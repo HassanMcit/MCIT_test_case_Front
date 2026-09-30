@@ -64,7 +64,10 @@ throw new Error("Incorrect Email or Password");
       loading: t("login_loading"),
       success: (_) => {
          router.refresh(); 
-        router.push("/dashboard");
+
+         setTimeout(() => {
+            router.push("/dashboard");
+          }, 100);
         return (
           <h1 className="text-green-500 font-bold">{t("login_success")}</h1>
         );
