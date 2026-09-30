@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {"darkMode":"class","theme":{"extend":{"colors":{"tertiary-container":"#08b77f","surface-tint":"#006685","secondary-fixed":"#dae2fd","outline":"#6d797f","secondary-container":"#dae2fd","surface-variant":"#d3e4fe","error-container":"#ffdad6","on-tertiary":"#ffffff","background":"#f8f9ff","secondary-fixed-dim":"#bec6e0","surface":"#f8f9ff","surface-container-lowest":"#ffffff","on-primary-fixed-variant":"#004d65","tertiary-fixed-dim":"#4edea3","on-surface":"#0b1c30","surface-container":"#e5eeff","on-secondary-container":"#5c647a","surface-bright":"#f8f9ff","surface-container-low":"#eff4ff","inverse-primary":"#6cd2ff","inverse-surface":"#213145","outline-variant":"#bcc8d0","on-surface-variant":"#3d484f","tertiary-fixed":"#6ffbbe","surface-container-highest":"#d3e4fe","on-background":"#0b1c30","on-secondary":"#ffffff","primary":"#006685","on-primary-fixed":"#001f2a","primary-container":"#00aee0","inverse-on-surface":"#eaf1ff","on-tertiary-fixed-variant":"#005236","primary-fixed-dim":"#6cd2ff","on-error":"#ffffff","on-secondary-fixed-variant":"#3f465c","surface-dim":"#cbdbf5","on-primary-container":"#003d51","secondary":"#565e74","on-secondary-fixed":"#131b2e","tertiary":"#006c49","on-tertiary-container":"#00402a","error":"#ba1a1a","on-error-container":"#93000a","primary-fixed":"#bfe9ff","surface-container-high":"#dce9ff","on-tertiary-fixed":"#002113","on-primary":"#ffffff"},"borderRadius":{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},"spacing":{"space-lg":"1rem","margin":"1.5rem","margin-mobile":"1rem","space-sm":"0.5rem","space-xs":"0.25rem","gutter":"1rem","space-xl":"1.5rem","space-md":"0.75rem","gutter-lg":"1.5rem"},"fontFamily":{"label-sm":["Geist"],"code-sm":["Geist"],"body-xs":["Geist"],"headline-lg":["Hanken Grotesk"],"headline-xl-mobile":["Hanken Grotesk"],"label-md":["Geist"],"label-md":["Geist"],"headline-md":["Hanken Grotesk"],"body-sm":["Geist"],"headline-sm":["Hanken Grotesk"],"body-md":["Geist"],"headline-xl":["Hanken Grotesk"],"body-lg":["Geist"]},"fontSize":{"label-sm":["11px",{"lineHeight":"14px","letterSpacing":"0.04em","fontWeight":"600"}],"code-sm":["12px",{"lineHeight":"16px","fontWeight":"400"}],"body-xs":["12px",{"lineHeight":"16px","fontWeight":"400"}],"headline-lg":["24px",{"lineHeight":"32px","fontWeight":"600"}],"headline-xl-mobile":["26px",{"lineHeight":"34px","fontWeight":"700"}],"label-md":["13px",{"lineHeight":"18px","fontWeight":"500"}],"headline-md":["20px",{"lineHeight":"28px","fontWeight":"600"}],"body-sm":["13px",{"lineHeight":"18px","fontWeight":"400"}],"headline-sm":["16px",{"lineHeight":"24px","fontWeight":"600"}],"body-md":["14px",{"lineHeight":"20px","fontWeight":"400"}],"headline-xl":["32px",{"lineHeight":"40px","fontWeight":"700"}],"body-lg":["16px",{"lineHeight":"24px","fontWeight":"400"}]}}}};</script><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Hanken+Grotesk:wght@100..900&display=swap" rel="stylesheet"/></head><body class="bg-surface font-body-md text-on-surface"><aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-low z-50 flex flex-col pt-space-lg pb-space-lg shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="px-margin mb-space-lg flex items-center justify-between"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-primary text-headline-md">verified</span><span class="font-headline-md text-on-surface">QA Enterprise</span></div><button class="p-space-xs text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined">chevron_left</span></button></div><div class="px-margin mb-space-lg"><div class="p-space-sm bg-surface-container rounded-lg border border-outline-variant flex items-center justify-between cursor-pointer"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-primary">folder</span><div><div class="text-label-md text-on-surface">Digital Portal v2.4</div><div class="text-body-xs text-on-surface-variant">Active Project</div></div></div><span class="material-symbols-outlined text-on-surface-variant">unfold_more</span></div></div><nav class="flex-1 px-space-md space-y-space-xs overflow-y-auto" data-active-classes="bg-primary-container text-on-primary-container font-headline-sm"><a aria-current="page" class="flex items-center px-space-md py-space-sm rounded-lg transition-all bg-primary-container text-on-primary-container font-headline-sm" data-path="dashboard" href="#"><span class="material-symbols-outlined mr-space-md">dashboard</span>Dashboard</a><a class="flex items-center px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="test-cases" href="#"><span class="material-symbols-outlined mr-space-md">checklist</span>Test Cases</a><a class="flex items-center px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="test-runs" href="#"><span class="material-symbols-outlined mr-space-md">play_arrow</span>Test Runs</a><a class="flex items-center px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="defects" href="#"><span class="material-symbols-outlined mr-space-md">bug_report</span>Defects</a><a class="flex items-center px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="reports" href="#"><span class="material-symbols-outlined mr-space-md">analytics</span>Reports</a></nav><div class="px-margin pt-space-md border-t border-outline-variant"><div class="flex items-center justify-between text-body-xs text-on-surface-variant"><span>MCIT QA v4.2</span><span class="text-primary">Secure</span></div></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-16 bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-between px-margin"><div class="flex items-center gap-space-lg"><div class="flex items-center gap-space-sm border-r border-outline-variant pr-space-lg"><div class="h-8 px-space-sm bg-surface-container rounded flex items-center justify-center text-label-sm font-bold text-primary">MCIT</div><div class="h-8 px-space-sm bg-surface-container rounded flex items-center justify-center text-label-sm font-bold text-secondary">DIGITAL TRANSFORMATION</div></div></div><div class="flex items-center gap-space-md"><button class="px-space-sm py-space-xs rounded bg-surface-container text-label-md text-on-surface hover:bg-surface-container-high">EN / AR</button><div class="h-6 w-[1px] bg-outline-variant"></div><span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-on-surface">notifications</span><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1VYPojZUhO5lM0uWhA6G_KNNQed5OxHeKZnIES7P3ex7Cuy-f96Staa-4y_CWz3vTCs2GsFCDqfUUAf6NRMfGU7EP8rPMM0E-OlX9Dmc3CfPblXHQ9sEUPUqgE2CpTXZLptQch8sMiU8zlU1kyn1JgkxjllzjUXHNOHTC3zofB8iTxmxTSPeUbbcjIkVcVMrpfwqriL8Ec_4G4YuatTJ0gOPBFATrhqitGIcVeT1BcrmsBMVKTtMMMlRC8YlZrT60798OrBQv6kyCc"/></div></header><main class="relative pt-16 bg-surface"><div class="flex flex-col w-full min-h-screen bg-surface text-on-surface" dir="ltr" id="dashboard-root">
+<!-- Top Hero Metric / Banner Area -->
+<div class="px-margin pt-space-lg pb-space-md flex flex-col gap-space-md">
+<!-- Banner Header with Logos requested -->
+<div class="p-space-lg rounded-xl bg-surface-container-low shadow-sm flex flex-col md:flex-row items-center justify-between gap-space-lg">
+<div class="flex items-center gap-space-lg">
+<div class="w-32 h-16 bg-surface-container rounded-lg p-2 flex items-center justify-center overflow-hidden">
+<img alt="MCIT Logo" class="object-contain max-h-full max-w-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCg0ZvehrLZW265ZUkDFg6F3sr1FN-BsmIgcfEsqBxEJWMHYtV7G2N07oflAq9dat2g4RnotynLlZ0CmmcYqkYrZeV1ffehDzs3or-XRUH1jvvH5uASNvDrJd_lLT_i5UB8PXJ7486yCehRXGvlaEw7bDR4loVs8ZZhyFZkLLzjGwbgN1qiayD1SJtVf9MNyQbjKry6rVODfRSkp0UUDfXDBVdljjcT1SAVfy6M1ZiQDV3wxP_OJGpH2iJX-_SeCqW91SA"/>
+</div>
+<div class="w-32 h-16 bg-surface-container rounded-lg p-2 flex items-center justify-center overflow-hidden">
+<img alt="Digital Transformation Logo" class="object-contain max-h-full max-w-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBRn4pz8A0VOQNZRRR7Go6ITujPgquKol_zwPR_t_bzcMHv1YZSsvS-fPnKYFWDuPvo52vGehU1lVznCPBtL8s2VQN0shocH2vpcmyiyiFcquQOORDqKVsPvSMTSAzT_Mt8PO9sBwMkRl1oRlUZObtLV92pTTHavJQs5C8mPh69gsF35Urts8rrDRH0phs4dj6ylYvw0VlD11mMcV87FJRFxEuo1lKN69UOPkZYD38ZdybuNSSDYdmZLVZPgv_DJLMH8q0"/>
+</div>
+<div>
+<span class="text-label-sm uppercase tracking-wider text-primary font-bold" data-translate="subtitle">National Quality Assurance Portal</span>
+<h1 class="text-headline-lg font-headline-lg text-on-surface" data-translate="title">Digital Portal v2.4 Execution & Testing Dashboard</h1>
+</div>
+</div>
+<div class="flex items-center gap-space-md">
+<button class="px-space-md py-space-sm rounded-lg text-on-primary font-label-md transition-all hover:opacity-90 shadow-sm flex items-center gap-space-sm" onclick="openNewTestCaseModal()" style="background-color: #00C3F3;">
+<span class="material-symbols-outlined">add</span>
+<span data-translate="new_test_case">+ New Test Case</span>
+</button>
+</div>
+</div>
+<!-- Metric Cards Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-space-md">
+<!-- Total Tests -->
+<div class="p-space-md rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant mb-space-sm">
+<span class="text-label-md" data-translate="total_tests">Total Tests</span>
+<span class="material-symbols-outlined text-primary">checklist</span>
+</div>
+<div class="flex items-baseline justify-between">
+<span class="text-headline-lg font-headline-lg text-on-surface">1,420</span>
+<span class="text-label-sm text-tertiary-container flex items-center"><span class="material-symbols-outlined text-xs">trending_up</span>+12%</span>
+</div>
+</div>
+<!-- Passed -->
+<div class="p-space-md rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant mb-space-sm">
+<span class="text-label-md" data-translate="passed">Passed</span>
+<span class="material-symbols-outlined text-tertiary-container" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div class="flex items-baseline justify-between">
+<span class="text-headline-lg font-headline-lg text-on-surface">1,180</span>
+<span class="text-label-sm text-tertiary-container">83%</span>
+</div>
+</div>
+<!-- Failed -->
+<div class="p-space-md rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant mb-space-sm">
+<span class="text-label-md" data-translate="failed">Failed</span>
+<span class="material-symbols-outlined text-error" style="font-variation-settings: 'FILL' 1;">error</span>
+</div>
+<div class="flex items-baseline justify-between">
+<span class="text-headline-lg font-headline-lg text-on-surface">145</span>
+<span class="text-label-sm text-error">10.2%</span>
+</div>
+</div>
+<!-- Pending -->
+<div class="p-space-md rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant mb-space-sm">
+<span class="text-label-md" data-translate="pending">Pending</span>
+<span class="material-symbols-outlined text-amber-500">schedule</span>
+</div>
+<div class="flex items-baseline justify-between">
+<span class="text-headline-lg font-headline-lg text-on-surface">95</span>
+<span class="text-label-sm text-on-surface-variant">6.8%</span>
+</div>
+</div>
+<!-- Pass Rate Circular Progress -->
+<div class="p-space-md rounded-xl bg-surface-container-lowest shadow-sm flex items-center justify-between">
+<div>
+<span class="text-label-md text-on-surface-variant block mb-1" data-translate="pass_rate">Pass Rate</span>
+<span class="text-headline-lg font-headline-lg text-on-surface">83.1%</span>
+<span class="text-body-xs text-tertiary-container block mt-1" data-translate="target_met">Target: >80% Met</span>
+</div>
+<div class="relative w-16 h-16 flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90" viewbox="0 0 36 36">
+<path class="text-surface-container" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3.5"></path>
+<path class="text-tertiary-container" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="83.1, 100" stroke-linecap="round" stroke-width="3.5"></path>
+</svg>
+<span class="absolute text-label-sm font-bold text-on-surface">83%</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Data Table Section -->
+<div class="px-margin pb-space-xl">
+<div class="rounded-xl bg-surface-container-lowest shadow-sm overflow-hidden">
+<!-- Table Controls Header -->
+<div class="p-space-md bg-surface-container-low flex flex-col sm:flex-row items-center justify-between gap-space-md">
+<div class="flex items-center gap-space-md w-full sm:w-auto">
+<div class="relative w-full sm:w-72">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-on-surface-variant text-sm">search</span>
+<input class="w-full h-9 pl-9 pr-space-md bg-surface border border-outline-variant rounded-lg text-body-sm text-on-surface focus:outline-none focus:border-primary" id="table-search" oninput="filterTable()" placeholder="Search test cases..." type="text"/>
+</div>
+<select class="h-9 px-space-sm bg-surface border border-outline-variant rounded-lg text-body-sm text-on-surface focus:outline-none focus:border-primary" id="status-filter" onchange="filterTable()">
+<option data-translate="all_statuses" value="">All Statuses</option>
+<option data-translate="passed" value="Passed">Passed</option>
+<option data-translate="failed" value="Failed">Failed</option>
+<option data-translate="pending" value="Pending">Pending</option>
+</select>
+</div>
+<div class="flex items-center gap-space-sm text-body-xs text-on-surface-variant">
+<span data-translate="showing_entries">Showing 5 of 1,420 entries</span>
+</div>
+</div>
+<!-- Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse" id="test-cases-table">
+<thead>
+<tr class="bg-surface-container-low text-label-sm text-on-surface-variant border-b border-outline-variant">
+<th class="py-space-sm px-space-md font-semibold" data-translate="tc_id">TC ID</th>
+<th class="py-space-sm px-space-md font-semibold" data-translate="module">Module</th>
+<th class="py-space-sm px-space-md font-semibold" data-translate="scenario_title">Scenario Title</th>
+<th class="py-space-sm px-space-md font-semibold" data-translate="priority">Priority</th>
+<th class="py-space-sm px-space-md font-semibold" data-translate="status">Status</th>
+<th class="py-space-sm px-space-md font-semibold" data-translate="tester_name">Tester Name</th>
+<th class="py-space-sm px-space-md font-semibold text-right" data-translate="actions">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant text-body-sm">
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-space-sm px-space-md font-code-sm text-primary font-semibold">TC-AUTH-001</td>
+<td class="py-space-sm px-space-md text-on-surface">Authentication</td>
+<td class="py-space-sm px-space-md text-on-surface font-medium">Verify National ID login with UAE Pass biometric fallback</td>
+<td class="py-space-sm px-space-md"><span class="px-2 py-0.5 rounded bg-error-container text-on-error-container text-label-sm">High</span></td>
+<td class="py-space-sm px-space-md"><span class="inline-flex items-center px-1.5 py-0.5 rounded text-label-sm bg-emerald-50 text-emerald-700 border border-emerald-200" data-translate="status_passed">Passed</span></td>
+<td class="py-space-sm px-space-md text-on-surface-variant">Fatima Al-Mansoori</td>
+<td class="py-space-sm px-space-md text-right">
+<button class="p-1 hover:bg-surface-container rounded text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined text-sm">more_vert</span></button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-space-sm px-space-md font-code-sm text-primary font-semibold">TC-PORT-042</td>
+<td class="py-space-sm px-space-md text-on-surface">Digital Portal</td>
+<td class="py-space-sm px-space-md text-on-surface font-medium">Submit enterprise licensing application form with attachments</td>
+<td class="py-space-sm px-space-md"><span class="px-2 py-0.5 rounded bg-amber-50 text-amber-700 text-label-sm">Medium</span></td>
+<td class="py-space-sm px-space-md"><span class="inline-flex items-center px-1.5 py-0.5 rounded text-label-sm bg-red-50 text-red-700 border border-red-200" data-translate="status_failed">Failed</span></td>
+<td class="py-space-sm px-space-md text-on-surface-variant">Tariq Al-Hashimi</td>
+<td class="py-space-sm px-space-md text-right">
+<button class="p-1 hover:bg-surface-container rounded text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined text-sm">more_vert</span></button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-space-sm px-space-md font-code-sm text-primary font-semibold">TC-PAY-108</td>
+<td class="py-space-sm px-space-md text-on-surface">Payment Gateway</td>
+<td class="py-space-sm px-space-md text-on-surface font-medium">Process government fee transaction via Apple Pay and Sadad</td>
+<td class="py-space-sm px-space-md"><span class="px-2 py-0.5 rounded bg-error-container text-on-error-container text-label-sm">High</span></td>
+<td class="py-space-sm px-space-md"><span class="inline-flex items-center px-1.5 py-0.5 rounded text-label-sm bg-emerald-50 text-emerald-700 border border-emerald-200" data-translate="status_passed">Passed</span></td>
+<td class="py-space-sm px-space-md text-on-surface-variant">Sarah Al-Nuaimi</td>
+<td class="py-space-sm px-space-md text-right">
+<button class="p-1 hover:bg-surface-container rounded text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined text-sm">more_vert</span></button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-space-sm px-space-md font-code-sm text-primary font-semibold">TC-NOTIF-019</td>
+<td class="py-space-sm px-space-md text-on-surface">Notifications</td>
+<td class="py-space-sm px-space-md text-on-surface font-medium">Verify SMS and bilingual email dispatch upon permit approval</td>
+<td class="py-space-sm px-space-md"><span class="px-2 py-0.5 rounded bg-surface-container text-on-surface text-label-sm">Low</span></td>
+<td class="py-space-sm px-space-md"><span class="inline-flex items-center px-1.5 py-0.5 rounded text-label-sm bg-amber-50 text-amber-700 border border-amber-200" data-translate="status_pending">Pending</span></td>
+<td class="py-space-sm px-space-md text-on-surface-variant">Mohammed Al-Kaabi</td>
+<td class="py-space-sm px-space-md text-right">
+<button class="p-1 hover:bg-surface-container rounded text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined text-sm">more_vert</span></button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-space-sm px-space-md font-code-sm text-primary font-semibold">TC-AUDIT-055</td>
+<td class="py-space-sm px-space-md text-on-surface">Audit Logs</td>
+<td class="py-space-sm px-space-md text-on-surface font-medium">Export compliance log reports in encrypted CSV format</td>
+<td class="py-space-sm px-space-md"><span class="px-2 py-0.5 rounded bg-amber-50 text-amber-700 text-label-sm">Medium</span></td>
+<td class="py-space-sm px-space-md"><span class="inline-flex items-center px-1.5 py-0.5 rounded text-label-sm bg-emerald-50 text-emerald-700 border border-emerald-200" data-translate="status_passed">Passed</span></td>
+<td class="py-space-sm px-space-md text-on-surface-variant">Aisha Al-Ketbi</td>
+<td class="py-space-sm px-space-md text-right">
+<button class="p-1 hover:bg-surface-container rounded text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined text-sm">more_vert</span></button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Footer Pagination -->
+<div class="p-space-md bg-surface-container-low flex items-center justify-between text-body-xs text-on-surface-variant">
+<span data-translate="page_info">Page 1 of 285</span>
+<div class="flex items-center gap-space-xs">
+<button class="px-2 py-1 rounded bg-surface border border-outline-variant hover:bg-surface-container">Prev</button>
+<button class="px-2 py-1 rounded bg-primary text-on-primary">1</button>
+<button class="px-2 py-1 rounded bg-surface border border-outline-variant hover:bg-surface-container">2</button>
+<button class="px-2 py-1 rounded bg-surface border border-outline-variant hover:bg-surface-container">3</button>
+<button class="px-2 py-1 rounded bg-surface border border-outline-variant hover:bg-surface-container">Next</button>
+</div>
+</div>
+</div>
+</div>
+<!-- New Test Case Modal (Hidden by default) -->
+<div class="fixed inset-0 bg-inverse-surface/40 backdrop-blur-sm z-50 flex items-center justify-center hidden" id="new-tc-modal">
+<div class="bg-surface rounded-xl shadow-xl w-full max-w-lg p-space-lg border border-outline-variant">
+<div class="flex items-center justify-between mb-space-md">
+<h3 class="text-headline-md font-headline-md text-on-surface" data-translate="modal_title">Create New Test Case</h3>
+<button class="text-on-surface-variant hover:text-on-surface" onclick="closeNewTestCaseModal()"><span class="material-symbols-outlined">close</span></button>
+</div>
+<div class="space-y-space-md">
+<div>
+<label class="block text-label-md text-on-surface mb-1" data-translate="modal_module">Module</label>
+<input class="w-full h-9 px-space-sm bg-surface-container-lowest border border-outline-variant rounded text-body-sm text-on-surface focus:outline-none focus:border-primary" placeholder="e.g. Authentication" type="text"/>
+</div>
+<div>
+<label class="block text-label-md text-on-surface mb-1" data-translate="modal_scenario">Scenario Title</label>
+<input class="w-full h-9 px-space-sm bg-surface-container-lowest border border-outline-variant rounded text-body-sm text-on-surface focus:outline-none focus:border-primary" placeholder="Enter scenario summary..." type="text"/>
+</div>
+<div class="grid grid-cols-2 gap-space-md">
+<div>
+<label class="block text-label-md text-on-surface mb-1" data-translate="modal_priority">Priority</label>
+<select class="w-full h-9 px-space-sm bg-surface-container-lowest border border-outline-variant rounded text-body-sm text-on-surface focus:outline-none focus:border-primary">
+<option>High</option>
+<option>Medium</option>
+<option>Low</option>
+</select>
+</div>
+<div>
+<label class="block text-label-md text-on-surface mb-1" data-translate="modal_tester">Assigned Tester</label>
+<input class="w-full h-9 px-space-sm bg-surface-container-lowest border border-outline-variant rounded text-body-sm text-on-surface focus:outline-none focus:border-primary" placeholder="Tester Name" type="text"/>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-end gap-space-sm mt-space-lg">
+<button class="px-space-md py-space-sm rounded border border-outline-variant text-label-md text-on-surface hover:bg-surface-container" data-translate="cancel" onclick="closeNewTestCaseModal()">Cancel</button>
+<button class="px-space-md py-space-sm rounded text-on-primary text-label-md" data-translate="save" onclick="closeNewTestCaseModal()" style="background-color: #00C3F3;">Save Test Case</button>
+</div>
+</div>
+</div>
+</div>
+<script>
+    let currentLang = 'en';
+
+    const translations = {
+        en: {
+            subtitle: "National Quality Assurance Portal",
+            title: "Digital Portal v2.4 Execution & Testing Dashboard",
+            new_test_case: "+ New Test Case",
+            total_tests: "Total Tests",
+            passed: "Passed",
+            failed: "Failed",
+            pending: "Pending",
+            pass_rate: "Pass Rate",
+            target_met: "Target: >80% Met",
+            all_statuses: "All Statuses",
+            showing_entries: "Showing 5 of 1,420 entries",
+            tc_id: "TC ID",
+            module: "Module",
+            scenario_title: "Scenario Title",
+            priority: "Priority",
+            status: "Status",
+            tester_name: "Tester Name",
+            actions: "Actions",
+            status_passed: "Passed",
+            status_failed: "Failed",
+            status_pending: "Pending",
+            page_info: "Page 1 of 285",
+            modal_title: "Create New Test Case",
+            modal_module: "Module",
+            modal_scenario: "Scenario Title",
+            modal_priority: "Priority",
+            modal_tester: "Assigned Tester",
+            cancel: "Cancel",
+            save: "Save Test Case"
+        },
+        ar: {
+            subtitle: "بوابة ضمان الجودة الوطنية",
+            title: "لوحة تحكم تنفيذ واختبار البوابة الرقمية الإصدار 2.4",
+            new_test_case: "+ حالة اختبار جديدة",
+            total_tests: "إجمالي الاختبارات",
+            passed: "ناجحة",
+            failed: "راسبة",
+            pending: "قيد الانتظار",
+            pass_rate: "معدل النجاح",
+            target_met: "المستهدف: >80% تحقق",
+            all_statuses: "جميع الحالات",
+            showing_entries: "عرض 5 من أصل 1,420 إدخال",
+            tc_id: "معرف الاختبار",
+            module: "الوحدة",
+            scenario_title: "عنوان السيناريو",
+            priority: "الأولوية",
+            status: "الحالة",
+            tester_name: "اسم المختبر",
+            actions: "الإجراءات",
+            status_passed: "ناجح",
+            status_failed: "راسب",
+            status_pending: "معلق",
+            page_info: "الصفحة 1 من 285",
+            modal_title: "إنشاء حالة اختبار جديدة",
+            modal_module: "الوحدة النمطية",
+            modal_scenario: "عنوان السيناريو",
+            modal_priority: "الأولوية",
+            modal_tester: "المختبر المعين",
+            cancel: "إلغاء",
+            save: "حفظ حالة الاختبار"
+        }
+    };
+
+    function toggleLanguage() {
+        currentLang = currentLang === 'en' ? 'ar' : 'en';
+        const root = document.getElementById('dashboard-root');
+        root.setAttribute('dir', currentLang === 'ar' ? 'rtl' : 'ltr');
+        
+        // Update language button text in shell if present
+        const langBtn = document.querySelector('header button');
+        if(langBtn) {
+            langBtn.textContent = currentLang === 'en' ? 'EN / AR' : 'AR / EN';
+        }
+
+        // Translate all elements with data-translate attribute
+        document.querySelectorAll('[data-translate]').forEach(el => {
+            const key = el.getAttribute('data-translate');
+            if (translations[currentLang][key]) {
+                el.textContent = translations[currentLang][key];
+            }
+        });
+    }
+
+    // Attach to shell language toggle button if available
+    document.addEventListener('DOMContentLoaded', () => {
+        const shellLangBtn = document.querySelector('header button');
+        if(shellLangBtn) {
+            shellLangBtn.onclick = toggleLanguage;
+        }
+    });
+
+    function openNewTestCaseModal() {
+        document.getElementById('new-tc-modal').classList.remove('hidden');
+    }
+
+    function closeNewTestCaseModal() {
+        document.getElementById('new-tc-modal').classList.add('hidden');
+    }
+
+    function filterTable() {
+        const searchInput = document.getElementById('table-search').value.toLowerCase();
+        const statusFilter = document.getElementById('status-filter').value;
+        const table = document.getElementById('test-cases-table');
+        const trs = table.getElementsByTagName('tr');
+
+        for (let i = 1; i < trs.length; i++) {
+            const tds = trs[i].getElementsByTagName('td');
+            if (tds.length === 0) continue;
+            const tcId = tds[0].textContent.toLowerCase();
+            const moduleName = tds[1].textContent.toLowerCase();
+            const scenario = tds[2].textContent.toLowerCase();
+            const status = tds[4].textContent.trim();
+
+            const matchesSearch = tcId.includes(searchInput) || moduleName.includes(searchInput) || scenario.includes(searchInput);
+            const matchesStatus = statusFilter === "" || status.toLowerCase() === statusFilter.toLowerCase();
+
+            if (matchesSearch && matchesStatus) {
+                trs[i].style.display = "";
+            } else {
+                trs[i].style.display = "none";
+            }
+        }
+    }
+</script></main></div></body></html>

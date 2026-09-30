@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Hanken+Grotesk:wght@100..900&display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"on-surface":"#0b1c30","surface-tint":"#006685","error-container":"#ffdad6","surface-container":"#e5eeff","secondary-container":"#dae2fd","on-tertiary-fixed-variant":"#005236","tertiary-fixed":"#6ffbbe","on-tertiary":"#ffffff","on-primary-container":"#003d51","inverse-primary":"#6cd2ff","secondary-fixed":"#dae2fd","on-tertiary-container":"#00402a","surface-variant":"#d3e4fe","on-secondary-container":"#5c647a","background":"#f8f9ff","tertiary":"#006c49","outline-variant":"#bcc8d0","secondary-fixed-dim":"#bec6e0","on-error":"#ffffff","primary-fixed":"#bfe9ff","on-secondary-fixed":"#131b2e","surface-container-high":"#dce9ff","surface-dim":"#cbdbf5","on-secondary-fixed-variant":"#3f465c","on-primary":"#ffffff","on-tertiary-fixed":"#002113","on-primary-fixed":"#001f2a","surface-container-low":"#eff4ff","primary-fixed-dim":"#6cd2ff","on-background":"#0b1c30","tertiary-container":"#08b77f","surface-container-highest":"#d3e4fe","on-surface-variant":"#3d484f","secondary":"#565e74","surface-bright":"#f8f9ff","outline":"#6d797f","on-primary-fixed-variant":"#004d65","on-error-container":"#93000a","error":"#ba1a1a","primary":"#006685","on-secondary":"#ffffff","surface":"#f8f9ff","primary-container":"#00aee0","tertiary-fixed-dim":"#4edea3","inverse-on-surface":"#eaf1ff","surface-container-lowest":"#ffffff","inverse-surface":"#213145"},"borderRadius":{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},"spacing":{"gutter":"1rem","gutter-lg":"1.5rem","margin":"1.5rem","space-md":"0.75rem","space-sm":"0.5rem","space-xl":"1.5rem","space-lg":"1rem","margin-mobile":"1rem","space-xs":"0.25rem"},"fontFamily":{"body-xs":["Geist"],"label-md":["Geist"],"headline-md":["Hanken Grotesk"],"headline-xl-mobile":["Hanken Grotesk"],"headline-sm":["Hanken Grotesk"],"body-sm":["Geist"],"code-sm":["Geist"],"headline-xl":["Hanken Grotesk"],"body-md":["Geist"],"body-lg":["Geist"],"label-sm":["Geist"],"headline-lg":["Hanken Grotesk"]},"fontSize":{"body-xs":["12px",{"lineHeight":"16px","fontWeight":"400"}],"label-md":["13px",{"lineHeight":"18px","fontWeight":"500"}],"headline-md":["20px",{"lineHeight":"28px","fontWeight":"600"}],"headline-xl-mobile":["26px",{"lineHeight":"34px","fontWeight":"700"}],"headline-sm":["16px",{"lineHeight":"24px","fontWeight":"600"}],"body-sm":["13px",{"lineHeight":"18px","fontWeight":"400"}],"code-sm":["12px",{"lineHeight":"16px","fontWeight":"400"}],"headline-xl":["32px",{"lineHeight":"40px","fontWeight":"700"}],"body-md":["14px",{"lineHeight":"20px","fontWeight":"400"}],"body-lg":["16px",{"lineHeight":"24px","fontWeight":"400"}],"label-sm":["11px",{"lineHeight":"14px","letterSpacing":"0.04em","fontWeight":"600"}],"headline-lg":["24px",{"lineHeight":"32px","fontWeight":"600"}]}}}}</script></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-lowest shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-50 flex flex-col justify-between"><div class="flex flex-col"><div class="h-16 px-gutter-lg flex items-center gap-space-sm bg-surface-container-lowest"><div class="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center text-on-primary"><span class="material-symbols-outlined text-[20px]">science</span></div><div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-on-surface leading-tight tracking-tight">QA Test Suite</span><span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Manager</span></div></div><div class="px-gutter-lg py-space-sm"><div class="font-label-sm text-label-sm uppercase tracking-wider text-outline px-space-sm mb-space-xs">Operations</div><nav class="flex flex-col gap-space-xs" data-active-classes="bg-surface-container text-primary font-label-md"><a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="dashboard" href="#"><span class="material-symbols-outlined text-[20px]">dashboard</span><span class="font-label-md text-label-md">Dashboard</span></a><a aria-current="page" class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg transition-all bg-surface-container text-primary font-label-md" data-path="add-test-case" href="#"><span class="material-symbols-outlined text-[20px]">add_circle</span><span class="font-label-md text-label-md">Add Test Case</span></a><a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="all-test-cases" href="#"><span class="material-symbols-outlined text-[20px]">checklist</span><span class="font-label-md text-label-md">All Test Cases</span></a><a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="projects-management" href="#"><span class="material-symbols-outlined text-[20px]">source_environment</span><span class="font-label-md text-label-md">Projects Management</span></a></nav></div></div><div class="p-gutter-lg flex flex-col gap-space-md"><div class="p-space-md rounded-xl bg-surface-container-low shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex items-center justify-between mb-space-xs"><span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Live Execution</span><span class="font-code-sm text-code-sm text-on-surface font-semibold">1,420 Total</span></div><div class="grid grid-cols-3 gap-space-xs pt-space-xs text-center"><div class="flex flex-col items-center bg-surface-container-lowest p-space-xs rounded"><div class="flex items-center gap-1 mb-0.5"><span class="w-1.5 h-1.5 rounded-full bg-tertiary-container"></span><span class="font-label-sm text-label-sm text-on-surface-variant">Passed</span></div><span class="font-headline-sm text-headline-sm text-tertiary">1,180</span></div><div class="flex flex-col items-center bg-surface-container-lowest p-space-xs rounded"><div class="flex items-center gap-1 mb-0.5"><span class="w-1.5 h-1.5 rounded-full bg-error"></span><span class="font-label-sm text-label-sm text-on-surface-variant">Failed</span></div><span class="font-headline-sm text-headline-sm text-error">145</span></div><div class="flex flex-col items-center bg-surface-container-lowest p-space-xs rounded"><div class="flex items-center gap-1 mb-0.5"><span class="w-1.5 h-1.5 rounded-full bg-secondary-fixed-dim"></span><span class="font-label-sm text-label-sm text-on-surface-variant">Pending</span></div><span class="font-headline-sm text-headline-sm text-secondary">95</span></div></div></div><button class="w-full flex items-center justify-center gap-space-sm h-[34px] rounded-lg bg-surface-container-lowest text-on-surface shadow-[0_1px_8px_rgba(0,0,0,0.04)] hover:bg-surface-container hover:text-on-surface transition-all" type="button"><span class="material-symbols-outlined text-[18px] text-tertiary">table_view</span><span class="font-label-md text-label-md font-medium">Export to Excel</span></button></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-16 bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-between px-gutter-lg"><div class="flex items-center gap-space-sm"><div class="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center text-primary"><span class="material-symbols-outlined text-[20px]">account_balance</span></div><div class="flex flex-col"><span class="font-label-md text-label-md text-on-surface font-semibold leading-tight">Ministry of Communications & Information Technology</span><span class="font-label-sm text-label-sm text-outline">(MCIT) QA Operations Oversight</span></div></div><div class="flex items-center gap-space-md px-space-md py-1.5 rounded-xl bg-surface-container-low cursor-pointer hover:bg-surface-container transition-colors"><div class="w-7 h-7 rounded bg-surface-container-highest flex items-center justify-center text-primary"><span class="material-symbols-outlined text-[18px]">layers</span></div><div class="flex flex-col"><div class="flex items-center gap-space-xs"><span class="font-label-md text-label-md font-semibold text-on-surface">Egypt Digital Platform</span><span class="font-code-sm text-code-sm text-outline">(Project 1 of 10)</span><span class="px-1.5 py-0.2 rounded font-label-sm text-label-sm bg-tertiary-container/20 text-tertiary font-semibold">Staging</span></div><span class="font-body-xs text-body-xs text-on-surface-variant">32 Open Defects • Last Run: 2h ago</span></div><span class="material-symbols-outlined text-[18px] text-outline ml-space-xs">expand_more</span></div><div class="flex items-center gap-space-md"><div class="relative flex items-center justify-center w-9 h-9 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer text-on-surface-variant"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-1 right-1 w-4 h-4 rounded-full bg-error text-on-error font-label-sm text-[10px] flex items-center justify-center font-bold">3</span></div><div class="flex items-center gap-space-sm pl-space-sm py-1 cursor-pointer"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1VBXzqiQPqkVvWpcMdqFyjExANOsYrsx26wVoBAvZdyGijraefJZ9OudHhRDqLb8puOmzk5n4nHDxBBhTQAoO4llz8rvN2apegq7FGm_52tNZ9Wcx_A7G3-jrUH6vc9UwC6E_sciUQ_Jj3k4UbIuRPrfjp0roaMhzUuknNVqvDcYlMy9NvRh8Vw4weyUJBglxIcfpu4zKvbuY5MpgRUbMCHU3d98n8LWOgGr2e9bm5ES3RpQmuLmR-QZMEybmOwWLuAPdKFKlvQRA"/><div class="hidden xl:flex flex-col text-left"><span class="font-label-md text-label-md text-on-surface font-semibold leading-none">Karim Mansour</span><span class="font-label-sm text-label-sm text-outline">Senior QA Lead</span></div><span class="material-symbols-outlined text-[18px] text-outline">expand_more</span></div></div></header><main class="relative w-full pt-16 bg-surface min-h-screen"><div class="w-full p-8"><div class="flex flex-col w-full">
+<!-- Upper Context & Breadcrumbs -->
+<div class="flex flex-col gap-space-sm mb-space-xl">
+<nav class="flex items-center gap-space-xs text-outline font-label-sm uppercase tracking-wider">
+<span class="hover:text-primary cursor-pointer transition-colors">Projects</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="hover:text-primary cursor-pointer transition-colors">Egypt Digital Platform</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="hover:text-primary cursor-pointer transition-colors">Test Cases</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-primary font-semibold">Add New</span>
+</nav>
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
+<div>
+<div class="flex items-center gap-space-sm">
+<h1 class="font-headline-xl text-headline-xl text-on-surface tracking-tight">Create New Test Case</h1>
+<span class="px-2 py-0.5 rounded font-label-sm text-label-sm bg-primary-fixed text-on-primary-fixed-variant font-medium">Draft TC_003</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">
+          Define test scenarios, pre-conditions, reproducible steps, and expected outcomes for test execution.
+        </p>
+</div>
+<div class="flex items-center gap-space-sm">
+<button class="h-[34px] px-space-md rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md transition-colors" type="button">
+          Cancel
+        </button>
+<button class="h-[34px] px-space-md rounded-lg bg-surface-container-lowest text-on-surface shadow-sm hover:bg-surface-container-low font-label-md flex items-center gap-1.5 transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px] text-outline">bookmark_border</span>
+<span>Save as Draft</span>
+</button>
+<button class="h-[34px] px-space-lg rounded-lg bg-primary-container text-on-primary shadow-sm hover:brightness-105 font-label-md font-medium flex items-center gap-1.5 transition-all" type="button">
+<span class="material-symbols-outlined text-[16px]">save</span>
+<span>Save Test Case</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Form Layout Grid (Main 8 Cols + Inspector 4 Cols) -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-gutter-lg pb-24">
+<!-- Primary Form Column -->
+<div class="xl:col-span-8 flex flex-col gap-space-xl">
+<!-- Card 1: General Information & Scope -->
+<section class="bg-surface-container-lowest rounded-xl shadow-sm p-gutter-lg flex flex-col gap-space-lg relative overflow-hidden">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-7 h-7 rounded-lg bg-primary-fixed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">General Information & Scope</h2>
+<p class="font-body-xs text-body-xs text-on-surface-variant">Core identifier, target module architecture, and scenario description.</p>
+</div>
+</div>
+<span class="font-code-sm text-code-sm text-outline uppercase tracking-wider">SECTION 01</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md">
+<!-- Test Case ID -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Test Case ID</label>
+<div class="relative flex items-center">
+<input class="w-full h-[34px] px-space-md pr-16 bg-surface-container-low text-on-surface font-code-sm text-code-sm rounded-lg outline-none cursor-default font-semibold" readonly="" type="text" value="TC_003"/>
+<div class="absolute right-1 flex items-center gap-1">
+<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-surface-container-highest text-primary">AUTO</span>
+<button class="p-1 hover:bg-surface-container-highest rounded text-outline hover:text-on-surface transition-colors" onclick="navigator.clipboard.writeText('TC_003')" title="Copy ID" type="button">
+<span class="material-symbols-outlined text-[15px]">content_copy</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Module Selector -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Module System</label>
+<div class="relative">
+<select class="w-full h-[34px] pl-space-md pr-8 bg-surface-container-lowest text-on-surface rounded-lg appearance-none outline-none font-body-sm text-body-sm shadow-[0_0_0_1px_rgba(226,232,240,1)] focus:shadow-[0_0_0_2px_rgba(0,174,224,1)]">
+<option selected="">Authentication & Authorization</option>
+<option>Payment Gateway Integration</option>
+<option>Civil Status Records</option>
+<option>Document Verification</option>
+<option>Digital Signature</option>
+</select>
+<span class="material-symbols-outlined text-[18px] text-outline absolute right-2.5 top-2 pointer-events-none">unfold_more</span>
+</div>
+</div>
+<!-- Page / Feature Name -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Page / Feature Name</label>
+<input class="w-full h-[34px] px-space-md bg-surface-container-lowest text-on-surface rounded-lg outline-none font-body-sm text-body-sm shadow-[0_0_0_1px_rgba(226,232,240,1)] focus:shadow-[0_0_0_2px_rgba(0,174,224,1)]" placeholder="Citizen SSO Login & Multi-Factor Auth" type="text" value="Citizen SSO Login & Multi-Factor Auth"/>
+</div>
+</div>
+<!-- Test Scenario Input -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Test Scenario Purpose</label>
+<input class="w-full h-[34px] px-space-md bg-surface-container-lowest text-on-surface rounded-lg outline-none font-body-sm text-body-sm shadow-[0_0_0_1px_rgba(226,232,240,1)] focus:shadow-[0_0_0_2px_rgba(0,174,224,1)]" placeholder="e.g., Verify that expired session triggers automatic re-authentication prompt without data loss" type="text" value="Verify that expired session triggers automatic re-authentication prompt without form state eviction or data loss"/>
+</div>
+</section>
+<!-- Card 2: Execution Prerequisites & Environment -->
+<section class="bg-surface-container-lowest rounded-xl shadow-sm p-gutter-lg flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-7 h-7 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">verified_user</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Execution Prerequisites & Setup</h2>
+<p class="font-body-xs text-body-xs text-on-surface-variant">Mandatory state conditions required before running execution sequence.</p>
+</div>
+</div>
+<span class="font-code-sm text-code-sm text-outline uppercase tracking-wider">SECTION 02</span>
+</div>
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Pre-conditions Matrix</label>
+<textarea class="w-full p-space-md bg-surface-container-lowest text-on-surface rounded-lg outline-none font-code-sm text-code-sm leading-relaxed shadow-[0_0_0_1px_rgba(226,232,240,1)] focus:shadow-[0_0_0_2px_rgba(0,174,224,1)] resize-none" placeholder="1. User must have an active verified National ID account in Staging.
+2. Payment sandbox wallet balance must exceed 500 EGP.
+3. Session token must be expired (>15 min)." rows="3">1. User must possess an active verified National ID citizen profile in Egypt Staging Registry.
+2. Payment sandbox linked wallet balance must exceed 500 EGP.
+3. Access token TTL state set to expired (>15 min inactivity) or mock expired via devtools.</textarea>
+</div>
+</section>
+<!-- Card 3: Test Steps (Dynamic Step Builder) -->
+<section class="bg-surface-container-lowest rounded-xl shadow-sm p-gutter-lg flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-7 h-7 rounded-lg bg-primary-fixed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">format_list_numbered</span>
+</div>
+<div>
+<div class="flex items-center gap-space-xs">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Test Steps Execution Sequence</h2>
+<span class="px-2 py-0.2 rounded-full font-label-sm text-label-sm bg-surface-container-high text-on-surface-variant font-semibold" id="step-count-badge">3 steps</span>
+</div>
+<p class="font-body-xs text-body-xs text-on-surface-variant">Step-by-step reproducible action log with associated mock test inputs.</p>
+</div>
+</div>
+<button class="h-[30px] px-space-md rounded-lg bg-surface-container-lowest text-primary-container shadow-sm hover:bg-surface-container-low font-label-md flex items-center gap-1 transition-all" id="add-step-btn" type="button">
+<span class="material-symbols-outlined text-[16px]">add</span>
+<span>Add Step</span>
+</button>
+</div>
+<!-- Step Items Container -->
+<div class="flex flex-col gap-space-sm" id="steps-container">
+<!-- Step 1 -->
+<div class="step-card group p-space-md rounded-lg bg-surface-container-low flex flex-col gap-space-xs transition-all hover:bg-surface-container">
+<div class="flex items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="step-badge w-6 h-6 rounded bg-surface-container-highest text-primary font-code-sm text-code-sm font-semibold flex items-center justify-center">1</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Action & Payload</span>
+</div>
+<button class="remove-step-btn text-outline hover:text-error transition-colors p-1 rounded" type="button">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-space-sm mt-1">
+<div class="md:col-span-8">
+<input class="w-full h-[34px] px-space-md bg-surface-container-lowest text-on-surface rounded-lg outline-none font-body-sm text-body-sm shadow-[0_0_0_1px_rgba(226,232,240,1)] focus:shadow-[0_0_0_2px_rgba(0,174,224,1)]" placeholder="Step action description..." type="text" value="Navigate to portal login endpoint /auth/login and enter valid citizen credentials."/>
+</div>
+<div class="md:col-span-4">
+<input class="w-full h-[34px] px-space-md bg-surface-container-lowest text-on-surface rounded-lg outline-none font-code-sm text-code-sm shadow-[0_0_0_1px_rgba(226,232,240,1)] focus:shadow-[0_0_0_2px_rgba(0,174,224,1)]" placeholder="Test Data payload..." type="text" value="User: test_qa_01@mcit.gov.eg"/>
+</div>
+</div>
+</div>
+<!-- Step 2 -->
+<div class="step-card group p-space-md rounded-lg bg-surface-container-low flex flex-col gap-space-xs transition-all hover:bg-surface-container">
+<div class="flex items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="step-badge w-6 h-6 rounded bg-surface-container-highest text-primary font-code-sm text-code-sm font-semibold flex items-center justify-center">2</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Action & Payload</span>
+</div>
+<button class="remove-step-btn text-outline hover:text-error transition-colors p-1 rounded" type="button">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-space-sm mt-1">
+<div class="md:col-span-8">
+<input class="w-full h-[34px] px-space-md bg-surface-container-lowest text-on-surface rounded-lg outline-none font-body-sm text-body-sm shadow-[0_0_0_1px_rgba(226,232,240,1)] focus:shadow-[0_0_0_2px_rgba(0,174,224,1)]" placeholder="Step action description..." type="text" value="Wait 15 minutes for inactivity timeout or trigger token expiration via mock service worker."/>
+</div>
+<div class="md:col-span-4">
+<input class="w-full h-[34px] px-space-md bg-surface-container-lowest text-on-surface rounded-lg outline-none font-code-sm text-code-sm shadow-[0_0_0_1px_rgba(226,232,240,1)] focus:shadow-[0_0_0_2px_rgba(0,174,224,1)]" placeholder="Test Data payload..." type="text" value="Token TTL: 0"/>
+</div>
+</div>
+</div>
+<!-- Step 3 -->
+<div class="step-card group p-space-md rounded-lg bg-surface-container-low flex flex-col gap-space-xs transition-all hover:bg-surface-container">
+<div class="flex items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="step-badge w-6 h-6 rounded bg-surface-container-highest text-primary font-code-sm text-code-sm font-semibold flex items-center justify-center">3</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Action & Payload</span>
+</div>
+<button class="remove-step-btn text-outline hover:text-error transition-colors p-1 rounded" type="button">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-space-sm mt-1">
+<div class="md:col-span-8">
+<input class="w-full h-[34px] px-space-md bg-surface-container-lowest text-on-surface rounded-lg outline-none font-body-sm text-body-sm shadow-[0_0_0_1px_rgba(226,232,240,1)] focus:shadow-[0_0_0_2px_rgba(0,174,224,1)]" placeholder="Step action description..." type="text" value="Click on Submit Application on the draft form page."/>
+</div>
+<div class="md:col-span-4">
+<input class="w-full h-[34px] px-space-md bg-surface-container-lowest text-on-surface rounded-lg outline-none font-code-sm text-code-sm shadow-[0_0_0_1px_rgba(226,232,240,1)] focus:shadow-[0_0_0_2px_rgba(0,174,224,1)]" placeholder="Test Data payload..." type="text" value="Form ID: APP-98214"/>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Card 4: Expected vs Actual Results -->
+<section class="bg-surface-container-lowest rounded-xl shadow-sm p-gutter-lg flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-7 h-7 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">compare_arrows</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Expected vs Actual Results</h2>
+<p class="font-body-xs text-body-xs text-on-surface-variant">Define validation criteria and monitor observed runtime execution logs.</p>
+</div>
+</div>
+<span class="font-code-sm text-code-sm text-outline uppercase tracking-wider">SECTION 04</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<label class="font-label-sm text-label-sm text-tertiary uppercase tracking-wider font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">task_alt</span>
+                Expected Result (Baseline)
+              </label>
+<span class="font-label-sm text-label-sm text-outline">Required</span>
+</div>
+<textarea class="w-full p-space-md bg-surface-container-lowest text-on-surface rounded-lg outline-none font-body-sm text-body-sm leading-relaxed shadow-[0_0_0_1px_rgba(226,232,240,1)] focus:shadow-[0_0_0_2px_rgba(0,174,224,1)] resize-none" rows="4">A modal dialog should prompt the user to re-enter password. Form data in background should remain preserved in cache and auto-submitted upon re-auth without throwing a 401 unhandled error.</textarea>
+</div>
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<label class="font-label-sm text-label-sm text-outline uppercase tracking-wider font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">visibility</span>
+                Actual Result (Observed)
+              </label>
+<span class="font-label-sm text-label-sm text-outline">Runtime Log</span>
+</div>
+<textarea class="w-full p-space-md bg-surface-container-lowest text-on-surface rounded-lg outline-none font-body-sm text-body-sm leading-relaxed shadow-[0_0_0_1px_rgba(226,232,240,1)] focus:shadow-[0_0_0_2px_rgba(0,174,224,1)] resize-none" placeholder="Observed behavior during test execution (leave empty if pending execution)..." rows="4"></textarea>
+</div>
+</div>
+</section>
+<!-- Card 5: Metadata, Severity & Assignment -->
+<section class="bg-surface-container-lowest rounded-xl shadow-sm p-gutter-lg flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-7 h-7 rounded-lg bg-primary-fixed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">assignment_ind</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Metadata, Severity & Assignment</h2>
+<p class="font-body-xs text-body-xs text-on-surface-variant">Classify priority tier, execution responsibility, and defect tracking tickets.</p>
+</div>
+</div>
+<span class="font-code-sm text-code-sm text-outline uppercase tracking-wider">SECTION 05</span>
+</div>
+<!-- Row 6: 3-column dropdowns -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md">
+<!-- Status -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Status</label>
+<div class="relative">
+<select class="w-full h-[34px] pl-space-md pr-8 bg-surface-container-lowest text-on-surface rounded-lg appearance-none outline-none font-body-sm text-body-sm shadow-[0_0_0_1px_rgba(226,232,240,1)] focus:shadow-[0_0_0_2px_rgba(0,174,224,1)]">
+<option selected="">Pending</option>
+<option>Pass</option>
+<option>Fail</option>
+</select>
+<span class="material-symbols-outlined text-[18px] text-outline absolute right-2.5 top-2 pointer-events-none">expand_more</span>
+</div>
+</div>
+<!-- Priority -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Priority Level</label>
+<div class="relative flex items-center">
+<span class="w-2.5 h-2.5 rounded-full bg-error absolute left-3 z-10"></span>
+<select class="w-full h-[34px] pl-8 pr-8 bg-surface-container-lowest text-on-surface rounded-lg appearance-none outline-none font-body-sm text-body-sm shadow-[0_0_0_1px_rgba(226,232,240,1)] focus:shadow-[0_0_0_2px_rgba(0,174,224,1)] font-medium">
+<option selected="">Critical</option>
+<option>High</option>
+<option>Medium</option>
+<option>Low</option>
+</select>
+<span class="material-symbols-outlined text-[18px] text-outline absolute right-2.5 top-2 pointer-events-none">expand_more</span>
+</div>
+</div>
+<!-- Test Type -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Test Type</label>
+<div class="relative">
+<select class="w-full h-[34px] pl-space-md pr-8 bg-surface-container-lowest text-on-surface rounded-lg appearance-none outline-none font-body-sm text-body-sm shadow-[0_0_0_1px_rgba(226,232,240,1)] focus:shadow-[0_0_0_2px_rgba(0,174,224,1)]">
+<option selected="">Functional</option>
+<option>UI/UX</option>
+<option>Security</option>
+<option>Performance</option>
+<option>Integration</option>
+<option>Regression</option>
+</select>
+<span class="material-symbols-outlined text-[18px] text-outline absolute right-2.5 top-2 pointer-events-none">expand_more</span>
+</div>
+</div>
+</div>
+<!-- Row 7: 2-column grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+<!-- Tester Name -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Assigned QA Tester</label>
+<div class="relative">
+<select class="w-full h-[34px] pl- space-md pr-8 bg-surface-container-lowest text-on-surface rounded-lg appearance-none outline-none font-body-sm text-body-sm shadow-[0_0_0_1px_rgba(226,232,240,1)] focus:shadow-[0_0_0_2px_rgba(0,174,224,1)]">
+<option selected="">Karim Mansour (Lead QA Automation)</option>
+<option>Nourhan El-Sayed (Senior SDET)</option>
+<option>Tarek Farouk (QA Security Specialist)</option>
+<option>Yasmine Adel (Performance QA)</option>
+</select>
+<span class="material-symbols-outlined text-[18px] text-outline absolute right-2.5 top-2 pointer-events-none">expand_more</span>
+</div>
+</div>
+<!-- Execution Date -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Scheduled Execution Date</label>
+<div class="relative flex items-center">
+<input class="w-full h-[34px] px-space-md bg-surface-container-lowest text-on-surface rounded-lg outline-none font-body-sm text-body-sm shadow-[0_0_0_1px_rgba(226,232,240,1)] focus:shadow-[0_0_0_2px_rgba(0,174,224,1)]" type="date" value="2025-05-18"/>
+</div>
+</div>
+</div>
+<!-- Row 8: Notes & Defect References -->
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<label class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Notes & Defect References (JIRA / Issue Tracker)</label>
+<span class="font-code-sm text-code-sm text-primary flex items-center gap-1 cursor-pointer hover:underline">
+<span class="material-symbols-outlined text-[14px]">link</span> JIRA sync enabled
+            </span>
+</div>
+<textarea class="w-full p-space-md bg-surface-container-lowest text-on-surface rounded-lg outline-none font-code-sm text-code-sm shadow-[0_0_0_1px_rgba(226,232,240,1)] focus:shadow-[0_0_0_2px_rgba(0,174,224,1)] resize-none" placeholder="e.g., JIRA: EDP-4328, linked to API v2.4 hotfix" rows="2">JIRA: EDP-4328, linked to API v2.4 session state invalidation hotfix branch (release/v2.4-mcit)</textarea>
+</div>
+</section>
+</div>
+<!-- Right Inspector / QA Context Column -->
+<div class="xl:col-span-4 flex flex-col gap-space-xl">
+<!-- Target Environment Info Card -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Target Architecture</span>
+<span class="px-2 py-0.5 rounded font-label-sm text-label-sm bg-tertiary-container/20 text-tertiary font-semibold">Active Node</span>
+</div>
+<div class="flex items-center gap-space-sm p-space-md rounded-lg bg-surface-container-low">
+<div class="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[24px]">terminal</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm text-on-surface">edp-stg-app-02</span>
+<span class="font-code-sm text-code-sm text-on-surface-variant">v2.4.1-rc3 • OpenSSL 3.0.7</span>
+</div>
+</div>
+<div class="flex flex-col gap-space-xs text-body-sm font-body-sm text-on-surface-variant">
+<div class="flex items-center justify-between py-1">
+<span>Regression Impact</span>
+<span class="font-medium text-error flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span> High Risk
+            </span>
+</div>
+<div class="flex items-center justify-between py-1">
+<span>Automation Coverage</span>
+<span class="font-medium text-on-surface">Cypress + Playwright</span>
+</div>
+<div class="flex items-center justify-between py-1">
+<span>National ID Gateway</span>
+<span class="font-medium text-tertiary">Connected (Mocked)</span>
+</div>
+</div>
+<!-- Embedded SVG Visual: Test Run Health Pulse -->
+<div class="p-space-md rounded-lg bg-surface-container-lowest shadow-sm flex flex-col gap-space-xs mt-1">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Suite Readiness</span>
+<span class="font-code-sm text-code-sm text-primary font-bold">89.4%</span>
+</div>
+<svg class="w-full h-10 text-primary-container" fill="none" viewbox="0 0 240 40">
+<path d="M0 28 L30 25 L60 27 L90 14 L120 18 L150 10 L180 12 L210 5 L240 9" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+<path d="M0 28 L30 25 L60 27 L90 14 L120 18 L150 10 L180 12 L210 5 L240 9 L240 40 L0 40 Z" fill="currentColor" fill-opacity="0.12"></path>
+</svg>
+<span class="font-body-xs text-body-xs text-outline text-right">Last 20 execution trends</span>
+</div>
+</div>
+<!-- QA Testing Guidelines Callout Card -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col gap-space-sm relative overflow-hidden">
+<div class="absolute -right-6 -bottom-6 w-28 h-28 rounded-full bg-primary-fixed/20 pointer-events-none"></div>
+<div class="flex items-center gap-space-xs text-primary font-headline-sm text-headline-sm">
+<span class="material-symbols-outlined text-[20px]">lightbulb</span>
+<span>Writing Good Test Steps</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+          Ensure reproducible navigation paths. Separate atomic actions from assertions. Test data values should use deterministic staging mocks to preserve idempotent test runs across CI pipelines.
+        </p>
+<div class="flex flex-col gap-2 mt-2 font-body-xs text-body-xs text-on-surface">
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-[16px] text-tertiary shrink-0 mt-0.5">check_circle</span>
+<span>Always mention specific button names and UI endpoints</span>
+</div>
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-[16px] text-tertiary shrink-0 mt-0.5">check_circle</span>
+<span>Isolate network dependencies inside Pre-conditions</span>
+</div>
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-[16px] text-tertiary shrink-0 mt-0.5">check_circle</span>
+<span>Tag relevant JIRA bug IDs for linked traceability</span>
+</div>
+</div>
+</div>
+<!-- Operational History Snapshot -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col gap-space-sm">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Author Audit Trail</span>
+<div class="flex items-center gap-space-sm mt-1">
+<img class="w-9 h-9 rounded-full object-cover" data-alt="Close up professional portrait of a senior Egyptian software quality engineer with glasses wearing a dark navy blazer in an enterprise tech environment with ambient office lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC3y2CXj48hJW1MH188mbqg09R5i8cWV--wDTmDqrjjTtpgM7cTvm4SiJ7PnXPpzH9KeG-oKCfjUFZmJzxn7vnGffijTPZtw0u_W_tsb98qsGSv6AvqQbhy_pT5ovv5VvYF8JQ7BP0WbLqlgRKd-8aPY0u5rVwcfYdl5aHWk9XcLqmGleAwzGzWPHVqAqMerOutg1oNjx3cIc7onsBZFb0lUtytXUyc3HdrPVvXmclY7vyTia5ZiZZ2RA"/>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface font-semibold">Karim Mansour</span>
+<span class="font-body-xs text-body-xs text-outline">Created Draft • Today at 10:42 AM</span>
+</div>
+</div>
+<div class="p-space-sm rounded bg-surface-container-low font-code-sm text-code-sm text-on-surface-variant mt-2 flex items-center justify-between">
+<span>Branch Target:</span>
+<span class="text-primary font-semibold">release/sso-hardening</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Action Sticky Bar -->
+<div class="fixed bottom-0 left-72 right-0 bg-surface-container-lowest/95 backdrop-blur-md shadow-[0_-4px_16px_rgba(0,0,0,0.06)] z-30 px-gutter-lg py-3 flex items-center justify-between">
+<div class="flex items-center gap-space-sm text-body-xs font-body-xs text-outline">
+<span class="material-symbols-outlined text-[16px] text-tertiary">cloud_done</span>
+<span>Auto-saved 2 mins ago to draft</span>
+<span class="text-surface-variant">•</span>
+<span class="font-code-sm text-code-sm">Repository: EDP-QA-Core</span>
+</div>
+<div class="flex items-center gap-space-md">
+<button class="h-10 px-space-lg rounded-lg text-on-surface-variant hover:text-error hover:bg-error-container/20 font-label-md transition-colors flex items-center gap-1.5" id="clear-form-btn" type="button">
+<span class="material-symbols-outlined text-[18px]">restart_alt</span>
+<span>Clear All Fields</span>
+</button>
+<button class="h-11 px-6 rounded-lg bg-primary-container text-on-primary shadow-md hover:brightness-105 active:scale-[0.99] font-label-md font-bold tracking-wide flex items-center gap-2 transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]">done_all</span>
+<span>Save Test Case</span>
+</button>
+</div>
+</div>
+</div>
+<script>
+  (function () {
+    const container = document.getElementById('steps-container');
+    const addBtn = document.getElementById('add-step-btn');
+    const countBadge = document.getElementById('step-count-badge');
+    const clearBtn = document.getElementById('clear-form-btn');
+
+    function updateStepNumbers() {
+      const steps = container.querySelectorAll('.step-card');
+      steps.forEach((step, idx) => {
+        const badge = step.querySelector('.step-badge');
+        if (badge) badge.textContent = (idx + 1).toString();
+      });
+      if (countBadge) {
+        countBadge.textContent = `${steps.length} ${steps.length === 1 ? 'step' : 'steps'}`;
+      }
+    }
+
+    // Dynamic Step Deletion
+    container.addEventListener('click', (e) => {
+      const btn = e.target.closest('.remove-step-btn');
+      if (btn) {
+        const card = btn.closest('.step-card');
+        if (card && container.querySelectorAll('.step-card').length > 1) {
+          card.remove();
+          updateStepNumbers();
+        }
+      }
+    });
+
+    // Dynamic Step Insertion
+    if (addBtn) {
+      addBtn.addEventListener('click', () => {
+        const currentCount = container.querySelectorAll('.step-card').length + 1;
+        const newCard = document.createElement('div');
+        newCard.className = 'step-card group p-space-md rounded-lg bg-surface-container-low flex flex-col gap-space-xs transition-all hover:bg-surface-container';
+        newCard.innerHTML = `
+          <div class="flex items-center justify-between gap-space-sm">
+            <div class="flex items-center gap-space-sm">
+              <span class="step-badge w-6 h-6 rounded bg-surface-container-highest text-primary font-code-sm text-code-sm font-semibold flex items-center justify-center">${currentCount}</span>
+              <span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Action & Payload</span>
+            </div>
+            <button type="button" class="remove-step-btn text-outline hover:text-error transition-colors p-1 rounded">
+              <span class="material-symbols-outlined text-[18px]">delete</span>
+            </button>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-space-sm mt-1">
+            <div class="md:col-span-8">
+              <input type="text" placeholder="Enter reproducible step action..." class="w-full h-[34px] px-space-md bg-surface-container-lowest text-on-surface rounded-lg outline-none font-body-sm text-body-sm shadow-[0_0_0_1px_rgba(226,232,240,1)] focus:shadow-[0_0_0_2px_rgba(0,174,224,1)]">
+            </div>
+            <div class="md:col-span-4">
+              <input type="text" placeholder="Test Data payload / query..." class="w-full h-[34px] px-space-md bg-surface-container-lowest text-on-surface rounded-lg outline-none font-code-sm text-code-sm shadow-[0_0_0_1px_rgba(226,232,240,1)] focus:shadow-[0_0_0_2px_rgba(0,174,224,1)]">
+            </div>
+          </div>
+        `;
+        container.appendChild(newCard);
+        updateStepNumbers();
+      });
+    }
+
+    // Reset confirmation
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        if (confirm('Are you sure you want to reset all form entries for TC_003?')) {
+          const inputs = document.querySelectorAll('input:not([readonly]), textarea');
+          inputs.forEach(el => el.value = '');
+        }
+      });
+    }
+  })();
+</script></div></main></div></body></html>

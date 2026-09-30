@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Hanken+Grotesk:wght@100..900&display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"on-surface":"#0b1c30","surface-tint":"#006685","error-container":"#ffdad6","surface-container":"#e5eeff","secondary-container":"#dae2fd","on-tertiary-fixed-variant":"#005236","tertiary-fixed":"#6ffbbe","on-tertiary":"#ffffff","on-primary-container":"#003d51","inverse-primary":"#6cd2ff","secondary-fixed":"#dae2fd","on-tertiary-container":"#00402a","surface-variant":"#d3e4fe","on-secondary-container":"#5c647a","background":"#f8f9ff","tertiary":"#006c49","outline-variant":"#bcc8d0","secondary-fixed-dim":"#bec6e0","on-error":"#ffffff","primary-fixed":"#bfe9ff","on-secondary-fixed":"#131b2e","surface-container-high":"#dce9ff","surface-dim":"#cbdbf5","on-secondary-fixed-variant":"#3f465c","on-primary":"#ffffff","on-tertiary-fixed":"#002113","on-primary-fixed":"#001f2a","surface-container-low":"#eff4ff","primary-fixed-dim":"#6cd2ff","on-background":"#0b1c30","tertiary-container":"#08b77f","surface-container-highest":"#d3e4fe","on-surface-variant":"#3d484f","secondary":"#565e74","surface-bright":"#f8f9ff","outline":"#6d797f","on-primary-fixed-variant":"#004d65","on-error-container":"#93000a","error":"#ba1a1a","primary":"#006685","on-secondary":"#ffffff","surface":"#f8f9ff","primary-container":"#00aee0","tertiary-fixed-dim":"#4edea3","inverse-on-surface":"#eaf1ff","surface-container-lowest":"#ffffff","inverse-surface":"#213145"},"borderRadius":{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},"spacing":{"gutter":"1rem","gutter-lg":"1.5rem","margin":"1.5rem","space-md":"0.75rem","space-sm":"0.5rem","space-xl":"1.5rem","space-lg":"1rem","margin-mobile":"1rem","space-xs":"0.25rem"},"fontFamily":{"body-xs":["Geist"],"label-md":["Geist"],"headline-md":["Hanken Grotesk"],"headline-xl-mobile":["Hanken Grotesk"],"headline-sm":["Hanken Grotesk"],"body-sm":["Geist"],"code-sm":["Geist"],"headline-xl":["Hanken Grotesk"],"body-md":["Geist"],"body-lg":["Geist"],"label-sm":["Geist"],"headline-lg":["Hanken Grotesk"]},"fontSize":{"body-xs":["12px",{"lineHeight":"16px","fontWeight":"400"}],"label-md":["13px",{"lineHeight":"18px","fontWeight":"500"}],"headline-md":["20px",{"lineHeight":"28px","fontWeight":"600"}],"headline-xl-mobile":["26px",{"lineHeight":"34px","fontWeight":"700"}],"headline-sm":["16px",{"lineHeight":"24px","fontWeight":"600"}],"body-sm":["13px",{"lineHeight":"18px","fontWeight":"400"}],"code-sm":["12px",{"lineHeight":"16px","fontWeight":"400"}],"headline-xl":["32px",{"lineHeight":"40px","fontWeight":"700"}],"body-md":["14px",{"lineHeight":"20px","fontWeight":"400"}],"body-lg":["16px",{"lineHeight":"24px","fontWeight":"400"}],"label-sm":["11px",{"lineHeight":"14px","letterSpacing":"0.04em","fontWeight":"600"}],"headline-lg":["24px",{"lineHeight":"32px","fontWeight":"600"}]}}}}</script></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-lowest shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-50 flex flex-col justify-between"><div class="flex flex-col"><div class="h-16 px-gutter-lg flex items-center gap-space-sm bg-surface-container-lowest"><div class="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center text-on-primary"><span class="material-symbols-outlined text-[20px]">science</span></div><div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-on-surface leading-tight tracking-tight">QA Test Suite</span><span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Manager</span></div></div><div class="px-gutter-lg py-space-sm"><div class="font-label-sm text-label-sm uppercase tracking-wider text-outline px-space-sm mb-space-xs">Operations</div><nav class="flex flex-col gap-space-xs" data-active-classes="bg-surface-container text-primary font-label-md"><a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="dashboard" href="#"><span class="material-symbols-outlined text-[20px]">dashboard</span><span class="font-label-md text-label-md">Dashboard</span></a><a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="add-test-case" href="#"><span class="material-symbols-outlined text-[20px]">add_circle</span><span class="font-label-md text-label-md">Add Test Case</span></a><a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="all-test-cases" href="#"><span class="material-symbols-outlined text-[20px]">checklist</span><span class="font-label-md text-label-md">All Test Cases</span></a><a aria-current="page" class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg transition-all bg-surface-container text-primary font-label-md" data-path="projects-management" href="#"><span class="material-symbols-outlined text-[20px]">source_environment</span><span class="font-label-md text-label-md">Projects Management</span></a></nav></div></div><div class="p-gutter-lg flex flex-col gap-space-md"><div class="p-space-md rounded-xl bg-surface-container-low shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex items-center justify-between mb-space-xs"><span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Live Execution</span><span class="font-code-sm text-code-sm text-on-surface font-semibold">1,420 Total</span></div><div class="grid grid-cols-3 gap-space-xs pt-space-xs text-center"><div class="flex flex-col items-center bg-surface-container-lowest p-space-xs rounded"><div class="flex items-center gap-1 mb-0.5"><span class="w-1.5 h-1.5 rounded-full bg-tertiary-container"></span><span class="font-label-sm text-label-sm text-on-surface-variant">Passed</span></div><span class="font-headline-sm text-headline-sm text-tertiary">1,180</span></div><div class="flex flex-col items-center bg-surface-container-lowest p-space-xs rounded"><div class="flex items-center gap-1 mb-0.5"><span class="w-1.5 h-1.5 rounded-full bg-error"></span><span class="font-label-sm text-label-sm text-on-surface-variant">Failed</span></div><span class="font-headline-sm text-headline-sm text-error">145</span></div><div class="flex flex-col items-center bg-surface-container-lowest p-space-xs rounded"><div class="flex items-center gap-1 mb-0.5"><span class="w-1.5 h-1.5 rounded-full bg-secondary-fixed-dim"></span><span class="font-label-sm text-label-sm text-on-surface-variant">Pending</span></div><span class="font-headline-sm text-headline-sm text-secondary">95</span></div></div></div><button class="w-full flex items-center justify-center gap-space-sm h-[34px] rounded-lg bg-surface-container-lowest text-on-surface shadow-[0_1px_8px_rgba(0,0,0,0.04)] hover:bg-surface-container hover:text-on-surface transition-all" type="button"><span class="material-symbols-outlined text-[18px] text-tertiary">table_view</span><span class="font-label-md text-label-md font-medium">Export to Excel</span></button></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-16 bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-between px-gutter-lg"><div class="flex items-center gap-space-sm"><div class="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center text-primary"><span class="material-symbols-outlined text-[20px]">account_balance</span></div><div class="flex flex-col"><span class="font-label-md text-label-md text-on-surface font-semibold leading-tight">Ministry of Communications & Information Technology</span><span class="font-label-sm text-label-sm text-outline">(MCIT) QA Operations Oversight</span></div></div><div class="flex items-center gap-space-md px-space-md py-1.5 rounded-xl bg-surface-container-low cursor-pointer hover:bg-surface-container transition-colors"><div class="w-7 h-7 rounded bg-surface-container-highest flex items-center justify-center text-primary"><span class="material-symbols-outlined text-[18px]">layers</span></div><div class="flex flex-col"><div class="flex items-center gap-space-xs"><span class="font-label-md text-label-md font-semibold text-on-surface">Egypt Digital Platform</span><span class="font-code-sm text-code-sm text-outline">(Project 1 of 10)</span><span class="px-1.5 py-0.2 rounded font-label-sm text-label-sm bg-tertiary-container/20 text-tertiary font-semibold">Staging</span></div><span class="font-body-xs text-body-xs text-on-surface-variant">32 Open Defects • Last Run: 2h ago</span></div><span class="material-symbols-outlined text-[18px] text-outline ml-space-xs">expand_more</span></div><div class="flex items-center gap-space-md"><div class="relative flex items-center justify-center w-9 h-9 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer text-on-surface-variant"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-1 right-1 w-4 h-4 rounded-full bg-error text-on-error font-label-sm text-[10px] flex items-center justify-center font-bold">3</span></div><div class="flex items-center gap-space-sm pl-space-sm py-1 cursor-pointer"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1VBXzqiQPqkVvWpcMdqFyjExANOsYrsx26wVoBAvZdyGijraefJZ9OudHhRDqLb8puOmzk5n4nHDxBBhTQAoO4llz8rvN2apegq7FGm_52tNZ9Wcx_A7G3-jrUH6vc9UwC6E_sciUQ_Jj3k4UbIuRPrfjp0roaMhzUuknNVqvDcYlMy9NvRh8Vw4weyUJBglxIcfpu4zKvbuY5MpgRUbMCHU3d98n8LWOgGr2e9bm5ES3RpQmuLmR-QZMEybmOwWLuAPdKFKlvQRA"/><div class="hidden xl:flex flex-col text-left"><span class="font-label-md text-label-md text-on-surface font-semibold leading-none">Karim Mansour</span><span class="font-label-sm text-label-sm text-outline">Senior QA Lead</span></div><span class="material-symbols-outlined text-[18px] text-outline">expand_more</span></div></div></header><main class="relative w-full pt-16 bg-surface min-h-screen"><div class="w-full p-8"><div class="flex flex-col w-full">
+<!-- Header & Controls Section -->
+<div class="flex flex-col lg:flex-row lg:items-end justify-between gap-space-lg mb-space-xl">
+<div class="flex flex-col gap-1 max-w-2xl">
+<div class="flex items-center gap-space-sm mb-1">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-primary/10 text-primary uppercase tracking-wider font-semibold">
+          Portfolio Overview
+        </span>
+<span class="text-outline text-label-sm font-label-sm">•</span>
+<span class="text-outline text-label-sm font-label-sm">MCIT Quality Architecture Program</span>
+</div>
+<h1 class="font-headline-xl text-headline-xl text-on-surface tracking-tight leading-tight">
+        Projects Portfolio & Management
+      </h1>
+<p class="font-body-md text-body-md text-on-surface-variant">
+        Manage test suites, staging/production environments, and QA pass rates across all 10 national digital transformation projects.
+      </p>
+</div>
+<!-- Actions & Toolbar -->
+<div class="flex flex-wrap items-center gap-space-sm">
+<!-- Search Input -->
+<div class="relative min-w-[260px] flex-1 sm:flex-initial">
+<span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span>
+<input class="w-full h-[34px] pl-8 pr-12 rounded-lg bg-surface-container-lowest text-on-surface text-body-sm font-body-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-primary-container transition-all" id="project-search-input" placeholder="Search project name or domain..." type="text"/>
+<span class="absolute right-2 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-surface-container-high text-outline font-code-sm text-[10px] uppercase font-semibold">⌘K</span>
+</div>
+<!-- Environment Filter Pills -->
+<div class="flex items-center bg-surface-container-low p-1 rounded-lg shadow-sm" id="env-filter-group">
+<button class="filter-btn px-3 py-1 rounded font-label-sm text-label-sm font-semibold transition-all bg-surface-container-lowest text-primary shadow-sm" data-filter="all" type="button">
+          All (10)
+        </button>
+<button class="filter-btn px-3 py-1 rounded font-label-sm text-label-sm font-semibold transition-all text-on-surface-variant hover:text-on-surface" data-filter="Staging" type="button">
+          Staging (5)
+        </button>
+<button class="filter-btn px-3 py-1 rounded font-label-sm text-label-sm font-semibold transition-all text-on-surface-variant hover:text-on-surface" data-filter="Production" type="button">
+          Production (5)
+        </button>
+</div>
+<!-- New Project CTA -->
+<button class="inline-flex items-center gap-1.5 h-[34px] px-4 rounded-lg bg-primary-container text-on-primary font-label-md text-label-md font-medium shadow-sm hover:brightness-105 active:scale-[0.98] transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span>New Project</span>
+</button>
+</div>
+</div>
+<!-- Summary Stats Bento Strip -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-lg mb-space-xl">
+<!-- Stat 1: Active Projects -->
+<div class="relative overflow-hidden p-space-lg rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between mb-2">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Active Projects</span>
+<div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">domain_verification</span>
+</div>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="font-headline-xl text-headline-xl text-on-surface font-bold tracking-tight">10</span>
+<span class="font-label-sm text-label-sm text-tertiary flex items-center">
+<span class="material-symbols-outlined text-[14px]">arrow_upward</span> 100% active
+        </span>
+</div>
+<div class="mt-3 flex items-center gap-1.5 text-outline text-body-xs font-body-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary-container"></span>
+<span>5 Staging • 5 Production instances</span>
+</div>
+</div>
+<!-- Stat 2: Total QA Test Cases -->
+<div class="relative overflow-hidden p-space-lg rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between mb-2">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Total QA Test Cases</span>
+<div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">checklist_rtl</span>
+</div>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="font-headline-xl text-headline-xl text-on-surface font-bold tracking-tight">14,890</span>
+<span class="font-code-sm text-code-sm text-on-surface-variant font-medium">+340 this week</span>
+</div>
+<div class="mt-3 w-full bg-surface-container-high h-1.5 rounded-full overflow-hidden flex">
+<div class="bg-tertiary-container h-full" style="width: 86.4%"></div>
+<div class="bg-error h-full" style="width: 7.2%"></div>
+<div class="bg-secondary-fixed-dim h-full" style="width: 6.4%"></div>
+</div>
+</div>
+<!-- Stat 3: Global Pass Rate -->
+<div class="relative overflow-hidden p-space-lg rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between mb-2">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Global Pass Rate</span>
+<div class="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-[20px]">verified</span>
+</div>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="font-headline-xl text-headline-xl text-on-surface font-bold tracking-tight">86.4%</span>
+<span class="font-label-sm text-label-sm text-tertiary flex items-center font-medium">
+<span class="material-symbols-outlined text-[14px]">trending_up</span> +2.1% MoM
+        </span>
+</div>
+<div class="mt-3 flex items-center justify-between text-body-xs font-body-xs text-on-surface-variant">
+<span>Target: 85.0%</span>
+<span class="font-semibold text-tertiary">Healthy Threshold Met</span>
+</div>
+</div>
+<!-- Stat 4: Total Open Defects -->
+<div class="relative overflow-hidden p-space-lg rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between mb-2">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Total Open Defects</span>
+<div class="w-8 h-8 rounded-lg bg-error-container/40 flex items-center justify-center text-error">
+<span class="material-symbols-outlined text-[20px]">bug_report</span>
+</div>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="font-headline-xl text-headline-xl text-error font-bold tracking-tight">284</span>
+<span class="font-body-xs text-body-xs text-error font-medium">18 Blocker • 42 Critical</span>
+</div>
+<div class="mt-3 flex items-center justify-between text-body-xs font-body-xs text-outline">
+<span>Across 10 project clusters</span>
+<span class="text-tertiary font-medium">48 resolved today</span>
+</div>
+</div>
+</div>
+<!-- Operational Portfolio Filter Notice & Meta -->
+<div class="flex items-center justify-between mb-space-md">
+<div class="flex items-center gap-space-sm text-body-sm font-body-sm text-on-surface-variant">
+<span class="font-headline-sm text-headline-sm text-on-surface">Digital Platforms Directory</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container font-code-sm text-code-sm font-semibold text-primary" id="project-count-badge">10 Portfolios Listed</span>
+</div>
+<div class="flex items-center gap-space-xs text-outline text-label-sm font-label-sm">
+<span class="material-symbols-outlined text-[16px]">sync</span>
+<span>Live cluster metrics synced: 2m ago</span>
+</div>
+</div>
+<!-- Responsive 10-Project Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-space-lg" id="projects-grid">
+<!-- Card 1: Digital Egypt Portal (ACTIVE) -->
+<div class="project-card relative rounded-xl bg-surface-container-lowest shadow-md flex flex-col justify-between overflow-hidden ring-2 ring-primary-container" data-domain="digital.gov.eg" data-env="Staging" data-name="digital egypt portal">
+<div class="absolute top-0 left-0 right-0 h-1 bg-primary-container"></div>
+<div class="p-space-lg flex flex-col flex-1">
+<!-- Top row: Identity & Tag -->
+<div class="flex items-start justify-between gap-space-sm mb-3">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-primary-container/15 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[24px]">flag</span>
+</div>
+<div class="flex flex-col min-w-0">
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold truncate flex items-center gap-1.5">
+                Digital Egypt Portal
+                <span class="material-symbols-outlined text-primary-container text-[16px]" title="Currently Active Workspace">check_circle</span>
+</h2>
+<a class="font-code-sm text-code-sm text-outline hover:text-primary transition-colors flex items-center gap-1 truncate" href="https://digital.gov.eg" target="_blank">
+                digital.gov.eg
+                <span class="material-symbols-outlined text-[13px]">open_in_new</span>
+</a>
+</div>
+</div>
+<!-- Environment Pill -->
+<span class="px-2.5 py-0.5 rounded font-label-sm text-label-sm font-semibold bg-surface-container text-primary">
+            Staging
+          </span>
+</div>
+<!-- Metric Bars & Stats -->
+<div class="my-space-md p-space-md rounded-lg bg-surface-container-low flex flex-col gap-2">
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<span class="text-on-surface-variant font-medium">Pass Rate</span>
+<div class="flex items-baseline gap-1">
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">83.1%</span>
+<span class="font-code-sm text-code-sm text-outline">/ 1,420 total</span>
+</div>
+</div>
+<!-- Progress Bar in Vibrant Cyan -->
+<div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
+<div class="bg-primary-container h-full rounded-full transition-all duration-500" style="width: 83.1%"></div>
+</div>
+<!-- Breakdown pills -->
+<div class="grid grid-cols-3 gap-1 pt-1 text-center font-code-sm text-[11px]">
+<div class="p-1 rounded bg-surface-container-lowest text-tertiary">
+<span class="font-semibold">1,180</span> Passed
+            </div>
+<div class="p-1 rounded bg-surface-container-lowest text-error">
+<span class="font-semibold">145</span> Failed
+            </div>
+<div class="p-1 rounded bg-surface-container-lowest text-secondary">
+<span class="font-semibold">95</span> Pending
+            </div>
+</div>
+</div>
+<!-- Project Lead & Meta -->
+<div class="mt-auto pt-space-xs flex items-center justify-between text-body-xs font-body-xs text-on-surface-variant">
+<div class="flex items-center gap-2">
+<img class="w-6 h-6 rounded-full object-cover" data-alt="Senior QA automation engineering specialist Karim Mansour wearing a professional navy jacket in a modern glass office background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCEsbNcwxI5dY7FmD_OWTtX8bvxOz5TVUbzEeFNTRmLsj9YV8VyzdESXvdLsU4KeFcJPC1GvKD1VELZX86V7mQhS4rNZaeQp1_rRsvJcp5t0lo8_iOEA80_h0P7W89SeNFKElibvN8yyiQLtpMhzEYyXFUCGbwJD5ptofiedsVSSxXIegANWQI9kgstrfHzd9UYgCbQzTIVFmeYIBujgzKiQ9MWfWAo5_EIczr3inOZHJLJFgBdCC3NHg"/>
+<span class="truncate">Lead: K. Mansour</span>
+</div>
+<span class="text-outline">Last run: 2h ago</span>
+</div>
+</div>
+<!-- Footer Button: Selected/Active State -->
+<div class="px-space-lg pb-space-lg pt-0">
+<button class="w-full h-[34px] rounded-lg bg-primary-container/15 text-on-primary-container font-label-md text-label-md font-semibold flex items-center justify-center gap-1.5 cursor-default" type="button">
+<span class="w-2 h-2 rounded-full bg-primary-container animate-ping"></span>
+<span>Currently Active</span>
+</button>
+</div>
+</div>
+<!-- Card 2: Smart Traffic & Violation System -->
+<div class="project-card relative rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between overflow-hidden hover:shadow-md transition-shadow" data-domain="traffic.moi.gov.eg" data-env="Production" data-name="smart traffic & violation system">
+<div class="p-space-lg flex flex-col flex-1">
+<div class="flex items-start justify-between gap-space-sm mb-3">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[24px]">traffic</span>
+</div>
+<div class="flex flex-col min-w-0">
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold truncate">
+                Smart Traffic & Violation System
+              </h2>
+<a class="font-code-sm text-code-sm text-outline hover:text-primary transition-colors flex items-center gap-1 truncate" href="https://traffic.moi.gov.eg" target="_blank">
+                traffic.moi.gov.eg
+                <span class="material-symbols-outlined text-[13px]">open_in_new</span>
+</a>
+</div>
+</div>
+<span class="px-2.5 py-0.5 rounded font-label-sm text-label-sm font-semibold bg-tertiary-container/20 text-tertiary">
+            Production
+          </span>
+</div>
+<div class="my-space-md p-space-md rounded-lg bg-surface-container-low flex flex-col gap-2">
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<span class="text-on-surface-variant font-medium">Pass Rate</span>
+<div class="flex items-baseline gap-1">
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">93.0%</span>
+<span class="font-code-sm text-code-sm text-outline">/ 1,850 total</span>
+</div>
+</div>
+<div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
+<div class="bg-primary-container h-full rounded-full" style="width: 93.0%"></div>
+</div>
+<div class="grid grid-cols-3 gap-1 pt-1 text-center font-code-sm text-[11px]">
+<div class="p-1 rounded bg-surface-container-lowest text-tertiary"><span class="font-semibold">1,720</span> Passed</div>
+<div class="p-1 rounded bg-surface-container-lowest text-error"><span class="font-semibold">80</span> Failed</div>
+<div class="p-1 rounded bg-surface-container-lowest text-secondary"><span class="font-semibold">50</span> Pending</div>
+</div>
+</div>
+<div class="mt-auto pt-space-xs flex items-center justify-between text-body-xs font-body-xs text-on-surface-variant">
+<div class="flex items-center gap-2">
+<img class="w-6 h-6 rounded-full object-cover" data-alt="Portrait of Egyptian senior QA test manager Tarek Soliman looking confident in smart casual attire with neutral corporate background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuATBvJ-Vys9fyorTexJ9WBCQsI3e_a9_6QCRBi8-gPEJCu6SCUCNhDuxod3WRxZ1NaCL9OkVP607nW-0ev_oECbQR1BhnGdf3b4S_eMcw5vC1l9RmVeZQEhi_YeD-BZE9AFrOFule9u1Q7mXc94Y-b7vxUedRoTy3l4nhqUMB_wDil5U73JtV6HOKwwY06SRb9c7c_j_RYuUqKHoHOcTmnE8ajB4IcfWYXfDn4JPtQRbWVhkg-cltNGdw"/>
+<span class="truncate">Lead: T. Soliman</span>
+</div>
+<span class="text-outline">Last run: 45m ago</span>
+</div>
+</div>
+<div class="px-space-lg pb-space-lg pt-0">
+<button class="switch-proj-btn w-full h-[34px] rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md font-medium flex items-center justify-center gap-1.5 transition-all" type="button">
+<span class="material-symbols-outlined text-[16px]">swap_horiz</span>
+<span>Switch Project</span>
+</button>
+</div>
+</div>
+<!-- Card 3: Universal Health Insurance System (UHIS) -->
+<div class="project-card relative rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between overflow-hidden hover:shadow-md transition-shadow" data-domain="uhis.gov.eg" data-env="Staging" data-name="universal health insurance system uhis">
+<div class="p-space-lg flex flex-col flex-1">
+<div class="flex items-start justify-between gap-space-sm mb-3">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[24px]">local_hospital</span>
+</div>
+<div class="flex flex-col min-w-0">
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold truncate">
+                Universal Health Insurance (UHIS)
+              </h2>
+<a class="font-code-sm text-code-sm text-outline hover:text-primary transition-colors flex items-center gap-1 truncate" href="https://uhis.gov.eg" target="_blank">
+                uhis.gov.eg
+                <span class="material-symbols-outlined text-[13px]">open_in_new</span>
+</a>
+</div>
+</div>
+<span class="px-2.5 py-0.5 rounded font-label-sm text-label-sm font-semibold bg-surface-container text-primary">
+            Staging
+          </span>
+</div>
+<div class="my-space-md p-space-md rounded-lg bg-surface-container-low flex flex-col gap-2">
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<span class="text-on-surface-variant font-medium">Pass Rate</span>
+<div class="flex items-baseline gap-1">
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">88.3%</span>
+<span class="font-code-sm text-code-sm text-outline">/ 2,140 total</span>
+</div>
+</div>
+<div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
+<div class="bg-primary-container h-full rounded-full" style="width: 88.3%"></div>
+</div>
+<div class="grid grid-cols-3 gap-1 pt-1 text-center font-code-sm text-[11px]">
+<div class="p-1 rounded bg-surface-container-lowest text-tertiary"><span class="font-semibold">1,890</span> Passed</div>
+<div class="p-1 rounded bg-surface-container-lowest text-error"><span class="font-semibold">160</span> Failed</div>
+<div class="p-1 rounded bg-surface-container-lowest text-secondary"><span class="font-semibold">90</span> Pending</div>
+</div>
+</div>
+<div class="mt-auto pt-space-xs flex items-center justify-between text-body-xs font-body-xs text-on-surface-variant">
+<div class="flex items-center gap-2">
+<img class="w-6 h-6 rounded-full object-cover" data-alt="Portrait of senior female healthcare software QA specialist Mona El-Sayed smiling in a high-tech modern healthcare IT control center" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBRxnwVrwLxgpsTdTjeaGLwvz2weBpMei6n-_JZmkuF5zQR367X26_4-s0Xyg8kZfCue7_GWkeUzDuZ8ORU33Rp0v86cIuCbFTwn2S7SDWn6zxfqsfku1ycIFua_ku5_c0eb_j8vT5LhSfpMeiEZRmGoprGEFScOgXh_SGwR2rpwTM_V3nQHRlX6vVpV5SGlTNe2nFojNHNLb5qQlAMnSe9ftalTctzzPFwa5UkYuktQ_P5CcycKxOrcg"/>
+<span class="truncate">Lead: Dr. M. El-Sayed</span>
+</div>
+<span class="text-outline">Last run: 1h ago</span>
+</div>
+</div>
+<div class="px-space-lg pb-space-lg pt-0">
+<button class="switch-proj-btn w-full h-[34px] rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md font-medium flex items-center justify-center gap-1.5 transition-all" type="button">
+<span class="material-symbols-outlined text-[16px]">swap_horiz</span>
+<span>Switch Project</span>
+</button>
+</div>
+</div>
+<!-- Card 4: Decent Life Initiative (Haya Karima) -->
+<div class="project-card relative rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between overflow-hidden hover:shadow-md transition-shadow" data-domain="hayakarima.gov.eg" data-env="Production" data-name="decent life initiative haya karima platform">
+<div class="p-space-lg flex flex-col flex-1">
+<div class="flex items-start justify-between gap-space-sm mb-3">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[24px]">diversity_3</span>
+</div>
+<div class="flex flex-col min-w-0">
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold truncate">
+                Decent Life (Haya Karima)
+              </h2>
+<a class="font-code-sm text-code-sm text-outline hover:text-primary transition-colors flex items-center gap-1 truncate" href="https://hayakarima.gov.eg" target="_blank">
+                hayakarima.gov.eg
+                <span class="material-symbols-outlined text-[13px]">open_in_new</span>
+</a>
+</div>
+</div>
+<span class="px-2.5 py-0.5 rounded font-label-sm text-label-sm font-semibold bg-tertiary-container/20 text-tertiary">
+            Production
+          </span>
+</div>
+<div class="my-space-md p-space-md rounded-lg bg-surface-container-low flex flex-col gap-2">
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<span class="text-on-surface-variant font-medium">Pass Rate</span>
+<div class="flex items-baseline gap-1">
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">92.8%</span>
+<span class="font-code-sm text-code-sm text-outline">/ 1,120 total</span>
+</div>
+</div>
+<div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
+<div class="bg-primary-container h-full rounded-full" style="width: 92.8%"></div>
+</div>
+<div class="grid grid-cols-3 gap-1 pt-1 text-center font-code-sm text-[11px]">
+<div class="p-1 rounded bg-surface-container-lowest text-tertiary"><span class="font-semibold">1,040</span> Passed</div>
+<div class="p-1 rounded bg-surface-container-lowest text-error"><span class="font-semibold">45</span> Failed</div>
+<div class="p-1 rounded bg-surface-container-lowest text-secondary"><span class="font-semibold">35</span> Pending</div>
+</div>
+</div>
+<div class="mt-auto pt-space-xs flex items-center justify-between text-body-xs font-body-xs text-on-surface-variant">
+<div class="flex items-center gap-2">
+<img class="w-6 h-6 rounded-full object-cover" data-alt="Headshot of Egyptian female test engineer Nouran Hatem wearing glasses and business blazer in professional technology workspace" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCNMyOhtcSQLOXuAze2ZRASv0Lx4HrD9OQBvahctf5DU9GLOsUr6o2g5sat3U5MkkDWZASMiQ4jzsxfLhj5JrEEMDhKRpqadNIbJmqZ_LXvpzYu30Ccup2H8qlF796cTaK0zBBSE6W_4-ioNiN6negMo01L6ROplc3Appm23BWUIJkYPUvnOT5lNrvkwB-0cD1Ud2zUkegqXRGU9NlfHK868sYbwzPCwGtWsP1iCvLg__V_ZarAu2Cnvw"/>
+<span class="truncate">Lead: N. Hatem</span>
+</div>
+<span class="text-outline">Last run: 3h ago</span>
+</div>
+</div>
+<div class="px-space-lg pb-space-lg pt-0">
+<button class="switch-proj-btn w-full h-[34px] rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md font-medium flex items-center justify-center gap-1.5 transition-all" type="button">
+<span class="material-symbols-outlined text-[16px]">swap_horiz</span>
+<span>Switch Project</span>
+</button>
+</div>
+</div>
+<!-- Card 5: Government Jobs & Civil Service Portal -->
+<div class="project-card relative rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between overflow-hidden hover:shadow-md transition-shadow" data-domain="jobs.caoa.gov.eg" data-env="Staging" data-name="government jobs civil service portal caoa">
+<div class="p-space-lg flex flex-col flex-1">
+<div class="flex items-start justify-between gap-space-sm mb-3">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[24px]">badge</span>
+</div>
+<div class="flex flex-col min-w-0">
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold truncate">
+                Gov Jobs & Civil Service
+              </h2>
+<a class="font-code-sm text-code-sm text-outline hover:text-primary transition-colors flex items-center gap-1 truncate" href="https://jobs.caoa.gov.eg" target="_blank">
+                jobs.caoa.gov.eg
+                <span class="material-symbols-outlined text-[13px]">open_in_new</span>
+</a>
+</div>
+</div>
+<span class="px-2.5 py-0.5 rounded font-label-sm text-label-sm font-semibold bg-surface-container text-primary">
+            Staging
+          </span>
+</div>
+<div class="my-space-md p-space-md rounded-lg bg-surface-container-low flex flex-col gap-2">
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<span class="text-on-surface-variant font-medium">Pass Rate</span>
+<div class="flex items-baseline gap-1">
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">82.6%</span>
+<span class="font-code-sm text-code-sm text-outline">/ 980 total</span>
+</div>
+</div>
+<div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
+<div class="bg-primary-container h-full rounded-full" style="width: 82.6%"></div>
+</div>
+<div class="grid grid-cols-3 gap-1 pt-1 text-center font-code-sm text-[11px]">
+<div class="p-1 rounded bg-surface-container-lowest text-tertiary"><span class="font-semibold">810</span> Passed</div>
+<div class="p-1 rounded bg-surface-container-lowest text-error"><span class="font-semibold">110</span> Failed</div>
+<div class="p-1 rounded bg-surface-container-lowest text-secondary"><span class="font-semibold">60</span> Pending</div>
+</div>
+</div>
+<div class="mt-auto pt-space-xs flex items-center justify-between text-body-xs font-body-xs text-on-surface-variant">
+<div class="flex items-center gap-2">
+<img class="w-6 h-6 rounded-full object-cover" data-alt="Portrait of male test automation architect Ahmed Rashed wearing minimalist glasses with crisp white shirt in tech office" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA6KdKL41_9QLAZsKafVDtyDNNfA_ZfAuN_MWD39fl26SY0-Dsy_OWOn6qejT-t2VuWTzUz3HVdLmLN7HzdI5k-VKnno1migkqWHlRMx0xCqr8hGvZjafQb5L-qcvn9oND8zTfzw5-5JezqzxCRqcpb6-B6diMwWf1pcPERInH8J1J-4AXeTjXGSMmV1g3DKt7uxYVFtdyxqmvxngtCKznjHxOMWGYVA8n4sAIH_yd4iOi0sSyJt1yc_g"/>
+<span class="truncate">Lead: A. Rashed</span>
+</div>
+<span class="text-outline">Last run: 5h ago</span>
+</div>
+</div>
+<div class="px-space-lg pb-space-lg pt-0">
+<button class="switch-proj-btn w-full h-[34px] rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md font-medium flex items-center justify-center gap-1.5 transition-all" type="button">
+<span class="material-symbols-outlined text-[16px]">swap_horiz</span>
+<span>Switch Project</span>
+</button>
+</div>
+</div>
+<!-- Card 6: Real Estate & Notary Registry (Shahr Aqari) -->
+<div class="project-card relative rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between overflow-hidden hover:shadow-md transition-shadow" data-domain="rerd.gov.eg" data-env="Staging" data-name="real estate notary registry shahr aqari">
+<div class="p-space-lg flex flex-col flex-1">
+<div class="flex items-start justify-between gap-space-sm mb-3">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[24px]">history_edu</span>
+</div>
+<div class="flex flex-col min-w-0">
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold truncate">
+                Real Estate Registry (Shahr Aqari)
+              </h2>
+<a class="font-code-sm text-code-sm text-outline hover:text-primary transition-colors flex items-center gap-1 truncate" href="https://rerd.gov.eg" target="_blank">
+                rerd.gov.eg
+                <span class="material-symbols-outlined text-[13px]">open_in_new</span>
+</a>
+</div>
+</div>
+<span class="px-2.5 py-0.5 rounded font-label-sm text-label-sm font-semibold bg-surface-container text-primary">
+            Staging
+          </span>
+</div>
+<div class="my-space-md p-space-md rounded-lg bg-surface-container-low flex flex-col gap-2">
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<span class="text-on-surface-variant font-medium">Pass Rate</span>
+<div class="flex items-baseline gap-1">
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">84.6%</span>
+<span class="font-code-sm text-code-sm text-outline">/ 1,630 total</span>
+</div>
+</div>
+<div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
+<div class="bg-primary-container h-full rounded-full" style="width: 84.6%"></div>
+</div>
+<div class="grid grid-cols-3 gap-1 pt-1 text-center font-code-sm text-[11px]">
+<div class="p-1 rounded bg-surface-container-lowest text-tertiary"><span class="font-semibold">1,380</span> Passed</div>
+<div class="p-1 rounded bg-surface-container-lowest text-error"><span class="font-semibold">170</span> Failed</div>
+<div class="p-1 rounded bg-surface-container-lowest text-secondary"><span class="font-semibold">80</span> Pending</div>
+</div>
+</div>
+<div class="mt-auto pt-space-xs flex items-center justify-between text-body-xs font-body-xs text-on-surface-variant">
+<div class="flex items-center gap-2">
+<img class="w-6 h-6 rounded-full object-cover" data-alt="Portrait of senior female technical quality assurance lead Yasmine Fathy with professional friendly posture and soft studio lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC42qjFX3IJCDnEYzJIqdN98o-XLzpGSqsswGjwFcuII4w0QHOrgy7vqltF3nnnYtPSfkwTGqfhtFDhAAXZ52B73E8EtGYdk77j740gyPz7NB9X317EXwQMrCE3DOhJJQVKmWWuO80mBtpDtpEGnypV1UhpduFqPxZFGnblYzLDFKGoGh0LSo4niSgwiDd9T_VKtoTA6ZH6USLeujGMMg2mxUuJHCXV2sugCW8_GIZ72wK7vzgHEDTnrQ"/>
+<span class="truncate">Lead: Y. Fathy</span>
+</div>
+<span class="text-outline">Last run: 4h ago</span>
+</div>
+</div>
+<div class="px-space-lg pb-space-lg pt-0">
+<button class="switch-proj-btn w-full h-[34px] rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md font-medium flex items-center justify-center gap-1.5 transition-all" type="button">
+<span class="material-symbols-outlined text-[16px]">swap_horiz</span>
+<span>Switch Project</span>
+</button>
+</div>
+</div>
+<!-- Card 7: E-Invoicing & Tax Authority Platform -->
+<div class="project-card relative rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between overflow-hidden hover:shadow-md transition-shadow" data-domain="invoicing.eta.gov.eg" data-env="Production" data-name="e-invoicing tax authority platform eta">
+<div class="p-space-lg flex flex-col flex-1">
+<div class="flex items-start justify-between gap-space-sm mb-3">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[24px]">receipt_long</span>
+</div>
+<div class="flex flex-col min-w-0">
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold truncate">
+                E-Invoicing & Tax Authority
+              </h2>
+<a class="font-code-sm text-code-sm text-outline hover:text-primary transition-colors flex items-center gap-1 truncate" href="https://invoicing.eta.gov.eg" target="_blank">
+                invoicing.eta.gov.eg
+                <span class="material-symbols-outlined text-[13px]">open_in_new</span>
+</a>
+</div>
+</div>
+<span class="px-2.5 py-0.5 rounded font-label-sm text-label-sm font-semibold bg-tertiary-container/20 text-tertiary">
+            Production
+          </span>
+</div>
+<div class="my-space-md p-space-md rounded-lg bg-surface-container-low flex flex-col gap-2">
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<span class="text-on-surface-variant font-medium">Pass Rate</span>
+<div class="flex items-baseline gap-1">
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">93.4%</span>
+<span class="font-code-sm text-code-sm text-outline">/ 2,450 total</span>
+</div>
+</div>
+<div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
+<div class="bg-primary-container h-full rounded-full" style="width: 93.4%"></div>
+</div>
+<div class="grid grid-cols-3 gap-1 pt-1 text-center font-code-sm text-[11px]">
+<div class="p-1 rounded bg-surface-container-lowest text-tertiary"><span class="font-semibold">2,290</span> Passed</div>
+<div class="p-1 rounded bg-surface-container-lowest text-error"><span class="font-semibold">90</span> Failed</div>
+<div class="p-1 rounded bg-surface-container-lowest text-secondary"><span class="font-semibold">70</span> Pending</div>
+</div>
+</div>
+<div class="mt-auto pt-space-xs flex items-center justify-between text-body-xs font-body-xs text-on-surface-variant">
+<div class="flex items-center gap-2">
+<img class="w-6 h-6 rounded-full object-cover" data-alt="Portrait of senior Egyptian fintech software QA director Hany Zaki in modern digital taxation infrastructure command center" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDh8OJh9zuVr8b_oZUxAD5mL68wyB0Y7SaNor7xrkKnLl3UTTtQK3piCDsVWRc_IelKEkx8Rr-kk5FE8BFAtm6hk4R8CZk0JUq14fVq04n9h0UIVNOyUL0lwCcWehrDaq5OralIDJq5-cYl2xAS0m7f3StAToDqoQ39Xy36psviRERU30d-YZHEUhu98ZR01-VhxUdFc6OsE4XPY7Z_q1hnQbdLxAOcQj4hYDnkFvRR7YnVifiDTNc2Fw"/>
+<span class="truncate">Lead: H. Zaki</span>
+</div>
+<span class="text-outline">Last run: 15m ago</span>
+</div>
+</div>
+<div class="px-space-lg pb-space-lg pt-0">
+<button class="switch-proj-btn w-full h-[34px] rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md font-medium flex items-center justify-center gap-1.5 transition-all" type="button">
+<span class="material-symbols-outlined text-[16px]">swap_horiz</span>
+<span>Switch Project</span>
+</button>
+</div>
+</div>
+<!-- Card 8: Nafeza - Customs Single Window System -->
+<div class="project-card relative rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between overflow-hidden hover:shadow-md transition-shadow" data-domain="nafeza.gov.eg" data-env="Production" data-name="nafeza customs single window system">
+<div class="p-space-lg flex flex-col flex-1">
+<div class="flex items-start justify-between gap-space-sm mb-3">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[24px]">warehouse</span>
+</div>
+<div class="flex flex-col min-w-0">
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold truncate">
+                Nafeza (Customs Single Window)
+              </h2>
+<a class="font-code-sm text-code-sm text-outline hover:text-primary transition-colors flex items-center gap-1 truncate" href="https://nafeza.gov.eg" target="_blank">
+                nafeza.gov.eg
+                <span class="material-symbols-outlined text-[13px]">open_in_new</span>
+</a>
+</div>
+</div>
+<span class="px-2.5 py-0.5 rounded font-label-sm text-label-sm font-semibold bg-tertiary-container/20 text-tertiary">
+            Production
+          </span>
+</div>
+<div class="my-space-md p-space-md rounded-lg bg-surface-container-low flex flex-col gap-2">
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<span class="text-on-surface-variant font-medium">Pass Rate</span>
+<div class="flex items-baseline gap-1">
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">90.8%</span>
+<span class="font-code-sm text-code-sm text-outline">/ 1,310 total</span>
+</div>
+</div>
+<div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
+<div class="bg-primary-container h-full rounded-full" style="width: 90.8%"></div>
+</div>
+<div class="grid grid-cols-3 gap-1 pt-1 text-center font-code-sm text-[11px]">
+<div class="p-1 rounded bg-surface-container-lowest text-tertiary"><span class="font-semibold">1,190</span> Passed</div>
+<div class="p-1 rounded bg-surface-container-lowest text-error"><span class="font-semibold">75</span> Failed</div>
+<div class="p-1 rounded bg-surface-container-lowest text-secondary"><span class="font-semibold">45</span> Pending</div>
+</div>
+</div>
+<div class="mt-auto pt-space-xs flex items-center justify-between text-body-xs font-body-xs text-on-surface-variant">
+<div class="flex items-center gap-2">
+<img class="w-6 h-6 rounded-full object-cover" data-alt="Portrait of senior enterprise supply chain QA tester Omar Hegazi in contemporary logistics analytics software suite" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAIsCELecr9Iz84MF4oITEw_Eg8wfPGZHssOuvyVgrDj_a0ieRWymeXFvNRaeKIThGNvAXW7C2BXrP2M1EtU1EYlcJQ-DdTUacyEBWniL99gWdzegUznTAmAIMGB2lzQTqblriwUHr7tGC9sUDcRuf6HnZRTuep9vCF8Znqg5adqmQ-6w53DEw5FWM8blnTtbNwETgHYArthQJV7uVYIhxDAUJiiRfpwORHle7T2KfL3BpSnBxYavFFMg"/>
+<span class="truncate">Lead: O. Hegazi</span>
+</div>
+<span class="text-outline">Last run: 1h ago</span>
+</div>
+</div>
+<div class="px-space-lg pb-space-lg pt-0">
+<button class="switch-proj-btn w-full h-[34px] rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md font-medium flex items-center justify-center gap-1.5 transition-all" type="button">
+<span class="material-symbols-outlined text-[16px]">swap_horiz</span>
+<span>Switch Project</span>
+</button>
+</div>
+</div>
+<!-- Card 9: Social Housing & Mortgage Finance Fund -->
+<div class="project-card relative rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between overflow-hidden hover:shadow-md transition-shadow" data-domain="shmff.gov.eg" data-env="Staging" data-name="social housing mortgage finance fund shmff">
+<div class="p-space-lg flex flex-col flex-1">
+<div class="flex items-start justify-between gap-space-sm mb-3">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[24px]">apartment</span>
+</div>
+<div class="flex flex-col min-w-0">
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold truncate">
+                Social Housing & Mortgage Fund
+              </h2>
+<a class="font-code-sm text-code-sm text-outline hover:text-primary transition-colors flex items-center gap-1 truncate" href="https://shmff.gov.eg" target="_blank">
+                shmff.gov.eg
+                <span class="material-symbols-outlined text-[13px]">open_in_new</span>
+</a>
+</div>
+</div>
+<span class="px-2.5 py-0.5 rounded font-label-sm text-label-sm font-semibold bg-surface-container text-primary">
+            Staging
+          </span>
+</div>
+<div class="my-space-md p-space-md rounded-lg bg-surface-container-low flex flex-col gap-2">
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<span class="text-on-surface-variant font-medium">Pass Rate</span>
+<div class="flex items-baseline gap-1">
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">82.8%</span>
+<span class="font-code-sm text-code-sm text-outline">/ 1,050 total</span>
+</div>
+</div>
+<div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
+<div class="bg-primary-container h-full rounded-full" style="width: 82.8%"></div>
+</div>
+<div class="grid grid-cols-3 gap-1 pt-1 text-center font-code-sm text-[11px]">
+<div class="p-1 rounded bg-surface-container-lowest text-tertiary"><span class="font-semibold">870</span> Passed</div>
+<div class="p-1 rounded bg-surface-container-lowest text-error"><span class="font-semibold">120</span> Failed</div>
+<div class="p-1 rounded bg-surface-container-lowest text-secondary"><span class="font-semibold">60</span> Pending</div>
+</div>
+</div>
+<div class="mt-auto pt-space-xs flex items-center justify-between text-body-xs font-body-xs text-on-surface-variant">
+<div class="flex items-center gap-2">
+<img class="w-6 h-6 rounded-full object-cover" data-alt="Portrait of senior female technical tester Rania Gamal in modern IT operations environment with sleek monitors" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB0KGZrkZ68Y7zDo6MsNgNq4IivophZrExLl8E4yrlyfpJzSJ3yBDNL-t338lsev1AhKO9ivfyrWuRw4GKr0gP5Tk657ylJmHRRowRyy03zDbWL8dyScBXa2YHXambn5kfLh7yJHXi1tSzcx8PBnPBvX68HAUhetUkIs8m7nRq-QX5rt0gtJbEvbxBGrskpewadCay0iwCJb94-dDP4pazl6Uf64K2rCQKD_2IMu-nvX0C7_j_zscNb9w"/>
+<span class="truncate">Lead: R. Gamal</span>
+</div>
+<span class="text-outline">Last run: 6h ago</span>
+</div>
+</div>
+<div class="px-space-lg pb-space-lg pt-0">
+<button class="switch-proj-btn w-full h-[34px] rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md font-medium flex items-center justify-center gap-1.5 transition-all" type="button">
+<span class="material-symbols-outlined text-[16px]">swap_horiz</span>
+<span>Switch Project</span>
+</button>
+</div>
+</div>
+<!-- Card 10: National ID & Civil Status Digital Services -->
+<div class="project-card relative rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between overflow-hidden hover:shadow-md transition-shadow" data-domain="cso.gov.eg" data-env="Production" data-name="national id civil status digital services cso">
+<div class="p-space-lg flex flex-col flex-1">
+<div class="flex items-start justify-between gap-space-sm mb-3">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[24px]">fingerprint</span>
+</div>
+<div class="flex flex-col min-w-0">
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold truncate">
+                National ID & Civil Status
+              </h2>
+<a class="font-code-sm text-code-sm text-outline hover:text-primary transition-colors flex items-center gap-1 truncate" href="https://cso.gov.eg" target="_blank">
+                cso.gov.eg
+                <span class="material-symbols-outlined text-[13px]">open_in_new</span>
+</a>
+</div>
+</div>
+<span class="px-2.5 py-0.5 rounded font-label-sm text-label-sm font-semibold bg-tertiary-container/20 text-tertiary">
+            Production
+          </span>
+</div>
+<div class="my-space-md p-space-md rounded-lg bg-surface-container-low flex flex-col gap-2">
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<span class="text-on-surface-variant font-medium">Pass Rate</span>
+<div class="flex items-baseline gap-1">
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">94.6%</span>
+<span class="font-code-sm text-code-sm text-outline">/ 940 total</span>
+</div>
+</div>
+<div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
+<div class="bg-primary-container h-full rounded-full" style="width: 94.6%"></div>
+</div>
+<div class="grid grid-cols-3 gap-1 pt-1 text-center font-code-sm text-[11px]">
+<div class="p-1 rounded bg-surface-container-lowest text-tertiary"><span class="font-semibold">890</span> Passed</div>
+<div class="p-1 rounded bg-surface-container-lowest text-error"><span class="font-semibold">30</span> Failed</div>
+<div class="p-1 rounded bg-surface-container-lowest text-secondary"><span class="font-semibold">20</span> Pending</div>
+</div>
+</div>
+<div class="mt-auto pt-space-xs flex items-center justify-between text-body-xs font-body-xs text-on-surface-variant">
+<div class="flex items-center gap-2">
+<img class="w-6 h-6 rounded-full object-cover" data-alt="Portrait of senior cybersecurity QA lead Mahmoud Badawy in clean server room lighting looking determined and analytical" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAVXRgEhvVyZJw94sb5GEYIyqHOmhnmZvx5ZHoCIe9n6Fs3A-Y5e8nv9wrHo9JLqX35olcnLU7haDzbapv_f3hn99LqLljaIys44wpEpTAS2CdvF4GzDp3LkHcSoHMWkiq7xW18r9Cl0jVh5qy-7O0aTFqSnvHIBb4WgPkNFxsxCQDuA7xAy5JIdukWoPvUDcCYQDP-gdQWMTK7CgRfcM19fcS-kGea-23vvjbkNsp7yXtgtlO53xvewg"/>
+<span class="truncate">Lead: M. Badawy</span>
+</div>
+<span class="text-outline">Last run: 30m ago</span>
+</div>
+</div>
+<div class="px-space-lg pb-space-lg pt-0">
+<button class="switch-proj-btn w-full h-[34px] rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md font-medium flex items-center justify-center gap-1.5 transition-all" type="button">
+<span class="material-symbols-outlined text-[16px]">swap_horiz</span>
+<span>Switch Project</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Empty Search/Filter State (Hidden by default) -->
+<div class="hidden flex-col items-center justify-center p-12 text-center bg-surface-container-lowest rounded-xl shadow-sm mt-space-md" id="no-projects-view">
+<div class="w-12 h-12 rounded-full bg-surface-container-low flex items-center justify-center text-outline mb-3">
+<span class="material-symbols-outlined text-[28px]">search_off</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">No matching projects found</h3>
+<p class="font-body-md text-body-md text-outline max-w-sm mb-4">Try adjusting your keyword search or clear environment filters to view all platforms.</p>
+<button class="px-3 py-1.5 rounded-lg bg-surface-container text-primary font-label-md text-label-md font-semibold" id="reset-filters-btn" type="button">
+      Reset Filters
+    </button>
+</div>
+</div>
+<script>
+  (function () {
+    const searchInput = document.getElementById('project-search-input');
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const cards = document.querySelectorAll('.project-card');
+    const noProjectsView = document.getElementById('no-projects-view');
+    const resetBtn = document.getElementById('reset-filters-btn');
+    const countBadge = document.getElementById('project-count-badge');
+
+    let currentEnv = 'all';
+    let searchQuery = '';
+
+    function applyFilters() {
+      let visibleCount = 0;
+
+      cards.forEach(card => {
+        const cardEnv = card.getAttribute('data-env');
+        const cardName = card.getAttribute('data-name') || '';
+        const cardDomain = card.getAttribute('data-domain') || '';
+
+        const matchesEnv = currentEnv === 'all' || cardEnv === currentEnv;
+        const matchesSearch = !searchQuery || 
+          cardName.toLowerCase().includes(searchQuery) || 
+          cardDomain.toLowerCase().includes(searchQuery);
+
+        if (matchesEnv && matchesSearch) {
+          card.classList.remove('hidden');
+          visibleCount++;
+        } else {
+          card.classList.add('hidden');
+        }
+      });
+
+      if (visibleCount === 0) {
+        noProjectsView.classList.remove('hidden');
+        noProjectsView.classList.add('flex');
+      } else {
+        noProjectsView.classList.add('hidden');
+        noProjectsView.classList.remove('flex');
+      }
+
+      if (countBadge) {
+        countBadge.textContent = `${visibleCount} Platform${visibleCount === 1 ? '' : 's'} Listed`;
+      }
+    }
+
+    // Search event
+    searchInput?.addEventListener('input', (e) => {
+      searchQuery = e.target.value.toLowerCase().trim();
+      applyFilters();
+    });
+
+    // Keyboard shortcut (⌘K / Ctrl+K)
+    window.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        searchInput?.focus();
+      }
+    });
+
+    // Environment tab filter
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterBtns.forEach(b => {
+          b.classList.remove('bg-surface-container-lowest', 'text-primary', 'shadow-sm');
+          b.classList.add('text-on-surface-variant');
+        });
+        btn.classList.add('bg-surface-container-lowest', 'text-primary', 'shadow-sm');
+        btn.classList.remove('text-on-surface-variant');
+
+        currentEnv = btn.getAttribute('data-filter') || 'all';
+        applyFilters();
+      });
+    });
+
+    // Reset button
+    resetBtn?.addEventListener('click', () => {
+      if (searchInput) searchInput.value = '';
+      searchQuery = '';
+      currentEnv = 'all';
+      filterBtns.forEach((b, idx) => {
+        if (idx === 0) {
+          b.classList.add('bg-surface-container-lowest', 'text-primary', 'shadow-sm');
+          b.classList.remove('text-on-surface-variant');
+        } else {
+          b.classList.remove('bg-surface-container-lowest', 'text-primary', 'shadow-sm');
+          b.classList.add('text-on-surface-variant');
+        }
+      });
+      applyFilters();
+    });
+
+    // Interactive Switch Project click toast simulator
+    document.querySelectorAll('.switch-proj-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const parentCard = e.currentTarget.closest('.project-card');
+        const projName = parentCard?.querySelector('h2')?.innerText?.trim() || 'Project';
+        
+        // Visual reaction
+        const origText = e.currentTarget.innerHTML;
+        e.currentTarget.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-spin">refresh</span><span>Switching...</span>';
+        
+        setTimeout(() => {
+          e.currentTarget.innerHTML = '<span class="material-symbols-outlined text-[16px] text-tertiary">check</span><span>Activated</span>';
+          setTimeout(() => {
+            e.currentTarget.innerHTML = origText;
+          }, 1500);
+        }, 500);
+      });
+    });
+  })();
+</script></div></main></div></body></html>

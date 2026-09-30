@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Hanken+Grotesk:wght@100..900&display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"on-surface":"#0b1c30","surface-tint":"#006685","error-container":"#ffdad6","surface-container":"#e5eeff","secondary-container":"#dae2fd","on-tertiary-fixed-variant":"#005236","tertiary-fixed":"#6ffbbe","on-tertiary":"#ffffff","on-primary-container":"#003d51","inverse-primary":"#6cd2ff","secondary-fixed":"#dae2fd","on-tertiary-container":"#00402a","surface-variant":"#d3e4fe","on-secondary-container":"#5c647a","background":"#f8f9ff","tertiary":"#006c49","outline-variant":"#bcc8d0","secondary-fixed-dim":"#bec6e0","on-error":"#ffffff","primary-fixed":"#bfe9ff","on-secondary-fixed":"#131b2e","surface-container-high":"#dce9ff","surface-dim":"#cbdbf5","on-secondary-fixed-variant":"#3f465c","on-primary":"#ffffff","on-tertiary-fixed":"#002113","on-primary-fixed":"#001f2a","surface-container-low":"#eff4ff","primary-fixed-dim":"#6cd2ff","on-background":"#0b1c30","tertiary-container":"#08b77f","surface-container-highest":"#d3e4fe","on-surface-variant":"#3d484f","secondary":"#565e74","surface-bright":"#f8f9ff","outline":"#6d797f","on-primary-fixed-variant":"#004d65","on-error-container":"#93000a","error":"#ba1a1a","primary":"#006685","on-secondary":"#ffffff","surface":"#f8f9ff","primary-container":"#00aee0","tertiary-fixed-dim":"#4edea3","inverse-on-surface":"#eaf1ff","surface-container-lowest":"#ffffff","inverse-surface":"#213145"},"borderRadius":{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},"spacing":{"gutter":"1rem","gutter-lg":"1.5rem","margin":"1.5rem","space-md":"0.75rem","space-sm":"0.5rem","space-xl":"1.5rem","space-lg":"1rem","margin-mobile":"1rem","space-xs":"0.25rem"},"fontFamily":{"body-xs":["Geist"],"label-md":["Geist"],"headline-md":["Hanken Grotesk"],"headline-xl-mobile":["Hanken Grotesk"],"headline-sm":["Hanken Grotesk"],"body-sm":["Geist"],"code-sm":["Geist"],"headline-xl":["Hanken Grotesk"],"body-md":["Geist"],"body-lg":["Geist"],"label-sm":["Geist"],"headline-lg":["Hanken Grotesk"]},"fontSize":{"body-xs":["12px",{"lineHeight":"16px","fontWeight":"400"}],"label-md":["13px",{"lineHeight":"18px","fontWeight":"500"}],"headline-md":["20px",{"lineHeight":"28px","fontWeight":"600"}],"headline-xl-mobile":["26px",{"lineHeight":"34px","fontWeight":"700"}],"headline-sm":["16px",{"lineHeight":"24px","fontWeight":"600"}],"body-sm":["13px",{"lineHeight":"18px","fontWeight":"400"}],"code-sm":["12px",{"lineHeight":"16px","fontWeight":"400"}],"headline-xl":["32px",{"lineHeight":"40px","fontWeight":"700"}],"body-md":["14px",{"lineHeight":"20px","fontWeight":"400"}],"body-lg":["16px",{"lineHeight":"24px","fontWeight":"400"}],"label-sm":["11px",{"lineHeight":"14px","letterSpacing":"0.04em","fontWeight":"600"}],"headline-lg":["24px",{"lineHeight":"32px","fontWeight":"600"}]}}}}</script></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-lowest shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-50 flex flex-col justify-between"><div class="flex flex-col"><div class="h-16 px-gutter-lg flex items-center gap-space-sm bg-surface-container-lowest"><div class="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center text-on-primary"><span class="material-symbols-outlined text-[20px]">science</span></div><div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-on-surface leading-tight tracking-tight">QA Test Suite</span><span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Manager</span></div></div><div class="px-gutter-lg py-space-sm"><div class="font-label-sm text-label-sm uppercase tracking-wider text-outline px-space-sm mb-space-xs">Operations</div><nav class="flex flex-col gap-space-xs" data-active-classes="bg-surface-container text-primary font-label-md"><a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="dashboard" href="#"><span class="material-symbols-outlined text-[20px]">dashboard</span><span class="font-label-md text-label-md">Dashboard</span></a><a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="add-test-case" href="#"><span class="material-symbols-outlined text-[20px]">add_circle</span><span class="font-label-md text-label-md">Add Test Case</span></a><a aria-current="page" class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg transition-all bg-surface-container text-primary font-label-md" data-path="all-test-cases" href="#"><span class="material-symbols-outlined text-[20px]">checklist</span><span class="font-label-md text-label-md">All Test Cases</span></a><a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="projects-management" href="#"><span class="material-symbols-outlined text-[20px]">source_environment</span><span class="font-label-md text-label-md">Projects Management</span></a></nav></div></div><div class="p-gutter-lg flex flex-col gap-space-md"><div class="p-space-md rounded-xl bg-surface-container-low shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex items-center justify-between mb-space-xs"><span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Live Execution</span><span class="font-code-sm text-code-sm text-on-surface font-semibold">1,420 Total</span></div><div class="grid grid-cols-3 gap-space-xs pt-space-xs text-center"><div class="flex flex-col items-center bg-surface-container-lowest p-space-xs rounded"><div class="flex items-center gap-1 mb-0.5"><span class="w-1.5 h-1.5 rounded-full bg-tertiary-container"></span><span class="font-label-sm text-label-sm text-on-surface-variant">Passed</span></div><span class="font-headline-sm text-headline-sm text-tertiary">1,180</span></div><div class="flex flex-col items-center bg-surface-container-lowest p-space-xs rounded"><div class="flex items-center gap-1 mb-0.5"><span class="w-1.5 h-1.5 rounded-full bg-error"></span><span class="font-label-sm text-label-sm text-on-surface-variant">Failed</span></div><span class="font-headline-sm text-headline-sm text-error">145</span></div><div class="flex flex-col items-center bg-surface-container-lowest p-space-xs rounded"><div class="flex items-center gap-1 mb-0.5"><span class="w-1.5 h-1.5 rounded-full bg-secondary-fixed-dim"></span><span class="font-label-sm text-label-sm text-on-surface-variant">Pending</span></div><span class="font-headline-sm text-headline-sm text-secondary">95</span></div></div></div><button class="w-full flex items-center justify-center gap-space-sm h-[34px] rounded-lg bg-surface-container-lowest text-on-surface shadow-[0_1px_8px_rgba(0,0,0,0.04)] hover:bg-surface-container hover:text-on-surface transition-all" type="button"><span class="material-symbols-outlined text-[18px] text-tertiary">table_view</span><span class="font-label-md text-label-md font-medium">Export to Excel</span></button></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-16 bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-between px-gutter-lg"><div class="flex items-center gap-space-sm"><div class="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center text-primary"><span class="material-symbols-outlined text-[20px]">account_balance</span></div><div class="flex flex-col"><span class="font-label-md text-label-md text-on-surface font-semibold leading-tight">Ministry of Communications & Information Technology</span><span class="font-label-sm text-label-sm text-outline">(MCIT) QA Operations Oversight</span></div></div><div class="flex items-center gap-space-md px-space-md py-1.5 rounded-xl bg-surface-container-low cursor-pointer hover:bg-surface-container transition-colors"><div class="w-7 h-7 rounded bg-surface-container-highest flex items-center justify-center text-primary"><span class="material-symbols-outlined text-[18px]">layers</span></div><div class="flex flex-col"><div class="flex items-center gap-space-xs"><span class="font-label-md text-label-md font-semibold text-on-surface">Egypt Digital Platform</span><span class="font-code-sm text-code-sm text-outline">(Project 1 of 10)</span><span class="px-1.5 py-0.2 rounded font-label-sm text-label-sm bg-tertiary-container/20 text-tertiary font-semibold">Staging</span></div><span class="font-body-xs text-body-xs text-on-surface-variant">32 Open Defects • Last Run: 2h ago</span></div><span class="material-symbols-outlined text-[18px] text-outline ml-space-xs">expand_more</span></div><div class="flex items-center gap-space-md"><div class="relative flex items-center justify-center w-9 h-9 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer text-on-surface-variant"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-1 right-1 w-4 h-4 rounded-full bg-error text-on-error font-label-sm text-[10px] flex items-center justify-center font-bold">3</span></div><div class="flex items-center gap-space-sm pl-space-sm py-1 cursor-pointer"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1VBXzqiQPqkVvWpcMdqFyjExANOsYrsx26wVoBAvZdyGijraefJZ9OudHhRDqLb8puOmzk5n4nHDxBBhTQAoO4llz8rvN2apegq7FGm_52tNZ9Wcx_A7G3-jrUH6vc9UwC6E_sciUQ_Jj3k4UbIuRPrfjp0roaMhzUuknNVqvDcYlMy9NvRh8Vw4weyUJBglxIcfpu4zKvbuY5MpgRUbMCHU3d98n8LWOgGr2e9bm5ES3RpQmuLmR-QZMEybmOwWLuAPdKFKlvQRA"/><div class="hidden xl:flex flex-col text-left"><span class="font-label-md text-label-md text-on-surface font-semibold leading-none">Karim Mansour</span><span class="font-label-sm text-label-sm text-outline">Senior QA Lead</span></div><span class="material-symbols-outlined text-[18px] text-outline">expand_more</span></div></div></header><main class="relative w-full pt-16 bg-surface min-h-screen"><div class="w-full p-8"><div class="flex flex-col w-full">
+<!-- Top Command Header -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-lg mb-space-xl">
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs mb-1">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-surface-tint font-bold">Egyptian e-Gov QA Suite</span>
+<span class="text-outline text-xs">•</span>
+<span class="font-code-sm text-code-sm text-outline">v2.4-RC6</span>
+</div>
+<h1 class="font-headline-xl text-headline-xl text-on-surface tracking-tight leading-tight">All Test Cases Repository</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-0.5">Total 1,420 test cases across 8 core modules in Egypt Digital Platform</p>
+</div>
+<!-- Header Quick Actions -->
+<div class="flex flex-wrap items-center gap-space-sm">
+<button class="inline-flex items-center gap-space-xs px-space-md h-[34px] rounded-lg bg-surface-container-lowest text-on-surface shadow-sm hover:bg-surface-container-low transition-all" type="button">
+<span class="material-symbols-outlined text-[18px] text-tertiary">table_view</span>
+<span class="font-label-md text-label-md font-medium">Export to Excel</span>
+</button>
+<div class="relative inline-block text-left" id="bulk-dropdown-parent">
+<button class="inline-flex items-center gap-space-xs px-space-md h-[34px] rounded-lg bg-surface-container-lowest text-on-surface shadow-sm hover:bg-surface-container-low transition-all" id="bulk-actions-btn" type="button">
+<span class="material-symbols-outlined text-[18px] text-secondary">tune</span>
+<span class="font-label-md text-label-md font-medium">Bulk Actions</span>
+<span class="material-symbols-outlined text-[16px] text-outline">expand_more</span>
+</button>
+<div class="hidden absolute right-0 mt-1 w-48 rounded-xl bg-surface-container-lowest shadow-xl py-1 z-30" id="bulk-actions-menu">
+<a class="flex items-center gap-space-xs px-3 py-2 font-body-sm text-body-sm text-on-surface hover:bg-surface-container-low" href="#">
+<span class="material-symbols-outlined text-[18px] text-primary">play_arrow</span> Run Selected (<span id="bulk-count">0</span>)
+          </a>
+<a class="flex items-center gap-space-xs px-3 py-2 font-body-sm text-body-sm text-on-surface hover:bg-surface-container-low" href="#">
+<span class="material-symbols-outlined text-[18px] text-tertiary">published_with_changes</span> Change Status
+          </a>
+<a class="flex items-center gap-space-xs px-3 py-2 font-body-sm text-body-sm text-on-surface hover:bg-surface-container-low" href="#">
+<span class="material-symbols-outlined text-[18px] text-secondary">person_add</span> Assign Reviewer
+          </a>
+<a class="flex items-center gap-space-xs px-3 py-2 font-body-sm text-body-sm text-error hover:bg-error-container/40" href="#">
+<span class="material-symbols-outlined text-[18px]">delete_sweep</span> Archive Selected
+          </a>
+</div>
+</div>
+<button class="inline-flex items-center gap-space-xs px-space-lg h-[34px] rounded-lg bg-primary-container text-on-primary shadow-sm hover:opacity-90 font-medium transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]">add_circle</span>
+<span class="font-label-md text-label-md font-semibold">+ New Test Case</span>
+</button>
+</div>
+</div>
+<!-- Search & Filter Console Card -->
+<div class="rounded-xl bg-surface-container-lowest shadow-sm p-space-lg mb-space-lg flex flex-col gap-space-md">
+<!-- Top Filter Inputs Row -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-space-sm items-center">
+<!-- Search Input Slot -->
+<div class="lg:col-span-4 relative flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-[18px] text-outline pointer-events-none">search</span>
+<input class="w-full h-[34px] pl-9 pr-12 rounded-lg bg-surface-container-low text-on-surface placeholder:text-outline font-body-sm text-body-sm focus:outline-none focus:bg-surface-container-lowest shadow-inner" id="table-search" placeholder="Search by TC ID, Module, Scenario title, or keywords..." type="text"/>
+<span class="absolute right-2 px-1.5 py-0.5 rounded bg-surface-container font-code-sm text-[10px] text-outline pointer-events-none">⌘K</span>
+</div>
+<!-- Status Filter -->
+<div class="lg:col-span-2 relative">
+<select class="w-full h-[34px] pl-space-sm pr-7 rounded-lg bg-surface-container-low font-body-sm text-body-sm text-on-surface focus:outline-none cursor-pointer appearance-none">
+<option value="all">Status: All (1,420)</option>
+<option value="passed">Passed (1,180)</option>
+<option value="failed">Failed (145)</option>
+<option value="pending">Pending (95)</option>
+</select>
+<span class="material-symbols-outlined absolute right-2 top-2 text-[16px] text-outline pointer-events-none">expand_more</span>
+</div>
+<!-- Priority Filter -->
+<div class="lg:col-span-2 relative">
+<select class="w-full h-[34px] pl-space-sm pr-7 rounded-lg bg-surface-container-low font-body-sm text-body-sm text-on-surface focus:outline-none cursor-pointer appearance-none">
+<option value="all">Priority: All</option>
+<option value="critical">Critical</option>
+<option value="high">High</option>
+<option value="medium">Medium</option>
+<option value="low">Low</option>
+</select>
+<span class="material-symbols-outlined absolute right-2 top-2 text-[16px] text-outline pointer-events-none">expand_more</span>
+</div>
+<!-- Module Filter -->
+<div class="lg:col-span-2 relative">
+<select class="w-full h-[34px] pl-space-sm pr-7 rounded-lg bg-surface-container-low font-body-sm text-body-sm text-on-surface focus:outline-none cursor-pointer appearance-none">
+<option value="all">All Modules</option>
+<option value="auth">Authentication</option>
+<option value="civil">Civil Registry</option>
+<option value="payments">e-Payments</option>
+<option value="licenses">Licenses & Permits</option>
+<option value="appointments">Appointments</option>
+</select>
+<span class="material-symbols-outlined absolute right-2 top-2 text-[16px] text-outline pointer-events-none">expand_more</span>
+</div>
+<!-- Test Type Filter -->
+<div class="lg:col-span-2 relative">
+<select class="w-full h-[34px] pl-space-sm pr-7 rounded-lg bg-surface-container-low font-body-sm text-body-sm text-on-surface focus:outline-none cursor-pointer appearance-none">
+<option value="all">All Types</option>
+<option value="functional">Functional</option>
+<option value="security">Security</option>
+<option value="regression">Regression</option>
+<option value="performance">Performance</option>
+</select>
+<span class="material-symbols-outlined absolute right-2 top-2 text-[16px] text-outline pointer-events-none">expand_more</span>
+</div>
+</div>
+<!-- Filter Meta and View Switcher -->
+<div class="flex flex-wrap items-center justify-between gap-space-sm pt-space-xs">
+<div class="flex flex-wrap items-center gap-space-xs">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider mr-1">Active:</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm">
+<span>Status:</span> <strong class="text-on-surface">All</strong>
+<span class="material-symbols-outlined text-[13px] cursor-pointer hover:text-error">close</span>
+</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm">
+<span>Priority:</span> <strong class="text-on-surface">All</strong>
+<span class="material-symbols-outlined text-[13px] cursor-pointer hover:text-error">close</span>
+</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-container/15 text-primary font-label-sm text-label-sm">
+<span>Scope:</span> <strong>Egypt Digital Core</strong>
+</span>
+<button class="font-label-sm text-label-sm text-surface-tint hover:underline ml-1" type="button">Clear All Filters</button>
+</div>
+<div class="flex items-center gap-space-sm ml-auto">
+<!-- Density Toggle -->
+<div class="inline-flex items-center p-0.5 rounded-lg bg-surface-container-low">
+<button class="px-2 py-1 rounded font-label-sm text-label-sm bg-surface-container-lowest text-on-surface shadow-xs" title="Comfortable density" type="button">Comfortable</button>
+<button class="px-2 py-1 rounded font-label-sm text-label-sm text-outline hover:text-on-surface" title="Compact density" type="button">Compact</button>
+</div>
+<!-- View Switcher -->
+<div class="inline-flex items-center p-0.5 rounded-lg bg-surface-container-low">
+<button class="w-7 h-7 flex items-center justify-center rounded bg-surface-container-lowest text-primary shadow-xs" title="Table View" type="button">
+<span class="material-symbols-outlined text-[18px]">table_rows</span>
+</button>
+<button class="w-7 h-7 flex items-center justify-center rounded text-outline hover:text-on-surface" title="Kanban Board" type="button">
+<span class="material-symbols-outlined text-[18px]">view_kanban</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Detailed Enterprise Data Grid -->
+<div class="rounded-xl bg-surface-container-lowest shadow-sm overflow-hidden flex flex-col">
+<div class="overflow-x-auto w-full">
+<table class="w-full text-left border-collapse min-w-[1100px]">
+<thead>
+<tr class="bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm tracking-wider uppercase select-none">
+<th class="py-3 px-3 w-10 text-center">
+<input class="w-4 h-4 rounded cursor-pointer accent-primary-container" id="select-all-head" type="checkbox"/>
+</th>
+<th class="py-3 px-3 w-28 cursor-pointer hover:text-on-surface">
+<div class="flex items-center gap-1">
+<span>TC ID</span>
+<span class="material-symbols-outlined text-[14px]">unfold_more</span>
+</div>
+</th>
+<th class="py-3 px-3 w-36">Module</th>
+<th class="py-3 px-4 min-w-[280px]">Scenario Title & Steps</th>
+<th class="py-3 px-3 w-48">Expected Result</th>
+<th class="py-3 px-3 w-44">Actual Result</th>
+<th class="py-3 px-3 w-24">Priority</th>
+<th class="py-3 px-3 w-28">Status</th>
+<th class="py-3 px-3 w-32">Tester</th>
+<th class="py-3 px-3 w-28">Executed</th>
+<th class="py-3 px-3 w-28 text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container-low font-body-sm text-body-sm text-on-surface">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-low/60 transition-colors group">
+<td class="py-2.5 px-3 text-center">
+<input class="row-checkbox w-4 h-4 rounded cursor-pointer accent-primary-container" type="checkbox"/>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-1">
+<span class="font-code-sm text-code-sm font-bold text-on-surface">TC-001</span>
+<button class="opacity-0 group-hover:opacity-100 text-outline hover:text-primary transition-opacity" title="Copy TC-001" type="button">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+</button>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded font-label-sm text-label-sm bg-surface-container text-on-surface-variant font-medium">
+                Authentication
+              </span>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface line-clamp-1">Verify 2FA SMS OTP validation fallback to Authenticator App</span>
+<span class="font-code-sm text-code-sm text-outline flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[13px]">format_list_numbered</span> 4 steps • Automated Playwright
+                </span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<span class="text-on-surface-variant line-clamp-2" title="User receives prompt for authenticator 6-digit TOTP code within 15 seconds.">
+                User receives prompt for authenticator 6-digit TOTP code within 15s.
+              </span>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-1.5 text-tertiary">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+<span class="font-label-sm text-label-sm font-medium">Matches Expected</span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded font-label-sm text-label-sm bg-error-container text-error font-semibold">Critical</span>
+</td>
+<td class="py-2.5 px-3">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded font-label-sm text-label-sm bg-tertiary-container/15 text-tertiary font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span> Passed
+              </span>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-1.5">
+<img class="w-6 h-6 rounded-full object-cover" data-alt="Close up corporate studio portrait of Karim Mansour, a senior Egyptian QA engineer with dark hair, glasses, wearing a tailored navy blazer, smiling confidently against neutral gray background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBB0xBXIG7O_MVJ1MYMt1mYjpXLlEdF0ZcX1mmHHLqXgtkKAQibFGGYq_MaGVdsExSMCnN84KdnVi9TnqvaQLThusbN_ejSCl6NZmRe0Y1ythxbn4wx5ZU_5f8ujjMkDjO8FGBfjuSh64lLdSF770f-CrCJVLdzVTCNMcj-Mjgd5LVe_L4iGev6Tx1MhiysU4TcRc7tKQKcASrKV3bDjGoCBAzuVmhIzoOXzEg2HW0cO1r7k4EvMdf-mg"/>
+<span class="font-body-xs text-body-xs font-medium truncate">Karim M.</span>
+</div>
+</td>
+<td class="py-2.5 px-3 font-code-sm text-code-sm text-outline">May 18, 2025</td>
+<td class="py-2.5 px-3 text-right">
+<div class="inline-flex items-center gap-1">
+<button class="p-1 rounded text-outline hover:text-primary hover:bg-surface-container" title="View details" type="button"><span class="material-symbols-outlined text-[16px]">visibility</span></button>
+<button class="p-1 rounded text-outline hover:text-tertiary hover:bg-surface-container" title="Run test" type="button"><span class="material-symbols-outlined text-[16px]">play_arrow</span></button>
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container" title="Edit" type="button"><span class="material-symbols-outlined text-[16px]">edit</span></button>
+<button class="p-1 rounded text-outline hover:text-error hover:bg-surface-container" title="Delete" type="button"><span class="material-symbols-outlined text-[16px]">delete</span></button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-low/60 transition-colors group">
+<td class="py-2.5 px-3 text-center">
+<input class="row-checkbox w-4 h-4 rounded cursor-pointer accent-primary-container" type="checkbox"/>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-1">
+<span class="font-code-sm text-code-sm font-bold text-on-surface">TC-002</span>
+<button class="opacity-0 group-hover:opacity-100 text-outline hover:text-primary transition-opacity" title="Copy TC-002" type="button">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+</button>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded font-label-sm text-label-sm bg-surface-container text-on-surface-variant font-medium">
+                e-Payment
+              </span>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface line-clamp-1">Fawry & Meeza Gateway settlement webhook retry on gateway timeout</span>
+<span class="font-code-sm text-code-sm text-outline flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[13px]">format_list_numbered</span> 6 steps • Integration API
+                </span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<span class="text-on-surface-variant line-clamp-2" title="Webhook returns exponential backoff HTTP 202; transaction state marked Pending.">
+                Webhook returns exponential backoff HTTP 202; state Pending.
+              </span>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-1.5 text-error">
+<span class="material-symbols-outlined text-[16px]">cancel</span>
+<span class="font-label-sm text-label-sm font-medium">HTTP 500 timeout</span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded font-label-sm text-label-sm bg-error-container text-error font-semibold">Critical</span>
+</td>
+<td class="py-2.5 px-3">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded font-label-sm text-label-sm bg-error-container text-error font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span> Failed
+              </span>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-1.5">
+<img class="w-6 h-6 rounded-full object-cover" data-alt="Professional corporate headshot of Sarah Adel, a Middle Eastern female test automation engineer wearing a modern teal blazer, standing in an illuminated high-tech office in Cairo." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCtPC7HhUlI9p3DJmdh4c5JLxVbUkRH7m25Wd45f4dYUeA2OZ22pUbZI7o05B-WqpGDXoD5zC21EWMcoJINGTmLy2QV-xfiGkhPYriRPVDZPJ5-MD5O7UhFbkepfy8fp0CSdClzhmqHX-WoBCRDksB7nax9d7HAKymBUnDEI5_PycN455LMuEaqHoQOvIuBjnCVWg2Y-y3evJrC1AbTXcA82DRE_303nxubRyOqInSEu4QtIcTKuSiKxQ"/>
+<span class="font-body-xs text-body-xs font-medium truncate">Sarah A.</span>
+</div>
+</td>
+<td class="py-2.5 px-3 font-code-sm text-code-sm text-outline">May 18, 2025</td>
+<td class="py-2.5 px-3 text-right">
+<div class="inline-flex items-center gap-1">
+<button class="p-1 rounded text-outline hover:text-primary hover:bg-surface-container" title="View details" type="button"><span class="material-symbols-outlined text-[16px]">visibility</span></button>
+<button class="p-1 rounded text-outline hover:text-tertiary hover:bg-surface-container" title="Run test" type="button"><span class="material-symbols-outlined text-[16px]">play_arrow</span></button>
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container" title="Edit" type="button"><span class="material-symbols-outlined text-[16px]">edit</span></button>
+<button class="p-1 rounded text-outline hover:text-error hover:bg-surface-container" title="Delete" type="button"><span class="material-symbols-outlined text-[16px]">delete</span></button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-low/60 transition-colors group">
+<td class="py-2.5 px-3 text-center">
+<input class="row-checkbox w-4 h-4 rounded cursor-pointer accent-primary-container" type="checkbox"/>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-1">
+<span class="font-code-sm text-code-sm font-bold text-on-surface">TC-003</span>
+<button class="opacity-0 group-hover:opacity-100 text-outline hover:text-primary transition-opacity" title="Copy TC-003" type="button">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+</button>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded font-label-sm text-label-sm bg-surface-container text-on-surface-variant font-medium">
+                Civil Registry
+              </span>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface line-clamp-1">National ID card replacement form validation with 14-digit modulus 11</span>
+<span class="font-code-sm text-code-sm text-outline flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[13px]">format_list_numbered</span> 3 steps • Boundary Unit
+                </span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<span class="text-on-surface-variant line-clamp-2" title="Invalid birth governorate code flags explicit inline Arabic error message.">
+                Invalid governorate code flags localized error banner.
+              </span>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-1.5 text-tertiary">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+<span class="font-label-sm text-label-sm font-medium">Matches Expected</span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded font-label-sm text-label-sm bg-secondary-container text-on-secondary-container font-semibold">High</span>
+</td>
+<td class="py-2.5 px-3">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded font-label-sm text-label-sm bg-tertiary-container/15 text-tertiary font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span> Passed
+              </span>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-1.5">
+<img class="w-6 h-6 rounded-full object-cover" data-alt="Headshot photo of Ahmed Hassan, an enterprise QA lead with sharp focus, wearing minimalist glasses and an open-collar white shirt in modern software lab." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCs8aWrsS7R291zAdLqswyv1I5KXjLGuUtu8xXBIP1B_cihhpComi3F-QSg-GOY-enP-m7LIFDw0vty_g0d8WZdW9FnsDWar2FjXDYo8LJUmKsrz8Ua8gtQxDvO8AppFJOKcCsztmHtw5PUWS8FRLh_LGs22YHwUtjSBfoB4C2jj5EgxqOmPjG58Wky9xPphyMQdtMx9qzerOrnBPoC8BNX1n9Wyw1pBdf9wN30s1QK9mceHodiHGgFLQ"/>
+<span class="font-body-xs text-body-xs font-medium truncate">Ahmed H.</span>
+</div>
+</td>
+<td class="py-2.5 px-3 font-code-sm text-code-sm text-outline">May 17, 2025</td>
+<td class="py-2.5 px-3 text-right">
+<div class="inline-flex items-center gap-1">
+<button class="p-1 rounded text-outline hover:text-primary hover:bg-surface-container" title="View details" type="button"><span class="material-symbols-outlined text-[16px]">visibility</span></button>
+<button class="p-1 rounded text-outline hover:text-tertiary hover:bg-surface-container" title="Run test" type="button"><span class="material-symbols-outlined text-[16px]">play_arrow</span></button>
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container" title="Edit" type="button"><span class="material-symbols-outlined text-[16px]">edit</span></button>
+<button class="p-1 rounded text-outline hover:text-error hover:bg-surface-container" title="Delete" type="button"><span class="material-symbols-outlined text-[16px]">delete</span></button>
+</div>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container-low/60 transition-colors group">
+<td class="py-2.5 px-3 text-center">
+<input class="row-checkbox w-4 h-4 rounded cursor-pointer accent-primary-container" type="checkbox"/>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-1">
+<span class="font-code-sm text-code-sm font-bold text-on-surface">TC-004</span>
+<button class="opacity-0 group-hover:opacity-100 text-outline hover:text-primary transition-opacity" title="Copy TC-004" type="button">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+</button>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded font-label-sm text-label-sm bg-surface-container text-on-surface-variant font-medium">
+                Document Vault
+              </span>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface line-clamp-1">Encrypted PDF watermarking with Government Cryptographic Key (HSM)</span>
+<span class="font-code-sm text-code-sm text-outline flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[13px]">format_list_numbered</span> 5 steps • Security & Compliance
+                </span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<span class="text-on-surface-variant line-clamp-2" title="Issued document contains verifiable QR code with SHA-256 digital signature.">
+                Document generated with verifiable SHA-256 QR payload.
+              </span>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-1.5 text-secondary">
+<span class="material-symbols-outlined text-[16px]">hourglass_top</span>
+<span class="font-label-sm text-label-sm font-medium">HSM queued (in run)</span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded font-label-sm text-label-sm bg-error-container text-error font-semibold">Critical</span>
+</td>
+<td class="py-2.5 px-3">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded font-label-sm text-label-sm bg-secondary-fixed text-on-secondary-fixed font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> Pending
+              </span>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-1.5">
+<img class="w-6 h-6 rounded-full object-cover" data-alt="Portrait of Mona Tarek, Egyptian Senior Quality Architect with neatly styled hijab, smiling warmly against clean engineering workspace." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBuPJhpBv0gzoXJPWGFPVMsdXcA-npP19jhGVJ8hHpDgwSAARg_8EhpUAVcMP0IdUdpP19d0CbPnkPUyGiPgEyygdY1SVpNiQrpEA8nh14T0JA_cM1pcsV_r3-YYc8eF0tMJzbNtmPQcZs_Q7ctjo_ncu0fHHAa0BDKbC43eP1OZ186T4kZ5CTn8J7tVEZn5d5qSt7EZ7uIjcW1Vbng0e7hmH0LfC-DsyhrmhsS9tosJlS7cL-YroLJVg"/>
+<span class="font-body-xs text-body-xs font-medium truncate">Mona T.</span>
+</div>
+</td>
+<td class="py-2.5 px-3 font-code-sm text-code-sm text-outline">May 17, 2025</td>
+<td class="py-2.5 px-3 text-right">
+<div class="inline-flex items-center gap-1">
+<button class="p-1 rounded text-outline hover:text-primary hover:bg-surface-container" title="View details" type="button"><span class="material-symbols-outlined text-[16px]">visibility</span></button>
+<button class="p-1 rounded text-outline hover:text-tertiary hover:bg-surface-container" title="Run test" type="button"><span class="material-symbols-outlined text-[16px]">play_arrow</span></button>
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container" title="Edit" type="button"><span class="material-symbols-outlined text-[16px]">edit</span></button>
+<button class="p-1 rounded text-outline hover:text-error hover:bg-surface-container" title="Delete" type="button"><span class="material-symbols-outlined text-[16px]">delete</span></button>
+</div>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-surface-container-low/60 transition-colors group">
+<td class="py-2.5 px-3 text-center">
+<input class="row-checkbox w-4 h-4 rounded cursor-pointer accent-primary-container" type="checkbox"/>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-1">
+<span class="font-code-sm text-code-sm font-bold text-on-surface">TC-005</span>
+<button class="opacity-0 group-hover:opacity-100 text-outline hover:text-primary transition-opacity" title="Copy TC-005" type="button">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+</button>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded font-label-sm text-label-sm bg-surface-container text-on-surface-variant font-medium">
+                Licenses & Permits
+              </span>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface line-clamp-1">Commercial Driver License Renewal medical exemption upload verification</span>
+<span class="font-code-sm text-code-sm text-outline flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[13px]">format_list_numbered</span> 7 steps • Cypress E2E
+                </span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<span class="text-on-surface-variant line-clamp-2" title="Accepts JPEG/PNG/PDF up to 5MB, virus-scans synchronously within 2 seconds.">
+                Accepts documents up to 5MB; AV scan completes < 2s.
+              </span>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-1.5 text-tertiary">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+<span class="font-label-sm text-label-sm font-medium">Matches Expected</span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded font-label-sm text-label-sm bg-surface-container-high text-on-surface-variant font-semibold">Medium</span>
+</td>
+<td class="py-2.5 px-3">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded font-label-sm text-label-sm bg-tertiary-container/15 text-tertiary font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span> Passed
+              </span>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-1.5">
+<img class="w-6 h-6 rounded-full object-cover" data-alt="Close up portrait of Karim Mansour, senior QA SDET testing engineer in modern corporate office." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCkkZjDAJ4H3bkIQ-prjv9CcIVdAuqUQX14GU2LNjHBAon0BQPjcpgb8ssaxNrCaQ8MjBz-2U-vzHUV5DHakYAfJYqxNbZdBPZUPffJZUq8yiA02bP98o94wkOJvoEPafTbmh8xouFtfOtGMF6CC9Hi2jOGmojh8olbHbWJP-kCFGuOH1oaUrUG1ZeTZYwuxh0AGEVgWwTVdnERmp94W25mWkvybfhBybJ4ms_opl5sxX19PRWujp-Psw"/>
+<span class="font-body-xs text-body-xs font-medium truncate">Karim M.</span>
+</div>
+</td>
+<td class="py-2.5 px-3 font-code-sm text-code-sm text-outline">May 16, 2025</td>
+<td class="py-2.5 px-3 text-right">
+<div class="inline-flex items-center gap-1">
+<button class="p-1 rounded text-outline hover:text-primary hover:bg-surface-container" title="View details" type="button"><span class="material-symbols-outlined text-[16px]">visibility</span></button>
+<button class="p-1 rounded text-outline hover:text-tertiary hover:bg-surface-container" title="Run test" type="button"><span class="material-symbols-outlined text-[16px]">play_arrow</span></button>
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container" title="Edit" type="button"><span class="material-symbols-outlined text-[16px]">edit</span></button>
+<button class="p-1 rounded text-outline hover:text-error hover:bg-surface-container" title="Delete" type="button"><span class="material-symbols-outlined text-[16px]">delete</span></button>
+</div>
+</td>
+</tr>
+<!-- Row 6 -->
+<tr class="hover:bg-surface-container-low/60 transition-colors group">
+<td class="py-2.5 px-3 text-center">
+<input class="row-checkbox w-4 h-4 rounded cursor-pointer accent-primary-container" type="checkbox"/>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-1">
+<span class="font-code-sm text-code-sm font-bold text-on-surface">TC-006</span>
+<button class="opacity-0 group-hover:opacity-100 text-outline hover:text-primary transition-opacity" title="Copy TC-006" type="button">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+</button>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded font-label-sm text-label-sm bg-surface-container text-on-surface-variant font-medium">
+                Appointments
+              </span>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface line-clamp-1">Traffic Directorate real-time slot lock during simultaneous checkout</span>
+<span class="font-code-sm text-code-sm text-outline flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[13px]">format_list_numbered</span> 4 steps • Concurrency k6
+                </span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<span class="text-on-surface-variant line-clamp-2" title="Redis distributed lock prevents double booking of exact 10:15 AM slot.">
+                Redis distributed lock prevents duplicate appointment reservation.
+              </span>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-1.5 text-error">
+<span class="material-symbols-outlined text-[16px]">cancel</span>
+<span class="font-label-sm text-label-sm font-medium">Lock race condition</span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded font-label-sm text-label-sm bg-secondary-container text-on-secondary-container font-semibold">High</span>
+</td>
+<td class="py-2.5 px-3">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded font-label-sm text-label-sm bg-error-container text-error font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span> Failed
+              </span>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-1.5">
+<img class="w-6 h-6 rounded-full object-cover" data-alt="Headshot of Ahmed Hassan, enterprise testing specialist in modern technology center." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAb334V0p1ZTCLp9yVORJNTerBeuiUwMqaepx0odOZljQQzWF8R8OhfrlnohRfg1Rcxb2AaoT6-vYlT1n7GJybIHkgKTsquH4Egjio_JydOYMSIrgaPYLr8iBjKdTH5k9eb8kFfkQ5wCFHH_oy388fZP6OraAwuZ66CQHwo0dmv-Z_gfps2gLMJ1KcHNAkNdukX2RYXCuCpa6lzP0mSsz2RhIsxgKxslgUKo4oD90fLtjRUIIfkpoZHDg"/>
+<span class="font-body-xs text-body-xs font-medium truncate">Ahmed H.</span>
+</div>
+</td>
+<td class="py-2.5 px-3 font-code-sm text-code-sm text-outline">May 16, 2025</td>
+<td class="py-2.5 px-3 text-right">
+<div class="inline-flex items-center gap-1">
+<button class="p-1 rounded text-outline hover:text-primary hover:bg-surface-container" title="View details" type="button"><span class="material-symbols-outlined text-[16px]">visibility</span></button>
+<button class="p-1 rounded text-outline hover:text-tertiary hover:bg-surface-container" title="Run test" type="button"><span class="material-symbols-outlined text-[16px]">play_arrow</span></button>
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container" title="Edit" type="button"><span class="material-symbols-outlined text-[16px]">edit</span></button>
+<button class="p-1 rounded text-outline hover:text-error hover:bg-surface-container" title="Delete" type="button"><span class="material-symbols-outlined text-[16px]">delete</span></button>
+</div>
+</td>
+</tr>
+<!-- Row 7 -->
+<tr class="hover:bg-surface-container-low/60 transition-colors group">
+<td class="py-2.5 px-3 text-center">
+<input class="row-checkbox w-4 h-4 rounded cursor-pointer accent-primary-container" type="checkbox"/>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-1">
+<span class="font-code-sm text-code-sm font-bold text-on-surface">TC-007</span>
+<button class="opacity-0 group-hover:opacity-100 text-outline hover:text-primary transition-opacity" title="Copy TC-007" type="button">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+</button>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded font-label-sm text-label-sm bg-surface-container text-on-surface-variant font-medium">
+                Authentication
+              </span>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface line-clamp-1">OAuth 2.0 PKCE code exchange with single-tenant Azure AD B2C gateway</span>
+<span class="font-code-sm text-code-sm text-outline flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[13px]">format_list_numbered</span> 3 steps • Security Auth
+                </span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<span class="text-on-surface-variant line-clamp-2" title="Valid JWT returned with correct aud, iss, and claims for Egyptian civil service.">
+                Valid JWT token issued with civil role claims intact.
+              </span>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-1.5 text-tertiary">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+<span class="font-label-sm text-label-sm font-medium">Matches Expected</span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded font-label-sm text-label-sm bg-surface-container-high text-on-surface-variant font-semibold">Low</span>
+</td>
+<td class="py-2.5 px-3">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded font-label-sm text-label-sm bg-tertiary-container/15 text-tertiary font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span> Passed
+              </span>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-1.5">
+<img class="w-6 h-6 rounded-full object-cover" data-alt="Portrait of Sarah Adel, Middle Eastern female software quality engineer in high-tech setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDe_6trjpbHg4nsbhsC_CwpnQ6uAT_HJ6x9kejzsZPGAAxO7xCERjFU3NfMb6gdsZTYDw7v1qPJ4QH3g2GQ93g4ruPxgApv7xCAnrOB6muFghX3JAED6EwpEBLATiPvwn8FFgpafzhvgRhgmZzYNJXzd2eYES45bHj8YpJhOir4w5Scpm6zibOK7f-Wu4dAk79hjuX80YITiMlKKzMWvgdMWrBK4Fin3ePuJHy1vhR8S1LKrBklaMAqVQ"/>
+<span class="font-body-xs text-body-xs font-medium truncate">Sarah A.</span>
+</div>
+</td>
+<td class="py-2.5 px-3 font-code-sm text-code-sm text-outline">May 15, 2025</td>
+<td class="py-2.5 px-3 text-right">
+<div class="inline-flex items-center gap-1">
+<button class="p-1 rounded text-outline hover:text-primary hover:bg-surface-container" title="View details" type="button"><span class="material-symbols-outlined text-[16px]">visibility</span></button>
+<button class="p-1 rounded text-outline hover:text-tertiary hover:bg-surface-container" title="Run test" type="button"><span class="material-symbols-outlined text-[16px]">play_arrow</span></button>
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container" title="Edit" type="button"><span class="material-symbols-outlined text-[16px]">edit</span></button>
+<button class="p-1 rounded text-outline hover:text-error hover:bg-surface-container" title="Delete" type="button"><span class="material-symbols-outlined text-[16px]">delete</span></button>
+</div>
+</td>
+</tr>
+<!-- Row 8 -->
+<tr class="hover:bg-surface-container-low/60 transition-colors group">
+<td class="py-2.5 px-3 text-center">
+<input class="row-checkbox w-4 h-4 rounded cursor-pointer accent-primary-container" type="checkbox"/>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-1">
+<span class="font-code-sm text-code-sm font-bold text-on-surface">TC-008</span>
+<button class="opacity-0 group-hover:opacity-100 text-outline hover:text-primary transition-opacity" title="Copy TC-008" type="button">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+</button>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded font-label-sm text-label-sm bg-surface-container text-on-surface-variant font-medium">
+                Civil Registry
+              </span>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface line-clamp-1">Family Status Certificate issuance validation for overseas Egyptian consulates</span>
+<span class="font-code-sm text-code-sm text-outline flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[13px]">format_list_numbered</span> 8 steps • Cross-Region API
+                </span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<span class="text-on-surface-variant line-clamp-2" title="Consular stamp format verifies and generates embassy-specific tracking ID.">
+                Consular seal validated with official diplomatic dispatch hash.
+              </span>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-1.5 text-secondary">
+<span class="material-symbols-outlined text-[16px]">schedule</span>
+<span class="font-label-sm text-label-sm font-medium">Scheduled (Nightly)</span>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded font-label-sm text-label-sm bg-secondary-container text-on-secondary-container font-semibold">High</span>
+</td>
+<td class="py-2.5 px-3">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded font-label-sm text-label-sm bg-secondary-fixed text-on-secondary-fixed font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> Pending
+              </span>
+</td>
+<td class="py-2.5 px-3">
+<div class="flex items-center gap-1.5">
+<img class="w-6 h-6 rounded-full object-cover" data-alt="Portrait of Mona Tarek, Egyptian QA engineer focused on software testing architectures." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDqA3EjQALCSoclFVEu1LUlGY1hfkKrGLkAHLOlyLjPKJuI02AFFj5TvyKOlJm_V3ilgDFoCPX8OJ0HwilXKJbGUDRVJNE4zvBJaeguyND32iDvvllBrCHkRa43cegRl6CPnNGJcMZFC4mIWYfyCywXwOR77sfuUQcYeSBvqXkVco3_hBBXOvibxKkcK-apRjMJtgUgNTsLh6ACCjMaVeRzHQTTKoDbwcvWg6pl29McxECbR3pKX6-mNg"/>
+<span class="font-body-xs text-body-xs font-medium truncate">Mona T.</span>
+</div>
+</td>
+<td class="py-2.5 px-3 font-code-sm text-code-sm text-outline">May 15, 2025</td>
+<td class="py-2.5 px-3 text-right">
+<div class="inline-flex items-center gap-1">
+<button class="p-1 rounded text-outline hover:text-primary hover:bg-surface-container" title="View details" type="button"><span class="material-symbols-outlined text-[16px]">visibility</span></button>
+<button class="p-1 rounded text-outline hover:text-tertiary hover:bg-surface-container" title="Run test" type="button"><span class="material-symbols-outlined text-[16px]">play_arrow</span></button>
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container" title="Edit" type="button"><span class="material-symbols-outlined text-[16px]">edit</span></button>
+<button class="p-1 rounded text-outline hover:text-error hover:bg-surface-container" title="Delete" type="button"><span class="material-symbols-outlined text-[16px]">delete</span></button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Pagination & Metrics Bar -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm px-space-lg py-space-md bg-surface-container-lowest">
+<div class="flex items-center gap-space-sm">
+<span class="font-body-sm text-body-sm text-on-surface-variant">
+          Showing <span class="font-medium text-on-surface">1</span> to <span class="font-medium text-on-surface">8</span> of <span class="font-medium text-on-surface">1,420</span> test cases
+        </span>
+</div>
+<div class="flex items-center gap-space-md">
+<!-- Rows Per Page -->
+<div class="flex items-center gap-space-xs font-body-sm text-body-sm text-on-surface-variant">
+<span>Rows per page:</span>
+<select class="h-7 px-2 rounded bg-surface-container-low font-body-sm text-body-sm text-on-surface focus:outline-none cursor-pointer">
+<option value="10">10</option>
+<option selected="" value="25">25</option>
+<option value="50">50</option>
+<option value="100">100</option>
+</select>
+</div>
+<!-- Pagination Controls -->
+<nav aria-label="Pagination" class="inline-flex items-center gap-1">
+<button class="w-8 h-8 flex items-center justify-center rounded-lg text-outline opacity-40 cursor-not-allowed" disabled="" type="button">
+<span class="material-symbols-outlined text-[18px]">chevron_left</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg bg-primary-container text-on-primary font-label-md text-label-md font-bold shadow-xs" type="button">
+            1
+          </button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface hover:bg-surface-container font-label-md text-label-md" type="button">
+            2
+          </button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface hover:bg-surface-container font-label-md text-label-md" type="button">
+            3
+          </button>
+<span class="px-1 text-outline font-body-sm text-body-sm select-none">…</span>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface hover:bg-surface-container font-label-md text-label-md" type="button">
+            142
+          </button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface hover:bg-surface-container" type="button">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</nav>
+</div>
+</div>
+</div>
+</div>
+<script>
+  // Bulk Actions & Checkbox Handling
+  const selectAll = document.getElementById('select-all-head');
+  const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+  const bulkCount = document.getElementById('bulk-count');
+  const bulkBtn = document.getElementById('bulk-actions-btn');
+  const bulkMenu = document.getElementById('bulk-actions-menu');
+
+  function updateBulkState() {
+    const checked = document.querySelectorAll('.row-checkbox:checked').length;
+    bulkCount.textContent = checked;
+    if (selectAll) {
+      selectAll.checked = checked === rowCheckboxes.length && checked > 0;
+      selectAll.indeterminate = checked > 0 && checked < rowCheckboxes.length;
+    }
+  }
+
+  if (selectAll) {
+    selectAll.addEventListener('change', () => {
+      rowCheckboxes.forEach(cb => cb.checked = selectAll.checked);
+      updateBulkState();
+    });
+  }
+
+  rowCheckboxes.forEach(cb => {
+    cb.addEventListener('change', updateBulkState);
+  });
+
+  if (bulkBtn && bulkMenu) {
+    bulkBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      bulkMenu.classList.toggle('hidden');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!bulkMenu.contains(e.target) && !bulkBtn.contains(e.target)) {
+        bulkMenu.classList.add('hidden');
+      }
+    });
+  }
+
+  // Quick ID Copy Feedback
+  document.querySelectorAll('button[title^="Copy"]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const tcText = this.getAttribute('title').replace('Copy ', '');
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(tcText);
+      }
+      const icon = this.querySelector('.material-symbols-outlined');
+      if (icon) {
+        icon.textContent = 'done';
+        setTimeout(() => { icon.textContent = 'content_copy'; }, 1400);
+      }
+    });
+  });
+</script></div></main></div></body></html>
