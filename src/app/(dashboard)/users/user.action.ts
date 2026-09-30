@@ -18,7 +18,7 @@ export async function getAllUsers() {
   );
 
   const resData: GetAllUsersResponse[] = await response.json();
-  console.log("res", resData);
+//   console.log("res", resData);
   return resData;
 }
 

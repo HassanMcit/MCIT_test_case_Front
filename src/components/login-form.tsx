@@ -51,7 +51,7 @@ function LoginFormInner() {
   function handleUserLogin(data: LoginSchemaType) {
     async function loginResponse() {
       const res = await signIn('credentials', {...data, redirect: false, redirectTo: '/dashboard'})
-      console.log(res)
+      // console.log(res)
       if(!res.error) {
         return true
       }

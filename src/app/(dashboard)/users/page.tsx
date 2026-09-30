@@ -85,7 +85,7 @@ export default function UsersManagementPage() {
     getAllUsers().then(res => setUsersList(res))
   }, [session]);
 
-  console.log(usersList?.filter(e => e.role))
+  // console.log(usersList?.filter(e => e.role))
 
 
   
