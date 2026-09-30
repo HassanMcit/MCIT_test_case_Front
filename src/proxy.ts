@@ -1,14 +1,16 @@
 import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function proxy(req: NextRequest) {
+export default async function proxy(req: NextRequest) {
     const pathName = req.nextUrl.pathname;
 
     const isAuth = pathName === '/login';
 
    const token = await getToken({
         req,
-        secret: process.env.AUTH_SECRET
+        secret: process.env.AUTH_SECRET,
+        cookieName: process.env.NODE_ENV === "production" ? "__Secure-authjs.session-token" : "authjs.session-token",
+        salt: process.env.NODE_ENV === "production" ? "__Secure-authjs.session-token" : "authjs.session-token"
     });
 
      let isExpired = false;
