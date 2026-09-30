@@ -52,6 +52,7 @@ function LoginFormInner() {
     async function loginResponse() {
       const res = await signIn('credentials', {...data, redirect: false, redirectTo: '/dashboard'})
       // console.log(res)
+      
       if(!res.error) {
         return true
       }
@@ -62,6 +63,7 @@ throw new Error("Incorrect Email or Password");
     toast.promise(loginResponse, {
       loading: t("login_loading"),
       success: (_) => {
+         router.refresh(); 
         router.push("/dashboard");
         return (
           <h1 className="text-green-500 font-bold">{t("login_success")}</h1>
