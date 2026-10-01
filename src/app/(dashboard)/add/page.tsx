@@ -52,7 +52,7 @@ export default function AddTestCasePage() {
           </p>
         </div>
         <div className="flex items-center gap-2 bg-[#eff4ff] px-4 py-2 rounded-xl">
-          <span className="text-[#006685] text-lg">✓</span>
+          <span className="text-[#38CAF0] text-lg">✓</span>
           <span className="text-[14px] font-bold text-[#0b1c30]">{isRTL ? "حالة جديدة" : "New Test Case"}: TC_003</span>
         </div>
       </div>
@@ -112,7 +112,7 @@ export default function AddTestCasePage() {
                 <button
                   type="button"
                   onClick={addStep}
-                  className="flex items-center gap-1 text-[#006685] bg-green-500/10 p-2 cursor-pointer rounded-4xl hover:text-[#003d51] text-[13px] font-medium transition-all"
+                  className="flex items-center gap-1 text-[#38CAF0] bg-green-500/10 p-2 cursor-pointer rounded-4xl hover:text-[#003d51] text-[13px] font-medium transition-all"
                 >
                   <Plus className="w-4 h-4 " /> {isRTL ? "إضافة خطوة" : "Add New Step"}
                 </button>
@@ -120,7 +120,7 @@ export default function AddTestCasePage() {
               <div className="space-y-2">
                 {steps.map((step, idx) => (
                   <div key={step.id} className="flex items-center gap-2 bg-[#f8f9ff] p-2 rounded-xl border border-[#e5eeff]">
-                    <Badge variant="outline" className="text-[11px] font-bold bg-[#bfe9ff] text-[#006685] border-[#bfe9ff] min-w-[28px] justify-center">
+                    <Badge variant="outline" className="text-[11px] font-bold bg-[#bfe9ff] text-[#38CAF0] border-[#bfe9ff] min-w-[28px] justify-center">
                       {idx + 1}
                     </Badge>
                     <Input
@@ -206,7 +206,7 @@ export default function AddTestCasePage() {
               <Button type="button" variant="outline" className="gap-2 rounded-xl">
                 <RotateCcw className="w-4 h-4" /> {isRTL ? "إعادة تعيين" : "Reset"}
               </Button>
-              <Button type="submit" className="gap-2 rounded-xl bg-[#006685] hover:bg-[#004d65] text-white">
+              <Button type="submit" className="gap-2 rounded-xl bg-[#38CAF0] hover:bg-[#004d65] text-white">
                 <Save className="w-4 h-4" /> {isRTL ? "حفظ حالة الاختبار" : "Save Test Case"}
               </Button>
             </div>

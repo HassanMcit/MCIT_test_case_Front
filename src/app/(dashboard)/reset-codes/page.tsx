@@ -281,7 +281,7 @@ export default function AdminResetCodesPage() {
             <Button
               variant="outline"
               onClick={() => setPreviewAsAdmin(true)}
-              className="w-full text-xs font-semibold border-[#006685] text-[#006685] hover:bg-[#eff4ff]"
+              className="w-full text-xs font-semibold border-[#38CAF0] text-[#38CAF0] hover:bg-[#eff4ff]"
             >
               <Eye className="w-4 h-4" />
               {isRTL ? "تفعيل وضع المعاينة (Admin Preview Mode)" : "Enable Admin Preview Mode"}
@@ -309,12 +309,12 @@ export default function AdminResetCodesPage() {
           <div className="flex items-center gap-2 mb-1.5">
             <Link
               href="/dashboard"
-              className="text-xs font-medium text-slate-400 hover:text-[#006685] transition-colors"
+              className="text-xs font-medium text-slate-400 hover:text-[#38CAF0] transition-colors"
             >
               {isRTL ? "لوحة التحكم" : "Dashboard"}
             </Link>
             <span className="text-slate-300">/</span>
-            <span className="text-xs font-semibold text-[#006685]">
+            <span className="text-xs font-semibold text-[#38CAF0]">
               {isRTL ? "أكواد الاستعادة" : "Reset Codes"}
             </span>
             <Badge
@@ -340,7 +340,7 @@ export default function AdminResetCodesPage() {
           <Button
             size="sm"
             onClick={handleGenerateTestCode}
-            className="h-9 gap-1.5 text-xs font-bold bg-[#006685] hover:bg-[#00526b] text-white cursor-pointer shadow-xs"
+            className="h-9 gap-1.5 text-xs font-bold bg-[#38CAF0] hover:bg-[#00526b] text-white cursor-pointer shadow-xs"
           >
             <PlusCircle className="w-3.5 h-3.5" />
             <span>{isRTL ? "توليد كود تجريبي (15 دقيقة)" : "Generate Test OTP (15 min)"}</span>
@@ -393,7 +393,7 @@ export default function AdminResetCodesPage() {
                 {isRTL ? "تم استخدامها بنجاح" : "Successfully Used"}
               </span>
               <div className="flex items-baseline gap-2">
-                <span className="text-2xl sm:text-3xl font-extrabold text-[#006685]">
+                <span className="text-2xl sm:text-3xl font-extrabold text-[#38CAF0]">
                   {stats.used}
                 </span>
                 <span className="text-[11px] text-slate-400 font-medium">
@@ -401,7 +401,7 @@ export default function AdminResetCodesPage() {
                 </span>
               </div>
             </div>
-            <div className="w-12 h-12 rounded-xl bg-[#bfe9ff]/50 text-[#006685] flex items-center justify-center shrink-0">
+            <div className="w-12 h-12 rounded-xl bg-[#bfe9ff]/50 text-[#38CAF0] flex items-center justify-center shrink-0">
               <Lock className="w-6 h-6" />
             </div>
           </CardContent>
@@ -423,7 +423,7 @@ export default function AdminResetCodesPage() {
                 </span>
               </div>
             </div>
-            <div className="w-12 h-12 rounded-xl bg-[#e5eeff] text-[#006685] flex items-center justify-center shrink-0">
+            <div className="w-12 h-12 rounded-xl bg-[#e5eeff] text-[#38CAF0] flex items-center justify-center shrink-0">
               <Clock className="w-6 h-6" />
             </div>
           </CardContent>
@@ -489,7 +489,7 @@ export default function AdminResetCodesPage() {
                     setSearchTerm("");
                     setStatusFilter("all");
                   }}
-                  className="h-10 text-xs text-[#006685] hover:bg-[#eff4ff]"
+                  className="h-10 text-xs text-[#38CAF0] hover:bg-[#eff4ff]"
                 >
                   {isRTL ? "إعادة الضبط" : "Reset"}
                 </Button>
@@ -513,7 +513,7 @@ export default function AdminResetCodesPage() {
             </CardDescription>
           </div>
           <Badge variant="outline" className="border-slate-200 text-slate-600 text-xs gap-1.5 py-1">
-            <Filter className="w-3 h-3 text-[#006685]" />
+            <Filter className="w-3 h-3 text-[#38CAF0]" />
             <span>{isRTL ? "مؤقت زمني حي" : "Live Ticking"}</span>
           </Badge>
         </CardHeader>
@@ -566,7 +566,7 @@ export default function AdminResetCodesPage() {
                       {/* User Info */}
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-[#eff4ff] text-[#006685] font-bold text-xs flex items-center justify-center ring-1 ring-slate-200 shrink-0">
+                          <div className="w-9 h-9 rounded-full bg-[#eff4ff] text-[#38CAF0] font-bold text-xs flex items-center justify-center ring-1 ring-slate-200 shrink-0">
                             {item.userName.charAt(0)}
                           </div>
                           <div className="flex flex-col min-w-0">
@@ -591,14 +591,14 @@ export default function AdminResetCodesPage() {
                       {/* Code Pill & Copy Button */}
                       <TableCell className="text-center">
                         <div className="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200/80 border border-slate-200 rounded-lg px-2.5 py-1 transition-colors">
-                          <span className="font-mono text-sm sm:text-base font-extrabold text-[#006685] tracking-widest">
+                          <span className="font-mono text-sm sm:text-base font-extrabold text-[#38CAF0] tracking-widest">
                             {item.code}
                           </span>
                           <button
                             type="button"
                             onClick={() => handleCopyCode(item.id, item.code)}
                             title={isRTL ? "نسخ الكود" : "Copy Code"}
-                            className="p-1 rounded text-slate-400 hover:text-[#006685] hover:bg-white transition-all cursor-pointer"
+                            className="p-1 rounded text-slate-400 hover:text-[#38CAF0] hover:bg-white transition-all cursor-pointer"
                           >
                             {isCopied ? (
                               <Check className="w-3.5 h-3.5 text-emerald-600" />
@@ -656,7 +656,7 @@ export default function AdminResetCodesPage() {
                           </Badge>
                         )}
                         {item.status === "used" && (
-                          <Badge className="bg-[#bfe9ff]/50 text-[#006685] border-[#00aee0]/40 hover:bg-[#bfe9ff] text-xs font-semibold gap-1">
+                          <Badge className="bg-[#bfe9ff]/50 text-[#38CAF0] border-[#00aee0]/40 hover:bg-[#bfe9ff] text-xs font-semibold gap-1">
                             <Lock className="w-3 h-3" />
                             {isRTL ? "تم الاستخدام" : "Used"}
                           </Badge>
@@ -671,7 +671,7 @@ export default function AdminResetCodesPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => setSelectedRecord(item)}
-                            className="h-8 w-8 p-0 text-slate-500 hover:text-[#006685] hover:bg-[#eff4ff]"
+                            className="h-8 w-8 p-0 text-slate-500 hover:text-[#38CAF0] hover:bg-[#eff4ff]"
                             title={isRTL ? "تفاصيل الطلب" : "View Details"}
                           >
                             <Eye className="w-4 h-4" />
@@ -683,7 +683,7 @@ export default function AdminResetCodesPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleMarkUsed(item.id)}
-                              className="h-8 w-8 p-0 text-slate-400 hover:text-[#006685] hover:bg-[#eff4ff]"
+                              className="h-8 w-8 p-0 text-slate-400 hover:text-[#38CAF0] hover:bg-[#eff4ff]"
                               title={isRTL ? "تحديد كـ تم الاستخدام" : "Mark as Used"}
                             >
                               <CheckCircle2 className="w-4 h-4" />
@@ -718,7 +718,7 @@ export default function AdminResetCodesPage() {
           <Card className="w-full max-w-lg border-slate-200 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
             <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-xl bg-[#e5eeff] text-[#006685] flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-[#e5eeff] text-[#38CAF0] flex items-center justify-center">
                   <KeyRound className="w-5 h-5" />
                 </div>
                 <div>
@@ -743,10 +743,10 @@ export default function AdminResetCodesPage() {
             <CardContent className="py-4 space-y-4 text-xs sm:text-sm">
               {/* Highlight OTP Code */}
               <div className="p-4 rounded-xl bg-[#eff4ff] border border-[#00aee0]/30 text-center">
-                <span className="text-xs font-semibold text-[#006685] block mb-1">
+                <span className="text-xs font-semibold text-[#38CAF0] block mb-1">
                   {isRTL ? "رمز التحقق المعتمد (6 أرقام)" : "Authorized 6-Digit OTP Code"}
                 </span>
-                <span className="font-mono text-3xl font-extrabold text-[#006685] tracking-widest">
+                <span className="font-mono text-3xl font-extrabold text-[#38CAF0] tracking-widest">
                   {selectedRecord.code}
                 </span>
                 <div className="mt-2 flex items-center justify-center gap-2">
@@ -755,7 +755,7 @@ export default function AdminResetCodesPage() {
                     className={
                       selectedRecord.status === "active"
                         ? "bg-emerald-50 text-emerald-700 border-emerald-300"
-                        : "bg-[#bfe9ff] text-[#006685] border-[#00aee0]/50"
+                        : "bg-[#bfe9ff] text-[#38CAF0] border-[#00aee0]/50"
                     }
                   >
                     {selectedRecord.status === "active"
@@ -785,7 +785,7 @@ export default function AdminResetCodesPage() {
                   </div>
                   <div className="col-span-2 pt-1">
                     <span className="text-slate-400 block">{isRTL ? "البريد الإلكتروني" : "Email"}</span>
-                    <span className="font-semibold text-[#006685]">{selectedRecord.userEmail}</span>
+                    <span className="font-semibold text-[#38CAF0]">{selectedRecord.userEmail}</span>
                   </div>
                 </div>
               </div>
@@ -824,7 +824,7 @@ export default function AdminResetCodesPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => handleMarkUsed(selectedRecord.id)}
-                  className="text-xs text-[#006685] border-slate-200 hover:bg-[#eff4ff]"
+                  className="text-xs text-[#38CAF0] border-slate-200 hover:bg-[#eff4ff]"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   {isRTL ? "تحديد كـ مستخدم" : "Mark as Used"}
@@ -839,7 +839,7 @@ export default function AdminResetCodesPage() {
                 variant="default"
                 size="sm"
                 onClick={() => handleCopyCode(selectedRecord.id, selectedRecord.code)}
-                className="bg-[#006685] hover:bg-[#00aee0] text-white text-xs gap-1.5"
+                className="bg-[#38CAF0] hover:bg-[#00aee0] text-white text-xs gap-1.5"
               >
                 <Copy className="w-3.5 h-3.5" />
                 {copiedCodeId === selectedRecord.id

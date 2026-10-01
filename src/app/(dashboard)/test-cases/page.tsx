@@ -32,7 +32,7 @@ export default function TestCasesPage() {
     const isRTL = dir === "rtl";
 
   const stats = [
-  { label: isRTL ? "إجمالي حالات الاختبار" : "Total Test Case", value: "1,284", icon: ListChecks, color: "text-[#006685]", bg: "bg-[#bfe9ff]" },
+  { label: isRTL ? "إجمالي حالات الاختبار" : "Total Test Case", value: "1,284", icon: ListChecks, color: "text-[#38CAF0]", bg: "bg-[#bfe9ff]" },
   { label: isRTL ?  "الاختبارات الناجحة" : "Success",     value: "1,120", icon: CheckCircle, color: "text-[#006c49]", bg: "bg-[#6ffbbe]/30" },
   { label: isRTL ? "الاختبارات الفاشلة" : "Fail",     value: "94",    icon: XCircle,     color: "text-[#ba1a1a]", bg: "bg-[#ffdad6]" },
   { label: isRTL ? "قيد الانتظار" : "Pending",           value: "70",    icon: Clock,       color: "text-[#565e74]", bg: "bg-[#dae2fd]" },
@@ -88,7 +88,7 @@ const statusDot: Record<string, string> = {
             <div className="relative flex-1 min-w-60">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6d797f] w-4 h-4" />
               <Input
-                className="pr-10 h-9 text-[13px] bg-[#f8f9ff] border-[#bcc8d0] focus-visible:ring-[#006685]/20"
+                className="pr-10 h-9 text-[13px] bg-[#f8f9ff] border-[#bcc8d0] focus-visible:ring-[#38CAF0]/20"
                 placeholder={isRTL ? "البحث برقم المعرف، الوحدة، أو الكلمة الرئيسية..." : "Search by ID, module, or keyword..."}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -120,7 +120,7 @@ const statusDot: Record<string, string> = {
           <div className="flex items-center gap-2 w-full md:w-auto justify-end">
             <Link
               href="/add"
-              className="inline-flex items-center justify-center h-9 px-4 bg-[#00C3F3] hover:bg-[#006685] text-white rounded-lg text-[13px] font-medium transition-colors"
+              className="inline-flex items-center justify-center h-9 px-4 bg-[#00C3F3] hover:bg-[#38CAF0] text-white rounded-lg text-[13px] font-medium transition-colors"
             >
               <Plus className="w-4 h-4 ml-1" />
               {isRTL ? "حالة اختبار جديدة" : "New Test Case"}
@@ -163,7 +163,7 @@ const statusDot: Record<string, string> = {
             <tbody className="divide-y divide-[#e5eeff]">
               {filtered.map((row) => (
                 <tr key={row.id} className="h-10 hover:bg-[#eff4ff] transition-colors">
-                  <td className="px-3 text-[13px] font-mono font-bold text-[#006685]">{row.id}</td>
+                  <td className="px-3 text-[13px] font-mono font-bold text-[#38CAF0]">{row.id}</td>
                   <td className="px-3 text-[13px] text-[#0b1c30]">{row.module}</td>
                   <td className="px-3 text-[13px] text-[#3d484f] max-w-[200px] truncate" title={row.steps}>{row.steps}</td>
                   <td className="px-3 text-[13px] text-[#3d484f] max-w-[150px] truncate">{row.expected}</td>
@@ -181,8 +181,8 @@ const statusDot: Record<string, string> = {
                   <td className="px-3 text-[12px] text-[#565e74] font-mono">{row.date}</td>
                   <td className="px-3 text-center">
                     <div className="flex items-center justify-center gap-1">
-                      <button className="p-1 hover:bg-[#e5eeff] rounded text-[#565e74] hover:text-[#006685] transition-colors" title="عرض"><Eye className="w-4 h-4" /></button>
-                      <button className="p-1 hover:bg-[#e5eeff] rounded text-[#565e74] hover:text-[#006685] transition-colors" title="تعديل"><Pencil className="w-4 h-4" /></button>
+                      <button className="p-1 hover:bg-[#e5eeff] rounded text-[#565e74] hover:text-[#38CAF0] transition-colors" title="عرض"><Eye className="w-4 h-4" /></button>
+                      <button className="p-1 hover:bg-[#e5eeff] rounded text-[#565e74] hover:text-[#38CAF0] transition-colors" title="تعديل"><Pencil className="w-4 h-4" /></button>
                       <button className="p-1 hover:bg-[#e5eeff] rounded text-[#565e74] hover:text-[#ba1a1a] transition-colors" title="حذف"><Trash2 className="w-4 h-4" /></button>
                     </div>
                   </td>

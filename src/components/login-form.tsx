@@ -281,7 +281,7 @@ throw new Error("Incorrect Email or Password");
               <div className={cn("flex -mt-1", isRTL ? "justify-start" : "justify-end")}>
                 <Link
                   href="/forget-password"
-                  className="text-xs font-semibold text-[#006685] hover:text-[#00C3F3] transition-colors hover:underline"
+                  className="text-xs font-semibold text-[#38CAF0] hover:text-[#00C3F3] transition-colors hover:underline"
                 >
                   {t("login_forgot_password")}
                 </Link>

@@ -195,23 +195,23 @@ export default function UsersManagementPage() {
           <div className="flex items-center gap-2 mb-2">
             <Link
               href="/dashboard"
-              className="text-xs font-medium text-slate-400 hover:text-[#006685] transition-colors"
+              className="text-xs font-medium text-slate-400 hover:text-[#38CAF0] transition-colors"
             >
               {t("dashboard")}
             </Link>
             <span className="text-slate-300">/</span>
-            <span className="text-xs font-semibold text-[#006685]">
+            <span className="text-xs font-semibold text-[#38CAF0]">
               {t("users_admin_nav")}
             </span>
           </div>
           <div className="flex items-center gap-2.5 mb-1.5 flex-wrap">
-            <div className="w-9 h-9 rounded-xl bg-[#006685]/10 text-[#006685] flex items-center justify-center font-bold shadow-xs">
+            <div className="w-9 h-9 rounded-xl bg-[#38CAF0]/10 text-[#38CAF0] flex items-center justify-center font-bold shadow-xs">
               <Users className="w-5 h-5" />
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold text-[#0b1c30] tracking-tight">
               {t("users_management_title")}
             </h1>
-            <Badge variant="outline" className="text-[11px] font-mono border-[#006685]/30 text-[#006685] bg-[#006685]/5">
+            <Badge variant="outline" className="text-[11px] font-mono border-[#38CAF0]/30 text-[#38CAF0] bg-[#38CAF0]/5">
               {usersList?.length} {isRTL ? "حساب مسجل" : "accounts"}
             </Badge>
           </div>
@@ -268,7 +268,7 @@ export default function UsersManagementPage() {
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                 {t("users_total_count")}
               </span>
-              <div className="w-9 h-9 rounded-xl bg-[#eff4ff] text-[#006685] flex items-center justify-center">
+              <div className="w-9 h-9 rounded-xl bg-[#eff4ff] text-[#38CAF0] flex items-center justify-center">
                 <Users className="w-5 h-5" />
               </div>
             </div>
@@ -350,7 +350,7 @@ export default function UsersManagementPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={t("users_search_placeholder")}
             className={cn(
-              "h-11 text-xs sm:text-sm rounded-xl border-slate-200 focus-visible:ring-[#006685]",
+              "h-11 text-xs sm:text-sm rounded-xl border-slate-200 focus-visible:ring-[#38CAF0]",
               isRTL ? "pr-10 pl-3 text-right" : "pl-10 pr-3 text-left"
             )}
           />

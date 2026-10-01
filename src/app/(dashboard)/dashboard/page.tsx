@@ -216,7 +216,7 @@ export default function DashboardPage() {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-1">
         <div className="flex flex-col">
           <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-[#bfe9ff]/60 text-[#006685] border border-[#00aee0]/30 tracking-wide uppercase">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-[#bfe9ff]/60 text-[#38CAF0] border border-[#00aee0]/30 tracking-wide uppercase">
               <span className="w-1.5 h-1.5 rounded-full bg-[#00aee0] animate-pulse" />
               Active Sprint • v2.4.1-rc3
             </span>
@@ -236,7 +236,7 @@ export default function DashboardPage() {
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Sprint Filter Dropdown */}
           <div className="inline-flex items-center gap-2 bg-white shadow-xs rounded-xl px-3.5 py-2 cursor-pointer hover:bg-slate-50 hover:border-slate-300 transition-all border border-slate-200/80 text-xs font-medium text-[#0b1c30]">
-            <SlidersHorizontal className="w-3.5 h-3.5 text-[#006685]" />
+            <SlidersHorizontal className="w-3.5 h-3.5 text-[#38CAF0]" />
             <span className="font-semibold text-[#0b1c30]">Sprint 14</span>
             <span className="text-slate-300">|</span>
             <span className="text-[#565e74]">
@@ -254,7 +254,7 @@ export default function DashboardPage() {
           >
             <RefreshCw
               className={`w-3.5 h-3.5 text-[#565e74] ${
-                isRunning ? "animate-spin text-[#006685]" : ""
+                isRunning ? "animate-spin text-[#38CAF0]" : ""
               }`}
             />
             <span>{isRunning ? (isRTL ? "جاري التشغيل..." : "Running...") : t("trigger_run")}</span>
@@ -279,7 +279,7 @@ export default function DashboardPage() {
             <span className="text-[11px] font-bold text-[#6d797f] uppercase tracking-wider">
               {t("total_tests")}
             </span>
-            <div className="w-8 h-8 rounded-xl bg-[#bfe9ff]/50 text-[#006685] flex items-center justify-center border border-[#00aee0]/20 transition-transform group-hover:scale-105">
+            <div className="w-8 h-8 rounded-xl bg-[#bfe9ff]/50 text-[#38CAF0] flex items-center justify-center border border-[#00aee0]/20 transition-transform group-hover:scale-105">
               <ShieldCheck className="w-4 h-4" />
             </div>
           </div>
@@ -392,7 +392,7 @@ export default function DashboardPage() {
             <div className="text-3xl font-extrabold tracking-tight text-[#0b1c30] mt-1">
               {passRate}%
             </div>
-            <div className="flex items-center gap-1 text-[11px] font-bold text-[#006685] mt-1.5">
+            <div className="flex items-center gap-1 text-[11px] font-bold text-[#38CAF0] mt-1.5">
               <Sparkles className="w-3 h-3 text-[#00aee0]" />
               <span>{t("goal_rate")}</span>
             </div>
@@ -417,7 +417,7 @@ export default function DashboardPage() {
                 strokeWidth="3.5"
               />
             </svg>
-            <div className="absolute flex items-center justify-center text-[#006685]">
+            <div className="absolute flex items-center justify-center text-[#38CAF0]">
               <Check className="w-4 h-4 stroke-[3]" />
             </div>
           </div>
@@ -433,7 +433,7 @@ export default function DashboardPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3.5 gap-3 border-b border-slate-100">
               <div>
                 <div className="flex items-center gap-2">
-                  <LineChart className="w-5 h-5 text-[#006685]" />
+                  <LineChart className="w-5 h-5 text-[#38CAF0]" />
                   <h2 className="text-base font-bold text-[#0b1c30]">
                     {t("trend_title")}
                   </h2>
@@ -464,7 +464,7 @@ export default function DashboardPage() {
             <div className="h-6 mt-2 flex items-center text-xs">
               {hoveredBar ? (
                 <div className="flex items-center gap-3 font-medium text-[#0b1c30] bg-[#eff4ff] px-2.5 py-0.5 rounded-lg border border-[#00aee0]/30 animate-in fade-in duration-150">
-                  <span className="font-bold text-[#006685]">{hoveredBar.day}:</span>
+                  <span className="font-bold text-[#38CAF0]">{hoveredBar.day}:</span>
                   <span className="text-[#006c49]">
                     {isRTL ? "ناجح" : "Passed"}: {hoveredBar.p}
                   </span>
@@ -474,7 +474,7 @@ export default function DashboardPage() {
                   <span className="text-[#565e74]">
                     {isRTL ? "معلق" : "Pending"}: {hoveredBar.pe}
                   </span>
-                  <span className="font-mono text-[#006685] font-bold">
+                  <span className="font-mono text-[#38CAF0] font-bold">
                     ({Math.round((hoveredBar.p / hoveredBar.total) * 100)}% Pass)
                   </span>
                 </div>
@@ -579,7 +579,7 @@ export default function DashboardPage() {
                         className={`text-[10px] font-mono ${
                           bar.isToday || isHovered ? "font-bold" : ""
                         }`}
-                        fill={bar.isToday ? "#006685" : isHovered ? "#0b1c30" : "#64748B"}
+                        fill={bar.isToday ? "#38CAF0" : isHovered ? "#0b1c30" : "#64748B"}
                         x={bar.x - 2}
                         y="200"
                       >
@@ -617,7 +617,7 @@ export default function DashboardPage() {
                   {t("defect_title")}
                 </h2>
               </div>
-              <span className="px-2.5 py-0.5 rounded-full text-xs bg-slate-100 font-bold text-[#006685] border border-slate-200/60">
+              <span className="px-2.5 py-0.5 rounded-full text-xs bg-slate-100 font-bold text-[#38CAF0] border border-slate-200/60">
                 {t("open_defects")}
               </span>
             </div>
@@ -724,7 +724,7 @@ export default function DashboardPage() {
           {/* Jira / Matrix CTA Button */}
           <button
             type="button"
-            className="w-full mt-4 py-2.5 px-3 rounded-xl bg-[#eff4ff] text-[#006685] hover:bg-[#dce9ff] text-xs font-bold flex items-center justify-center gap-2 border border-[#00aee0]/20 hover:border-[#00aee0]/40 transition-all active:scale-[0.98]"
+            className="w-full mt-4 py-2.5 px-3 rounded-xl bg-[#eff4ff] text-[#38CAF0] hover:bg-[#dce9ff] text-xs font-bold flex items-center justify-center gap-2 border border-[#00aee0]/20 hover:border-[#00aee0]/40 transition-all active:scale-[0.98]"
           >
             <span>{t("explore_jira")}</span>
             <ExternalLink className="w-3.5 h-3.5" />
@@ -793,7 +793,7 @@ export default function DashboardPage() {
           {/* View All Link */}
           <Link
             href="/test-cases"
-            className="inline-flex items-center gap-1.5 text-xs text-[#006685] font-bold hover:text-[#00aee0] transition-colors whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 text-xs text-[#38CAF0] font-bold hover:text-[#00aee0] transition-colors whitespace-nowrap"
           >
             <span>{t("view_all")}</span>
             <ExternalLink className="w-3.5 h-3.5" />
@@ -830,7 +830,7 @@ export default function DashboardPage() {
                           setSearchQuery("");
                           setActiveModule("all");
                         }}
-                        className="text-xs text-[#006685] font-bold hover:underline"
+                        className="text-xs text-[#38CAF0] font-bold hover:underline"
                       >
                         {isRTL ? "إعادة تعيين الفلاتر" : "Reset filters"}
                       </button>
@@ -870,7 +870,7 @@ export default function DashboardPage() {
                       className="hover:bg-[#f8faff] transition-colors group"
                     >
                       {/* TC ID */}
-                      <td className="py-3 px-4 font-mono font-bold text-[#006685]">
+                      <td className="py-3 px-4 font-mono font-bold text-[#38CAF0]">
                         <span className="hover:underline cursor-pointer">
                           {row.id}
                         </span>
@@ -917,7 +917,7 @@ export default function DashboardPage() {
                       {/* Tester */}
                       <td className="py-3 px-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-[#dae2fd] text-[#006685] font-bold text-[10px] flex items-center justify-center ring-1 ring-slate-200">
+                          <div className="w-6 h-6 rounded-full bg-[#dae2fd] text-[#38CAF0] font-bold text-[10px] flex items-center justify-center ring-1 ring-slate-200">
                             {row.testerInitials}
                           </div>
                           <span className="font-medium text-[#3d484f]">
@@ -936,10 +936,10 @@ export default function DashboardPage() {
                         <div className="flex items-center justify-center gap-1">
                           <button
                             type="button"
-                            className="p-1.5 hover:bg-[#eff4ff] rounded-lg text-[#006685] transition-colors"
+                            className="p-1.5 hover:bg-[#eff4ff] rounded-lg text-[#38CAF0] transition-colors"
                             title="Run Test"
                           >
-                            <Play className="w-3.5 h-3.5 fill-[#006685]" />
+                            <Play className="w-3.5 h-3.5 fill-[#38CAF0]" />
                           </button>
                           <button
                             type="button"
@@ -969,7 +969,7 @@ export default function DashboardPage() {
         <div className="p-4 bg-white border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#6d797f]">
           <span className="font-medium">
             {t("showing_text")} •{" "}
-            <span className="text-[#006685] font-semibold">
+            <span className="text-[#38CAF0] font-semibold">
               {isRTL ? "مصفاة حسب سبرنت 14" : "Filtered by Sprint 14"}
             </span>
           </span>

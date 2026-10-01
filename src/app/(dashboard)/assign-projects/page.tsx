@@ -193,11 +193,11 @@ export default function AssignProjectsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1.5">
-            <Link href="/dashboard" className="text-xs font-medium text-slate-400 hover:text-[#006685] transition-colors">
+            <Link href="/dashboard" className="text-xs font-medium text-slate-400 hover:text-[#38CAF0] transition-colors">
               {isRTL ? "لوحة التحكم" : "Dashboard"}
             </Link>
             <span className="text-slate-300">/</span>
-            <span className="text-xs font-semibold text-[#006685]">
+            <span className="text-xs font-semibold text-[#38CAF0]">
               {isRTL ? "إسناد المشاريع" : "Assign Projects"}
             </span>
             <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 text-[10px] font-bold px-2 py-0.5 gap-1">
@@ -219,7 +219,7 @@ export default function AssignProjectsPage() {
           <button
             onClick={() => setViewTab("interactive")}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              viewTab === "interactive" ? "bg-[#006685] text-white shadow-xs" : "text-slate-600 hover:text-slate-900"
+              viewTab === "interactive" ? "bg-[#38CAF0] text-white shadow-xs" : "text-slate-600 hover:text-slate-900"
             }`}
           >
             <LayoutGrid className="w-3.5 h-3.5" />
@@ -228,7 +228,7 @@ export default function AssignProjectsPage() {
           <button
             onClick={() => setViewTab("matrix")}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              viewTab === "matrix" ? "bg-[#006685] text-white shadow-xs" : "text-slate-600 hover:text-slate-900"
+              viewTab === "matrix" ? "bg-[#38CAF0] text-white shadow-xs" : "text-slate-600 hover:text-slate-900"
             }`}
           >
             <TableIcon className="w-3.5 h-3.5" />
@@ -245,7 +245,7 @@ export default function AssignProjectsPage() {
               <span className="text-xs font-semibold text-[#6d797f] block">إجمالي المستخدمين</span>
               <span className="text-2xl font-extrabold text-[#0b1c30]">{users.length}</span>
             </div>
-            <div className="w-12 h-12 rounded-xl bg-[#e5eeff] text-[#006685] flex items-center justify-center shrink-0">
+            <div className="w-12 h-12 rounded-xl bg-[#e5eeff] text-[#38CAF0] flex items-center justify-center shrink-0">
               <User className="w-6 h-6" />
             </div>
           </CardContent>
@@ -254,9 +254,9 @@ export default function AssignProjectsPage() {
           <CardContent className="p-4 sm:p-5 flex items-center justify-between">
             <div className="space-y-1">
               <span className="text-xs font-semibold text-[#6d797f] block">إجمالي المشاريع</span>
-              <span className="text-2xl font-extrabold text-[#006685]">{projects.length}</span>
+              <span className="text-2xl font-extrabold text-[#38CAF0]">{projects.length}</span>
             </div>
-            <div className="w-12 h-12 rounded-xl bg-[#bfe9ff]/50 text-[#006685] flex items-center justify-center shrink-0">
+            <div className="w-12 h-12 rounded-xl bg-[#bfe9ff]/50 text-[#38CAF0] flex items-center justify-center shrink-0">
               <FolderKanban className="w-6 h-6" />
             </div>
           </CardContent>
@@ -304,7 +304,7 @@ export default function AssignProjectsPage() {
                       onClick={() => setSelectedUserId(u.id)}
                       className={`p-3 rounded-xl border text-xs cursor-pointer transition-all ${
                         isSelected
-                          ? "bg-[#eff4ff] border-[#006685] ring-1 ring-[#006685]/30 shadow-xs"
+                          ? "bg-[#eff4ff] border-[#38CAF0] ring-1 ring-[#38CAF0]/30 shadow-xs"
                           : "bg-white border-slate-200/70 hover:bg-slate-50"
                       }`}
                     >
@@ -345,7 +345,7 @@ export default function AssignProjectsPage() {
                   </div>
                   <div className="text-center">
                     <span className="text-[11px] text-slate-500 block">المشاريع المسندة</span>
-                    <span className="text-lg font-black text-[#006685]">{activeUser.assignedProjectIds.length} / {projects.length}</span>
+                    <span className="text-lg font-black text-[#38CAF0]">{activeUser.assignedProjectIds.length} / {projects.length}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -382,7 +382,7 @@ export default function AssignProjectsPage() {
                         <span className="text-xs text-slate-400 mt-0.5">{project.environment}</span>
                       </div>
                       <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
-                        isAssigned ? "bg-[#006685] text-white" : "border border-slate-300 bg-slate-50"
+                        isAssigned ? "bg-[#38CAF0] text-white" : "border border-slate-300 bg-slate-50"
                       }`}>
                         {isAssigned && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                       </div>
@@ -427,7 +427,7 @@ export default function AssignProjectsPage() {
                           const p = projects.find(x => x.id === pid);
                           if (!p) return null;
                           return (
-                            <Badge key={pid} variant="outline" className="bg-[#eff4ff] text-[#006685] border-[#00aee0]/30 text-[10px]">
+                            <Badge key={pid} variant="outline" className="bg-[#eff4ff] text-[#38CAF0] border-[#00aee0]/30 text-[10px]">
                               {p.name}
                             </Badge>
                           );

@@ -93,7 +93,7 @@ export function ForgetPasswordForm() {
             </div>
 
             {/* Icon decoration */}
-            <div className="w-12 h-12 rounded-2xl bg-[#e5eeff] flex items-center justify-center mb-1 text-[#006685] shadow-xs">
+            <div className="w-12 h-12 rounded-2xl bg-[#e5eeff] flex items-center justify-center mb-1 text-[#38CAF0] shadow-xs">
               <KeyRound className="w-6 h-6" />
             </div>
 
@@ -165,7 +165,7 @@ export function ForgetPasswordForm() {
               <div className="flex justify-center pt-2 border-t border-slate-100">
                 <Link
                   href="/login"
-                  className="flex items-center gap-2 text-xs font-semibold text-[#006685] hover:text-[#00C3F3] transition-colors"
+                  className="flex items-center gap-2 text-xs font-semibold text-[#38CAF0] hover:text-[#00C3F3] transition-colors"
                 >
                   <BackArrow className="w-3.5 h-3.5" />
                   <span>{t("fp_back_to_login")}</span>

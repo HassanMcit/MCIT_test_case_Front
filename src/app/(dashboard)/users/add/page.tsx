@@ -160,7 +160,7 @@ export default function AddUserPage() {
             <Button
               variant="outline"
               onClick={() => setPreviewAsAdmin(true)}
-              className="w-full text-xs font-semibold border-[#006685] text-[#006685] hover:bg-[#eff4ff]"
+              className="w-full text-xs font-semibold border-[#38CAF0] text-[#38CAF0] hover:bg-[#eff4ff]"
             >
               <Eye className="w-4 h-4" />
               {isRTL ? "تفعيل وضع المعاينة (Admin Preview Mode)" : "Enable Admin Preview Mode"}
@@ -188,12 +188,12 @@ export default function AddUserPage() {
           <div className="flex items-center gap-2 mb-1.5">
             <Link
               href="/dashboard"
-              className="text-xs font-medium text-slate-400 hover:text-[#006685] transition-colors"
+              className="text-xs font-medium text-slate-400 hover:text-[#38CAF0] transition-colors"
             >
               {isRTL ? "لوحة التحكم" : "Dashboard"}
             </Link>
             <span className="text-slate-300">/</span>
-            <span className="text-xs font-semibold text-[#006685]">
+            <span className="text-xs font-semibold text-[#38CAF0]">
               {isRTL ? "إدارة المستخدمين" : "User Management"}
             </span>
             <Badge
@@ -240,7 +240,7 @@ export default function AddUserPage() {
         <Card className="border-slate-200/80 shadow-xs">
           <CardHeader className="pb-3 border-b border-slate-100">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-[#e5eeff] text-[#006685] flex items-center justify-center">
+              <div className="w-9 h-9 rounded-xl bg-[#e5eeff] text-[#38CAF0] flex items-center justify-center">
                 <User className="w-5 h-5" />
               </div>
               <div>
@@ -409,7 +409,7 @@ export default function AddUserPage() {
                   setTemporaryPassword(newPass);
                   setValue("password", newPass, { shouldValidate: true });
                 }}
-                className="h-8 gap-1.5 text-xs text-[#006685] border-slate-200 hover:bg-[#eff4ff] cursor-pointer"
+                className="h-8 gap-1.5 text-xs text-[#38CAF0] border-slate-200 hover:bg-[#eff4ff] cursor-pointer"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>{isRTL ? "توليد كلمة مرور جديدة" : "Generate New"}</span>
@@ -445,7 +445,7 @@ export default function AddUserPage() {
                       setValue("password", e.target.value, { shouldValidate: true });
                     }}
                     className={cn(
-                      "h-11 font-mono text-sm sm:text-base font-bold text-[#006685] tracking-wider pr-10 bg-slate-50/60 border-slate-200",
+                      "h-11 font-mono text-sm sm:text-base font-bold text-[#38CAF0] tracking-wider pr-10 bg-slate-50/60 border-slate-200",
                       errors.password && "border-red-400 focus-visible:ring-red-400"
                     )}
                   />
@@ -464,7 +464,7 @@ export default function AddUserPage() {
                   type="button"
                   variant="outline"
                   onClick={handleCopyPassword}
-                  className="h-11 px-4 gap-1.5 text-xs font-semibold border-slate-200 hover:bg-[#eff4ff] hover:text-[#006685] cursor-pointer shrink-0"
+                  className="h-11 px-4 gap-1.5 text-xs font-semibold border-slate-200 hover:bg-[#eff4ff] hover:text-[#38CAF0] cursor-pointer shrink-0"
                 >
                   {isCopied ? (
                     <>
@@ -597,7 +597,7 @@ export default function AddUserPage() {
             >
               <div
                 className={`w-4 h-4 rounded flex items-center justify-center border transition-colors ${
-                  forceChangePassword ? "bg-[#006685] border-[#006685] text-white" : "border-slate-300 bg-white"
+                  forceChangePassword ? "bg-[#38CAF0] border-[#38CAF0] text-white" : "border-slate-300 bg-white"
                 }`}
               >
                 {forceChangePassword && <Check className="w-3 h-3 stroke-[3]" />}
@@ -634,7 +634,7 @@ export default function AddUserPage() {
           </Link>
           <Button
             type="submit"
-            className="h-11 px-6 text-xs font-bold bg-[#39C9F6] hover:bg-[#39C9F6]/80 text-white shadow-md shadow-[#006685]/20 gap-2 cursor-pointer"
+            className="h-11 px-6 text-xs font-bold bg-[#39C9F6] hover:bg-[#39C9F6]/80 text-white shadow-md shadow-[#38CAF0]/20 gap-2 cursor-pointer"
           >
             <UserPlus className="w-4 h-4" />
             <span>{isRTL ? "إنشاء وتفعيل حساب المستخدم" : "Create & Activate User"}</span>

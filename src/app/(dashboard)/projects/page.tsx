@@ -112,7 +112,7 @@ const initialProjects: ProjectItem[] = [
     failed: 19,
     pending: 10,
     successRate: 98.0,
-    color: "text-[#006685]",
+    color: "text-[#38CAF0]",
     bg: "bg-[#bfe9ff]/50",
     lastUpdated: "منذ ساعتين",
     leadTester: "م. حسن علي",
@@ -169,7 +169,7 @@ const initialProjects: ProjectItem[] = [
     failed: 12,
     pending: 10,
     successRate: 96.0,
-    color: "text-[#006685]",
+    color: "text-[#38CAF0]",
     bg: "bg-[#bfe9ff]/50",
     lastUpdated: "منذ 3 أيام",
     leadTester: "م. حسن علي",
@@ -207,7 +207,7 @@ const initialProjects: ProjectItem[] = [
     failed: 50,
     pending: 40,
     successRate: 92.0,
-    color: "text-[#006685]",
+    color: "text-[#38CAF0]",
     bg: "bg-[#bfe9ff]/50",
     lastUpdated: "منذ أسبوع",
     leadTester: "إيمان الشريف",
@@ -309,13 +309,13 @@ export default function ProjectsPage() {
     <div className="flex flex-col w-full p-4 sm:p-6 lg:p-8 gap-6 max-w-7xl mx-auto">
       {/* ── Top Header Banner ────────────────────────────────────────── */}
       <Card className="border border-slate-200/80 shadow-xs bg-linear-to-r from-[#eff4ff] via-white to-[#eff4ff]/60 rounded-2xl overflow-hidden relative">
-        <div className="absolute top-0 right-0 w-2 h-full bg-[#006685]" />
+        <div className="absolute top-0 right-0 w-2 h-full bg-[#38CAF0]" />
         <CardContent className="p-6 sm:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="flex flex-col gap-2 max-w-2xl">
             <div className="flex items-center gap-2">
               <Badge
                 variant="outline"
-                className="bg-[#006685]/10 text-[#006685] border-[#006685]/20 font-bold px-2.5 py-0.5"
+                className="bg-[#38CAF0]/10 text-[#38CAF0] border-[#38CAF0]/20 font-bold px-2.5 py-0.5"
               >
                 <Sparkles className="w-3 h-3 me-1" />
                 {isRTL ? "منظومة المشاريع القومية" : "National Projects Hub"}
@@ -338,7 +338,7 @@ export default function ProjectsPage() {
 
           <Button
             onClick={() => setShowAddModal(true)}
-            className="gap-2 bg-[#006685] hover:bg-[#00526b] text-white shadow-md shadow-[#006685]/20 rounded-xl px-5 h-11 shrink-0 font-bold cursor-pointer"
+            className="gap-2 bg-[#38CAF0] hover:bg-[#00526b] text-white shadow-md shadow-[#38CAF0]/20 rounded-xl px-5 h-11 shrink-0 font-bold cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>{isRTL ? "إضافة مشروع جديد" : "Add New Project"}</span>
@@ -348,7 +348,7 @@ export default function ProjectsPage() {
 
       {/* ── KPI Metric Cards ─────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border border-slate-200/80 shadow-xs rounded-xl bg-white hover:border-[#006685]/40 transition-colors">
+        <Card className="border border-slate-200/80 shadow-xs rounded-xl bg-white hover:border-[#38CAF0]/40 transition-colors">
           <CardContent className="p-4 flex items-center justify-between">
             <div className="flex flex-col">
               <span className="text-xs font-semibold text-[#6d797f]">
@@ -362,7 +362,7 @@ export default function ProjectsPage() {
                 {isRTL ? "محدث بالكامل" : "All Active"}
               </span>
             </div>
-            <div className="w-12 h-12 rounded-xl bg-[#eff4ff] flex items-center justify-center text-[#006685] shrink-0">
+            <div className="w-12 h-12 rounded-xl bg-[#eff4ff] flex items-center justify-center text-[#38CAF0] shrink-0">
               <FolderGit2 className="w-6 h-6" />
             </div>
           </CardContent>
@@ -412,7 +412,7 @@ export default function ProjectsPage() {
               <span className="text-xs font-semibold text-[#6d797f]">
                 {isRTL ? "متوسط نسبة النجاح" : "Avg. Pass Rate"}
               </span>
-              <span className="text-2xl font-black text-[#006685] mt-1">
+              <span className="text-2xl font-black text-[#38CAF0] mt-1">
                 %{avgSuccessRate}
               </span>
               <span className="text-[11px] text-[#6d797f] font-medium mt-0.5">
@@ -480,7 +480,7 @@ export default function ProjectsPage() {
                 onClick={() => setViewMode("grid")}
                 className={`h-8 px-2.5 rounded-md cursor-pointer ${
                   viewMode === "grid"
-                    ? "bg-[#006685] text-white hover:bg-[#00526b]"
+                    ? "bg-[#38CAF0] text-white hover:bg-[#00526b]"
                     : "text-slate-600 hover:text-slate-900"
                 }`}
                 title={isRTL ? "عرض الكروت" : "Grid View"}
@@ -493,7 +493,7 @@ export default function ProjectsPage() {
                 onClick={() => setViewMode("table")}
                 className={`h-8 px-2.5 rounded-md cursor-pointer ${
                   viewMode === "table"
-                    ? "bg-[#006685] text-white hover:bg-[#00526b]"
+                    ? "bg-[#38CAF0] text-white hover:bg-[#00526b]"
                     : "text-slate-600 hover:text-slate-900"
                 }`}
                 title={isRTL ? "عرض الجدول" : "Table View"}
@@ -516,7 +516,7 @@ export default function ProjectsPage() {
             return (
               <Card
                 key={p.id}
-                className="border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-200 rounded-2xl overflow-hidden flex flex-col justify-between group hover:border-[#006685]/50 bg-white"
+                className="border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-200 rounded-2xl overflow-hidden flex flex-col justify-between group hover:border-[#38CAF0]/50 bg-white"
               >
                 <div>
                   {/* Card Header Top */}
@@ -529,7 +529,7 @@ export default function ProjectsPage() {
                           <IconComponent className={`w-5 h-5 ${p.color}`} />
                         </div>
                         <div className="flex flex-col min-w-0">
-                          <CardTitle className="text-base font-bold text-[#0b1c30] truncate group-hover:text-[#006685] transition-colors">
+                          <CardTitle className="text-base font-bold text-[#0b1c30] truncate group-hover:text-[#38CAF0] transition-colors">
                             {isRTL ? p.name : p.nameEn}
                           </CardTitle>
                           <span className="text-[11px] text-[#6d797f] truncate">
@@ -626,7 +626,7 @@ export default function ProjectsPage() {
                     {/* Assigned Users Avatar Stack */}
                     <div className="flex items-center justify-between pt-2.5 mt-2 border-t border-slate-100 text-[11px] text-slate-500">
                       <span className="flex items-center gap-1 font-medium text-slate-600">
-                        <Users className="w-3.5 h-3.5 text-[#006685]" />
+                        <Users className="w-3.5 h-3.5 text-[#38CAF0]" />
                         <span>{isRTL ? "المسند إليهم:" : "Assigned:"}</span>
                       </span>
                       <div className="flex items-center -space-x-1.5 rtl:space-x-reverse">
@@ -637,7 +637,7 @@ export default function ProjectsPage() {
                           <div
                             key={i}
                             title={`${u.name} (${u.role})`}
-                            className="w-6 h-6 rounded-full bg-[#eff4ff] text-[#006685] font-bold text-[10px] flex items-center justify-center ring-2 ring-white shadow-2xs"
+                            className="w-6 h-6 rounded-full bg-[#eff4ff] text-[#38CAF0] font-bold text-[10px] flex items-center justify-center ring-2 ring-white shadow-2xs"
                           >
                             {u.name.charAt(0)}
                           </div>
@@ -676,7 +676,7 @@ export default function ProjectsPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => setSelectedProject(p)}
-                      className="h-8 px-2.5 text-xs text-[#006685] hover:bg-[#eff4ff] border-slate-200 cursor-pointer"
+                      className="h-8 px-2.5 text-xs text-[#38CAF0] hover:bg-[#eff4ff] border-slate-200 cursor-pointer"
                     >
                       <Eye className="w-3.5 h-3.5 me-1" />
                       <span>{isRTL ? "تفاصيل" : "View"}</span>
@@ -770,7 +770,7 @@ export default function ProjectsPage() {
                                     <div
                                       key={i}
                                       title={`${u.name} (${u.role})`}
-                                      className="w-5 h-5 rounded-full bg-[#eff4ff] text-[#006685] font-bold text-[9px] flex items-center justify-center ring-1 ring-white"
+                                      className="w-5 h-5 rounded-full bg-[#eff4ff] text-[#38CAF0] font-bold text-[9px] flex items-center justify-center ring-1 ring-white"
                                     >
                                       {u.name.charAt(0)}
                                     </div>
@@ -864,7 +864,7 @@ export default function ProjectsPage() {
                               variant="outline"
                               size="sm"
                               onClick={() => setSelectedProject(p)}
-                              className="h-8 px-2.5 text-xs text-[#006685] hover:bg-[#eff4ff] border-slate-200 cursor-pointer"
+                              className="h-8 px-2.5 text-xs text-[#38CAF0] hover:bg-[#eff4ff] border-slate-200 cursor-pointer"
                             >
                               <Eye className="w-3.5 h-3.5 me-1" />
                               <span>{isRTL ? "تفاصيل" : "View"}</span>
@@ -1045,7 +1045,7 @@ export default function ProjectsPage() {
                   <Label className="text-xs font-bold text-slate-700">
                     {isRTL ? "المستخدمين المسند إليهم المشروع (فريق الاختبارات) *" : "Assigned Team Members *"}
                   </Label>
-                  <Badge variant="outline" className="text-[10px] text-[#006685] border-[#00aee0]/40 font-semibold">
+                  <Badge variant="outline" className="text-[10px] text-[#38CAF0] border-[#00aee0]/40 font-semibold">
                     {isRTL ? `${addAssignedUserIds.length} مستخدمين مسندين` : `${addAssignedUserIds.length} assigned`}
                   </Badge>
                 </div>
@@ -1065,7 +1065,7 @@ export default function ProjectsPage() {
                         <div className="flex items-center gap-2 min-w-0">
                           <div
                             className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
-                              isAssigned ? "bg-[#006685] border-[#006685] text-white" : "border-slate-300 bg-white"
+                              isAssigned ? "bg-[#38CAF0] border-[#38CAF0] text-white" : "border-slate-300 bg-white"
                             }`}
                           >
                             {isAssigned && <Check className="w-3 h-3 stroke-[3]" />}
@@ -1099,7 +1099,7 @@ export default function ProjectsPage() {
               <Button
                 size="sm"
                 onClick={() => setShowAddModal(false)}
-                className="bg-[#006685] hover:bg-[#00526b] text-white text-xs font-bold px-4"
+                className="bg-[#38CAF0] hover:bg-[#00526b] text-white text-xs font-bold px-4"
               >
                 {isRTL ? "حفظ المشروع" : "Save Project"}
               </Button>
@@ -1193,11 +1193,11 @@ export default function ProjectsPage() {
                   <span className="text-slate-700">
                     {isRTL ? "معدل نجاح الاختبارات العام" : "Overall Quality Index"}
                   </span>
-                  <span className="text-[#006685]">%{selectedProject.successRate}</span>
+                  <span className="text-[#38CAF0]">%{selectedProject.successRate}</span>
                 </div>
                 <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-[#006685] rounded-full"
+                    className="h-full bg-[#38CAF0] rounded-full"
                     style={{ width: `${selectedProject.successRate}%` }}
                   />
                 </div>
@@ -1225,7 +1225,7 @@ export default function ProjectsPage() {
                   <span className="text-xs font-bold text-slate-700">
                     {isRTL ? "المستخدمين المسند إليهم المشروع (فريق العمل)" : "Assigned Team Members"}
                   </span>
-                  <Badge variant="outline" className="text-[10px] text-[#006685] border-[#00aee0]/40">
+                  <Badge variant="outline" className="text-[10px] text-[#38CAF0] border-[#00aee0]/40">
                     {isRTL ? "مكلفون بمتابعة الاختبارات" : "Assigned Testers"}
                   </Badge>
                 </div>
@@ -1239,7 +1239,7 @@ export default function ProjectsPage() {
                       key={idx}
                       className="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs"
                     >
-                      <div className="w-8 h-8 rounded-full bg-[#eff4ff] text-[#006685] font-bold flex items-center justify-center text-xs shrink-0 ring-1 ring-slate-200">
+                      <div className="w-8 h-8 rounded-full bg-[#eff4ff] text-[#38CAF0] font-bold flex items-center justify-center text-xs shrink-0 ring-1 ring-slate-200">
                         {user.name.charAt(0)}
                       </div>
                       <div className="flex flex-col min-w-0">
@@ -1256,7 +1256,7 @@ export default function ProjectsPage() {
               <Button
                 size="sm"
                 onClick={() => setSelectedProject(null)}
-                className="bg-[#006685] hover:bg-[#00526b] text-white text-xs font-bold px-5"
+                className="bg-[#38CAF0] hover:bg-[#00526b] text-white text-xs font-bold px-5"
               >
                 {isRTL ? "إغلاق" : "Close"}
               </Button>
@@ -1353,7 +1353,7 @@ export default function ProjectsPage() {
                   <Label className="text-xs font-bold text-slate-700">
                     {isRTL ? "المستخدمين المسند إليهم المشروع (فريق العمل) *" : "Assigned Team Members *"}
                   </Label>
-                  <Badge variant="outline" className="text-[10px] text-[#006685] border-[#00aee0]/40 font-semibold">
+                  <Badge variant="outline" className="text-[10px] text-[#38CAF0] border-[#00aee0]/40 font-semibold">
                     {isRTL ? `${editAssignedUserIds.length} مستخدمين` : `${editAssignedUserIds.length} assigned`}
                   </Badge>
                 </div>
@@ -1373,7 +1373,7 @@ export default function ProjectsPage() {
                         <div className="flex items-center gap-2 min-w-0">
                           <div
                             className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
-                              isAssigned ? "bg-[#006685] border-[#006685] text-white" : "border-slate-300 bg-white"
+                              isAssigned ? "bg-[#38CAF0] border-[#38CAF0] text-white" : "border-slate-300 bg-white"
                             }`}
                           >
                             {isAssigned && <Check className="w-3 h-3 stroke-[3]" />}
@@ -1402,7 +1402,7 @@ export default function ProjectsPage() {
               <Button
                 size="sm"
                 onClick={() => setEditingProject(null)}
-                className="bg-[#006685] hover:bg-[#00526b] text-white text-xs font-bold px-4"
+                className="bg-[#38CAF0] hover:bg-[#00526b] text-white text-xs font-bold px-4"
               >
                 {isRTL ? "حفظ التعديلات" : "Save Changes"}
               </Button>

@@ -142,7 +142,7 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
           {isAdmin && (
             <div className="mt-4 pt-3 border-t border-slate-100">
               <div className="flex items-center justify-between px-3 mb-2">
-                <span className="text-[11px] font-bold tracking-wider text-[#006685] uppercase">
+                <span className="text-[11px] font-bold tracking-wider text-[#38CAF0] uppercase">
                   {t("admin_section")}
                 </span>
                 <span className="px-1.5 py-0.5 text-[9px] font-semibold bg-[#bfe9ff] text-[#004f68] rounded-full">
