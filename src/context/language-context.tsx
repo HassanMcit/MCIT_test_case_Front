@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 
@@ -201,6 +201,34 @@ error_password_regex: {
   },
   fp_submit_btn: { en: "Get Verified Code", ar: "Get Verified Code" },
   fp_back_to_login: { en: "Back to Sign In", ar: "العودة لتسجيل الدخول" },
+
+  // Assign Projects
+  assign_title: { en: "Assign Projects", ar: "إسناد المشاريع" },
+  assign_subtitle: { en: "Select projects for each user to grant them access to tests and execution.", ar: "حدد المشاريع لكل مستخدم لمنحه صلاحية الدخول للاختبارات والتنفيذ." },
+  access_denied_title: { en: "Access Denied", ar: "صلاحية غير متوفرة" },
+  access_denied_desc: { en: "This page is restricted to Administrators only.", ar: "هذه الصفحة مخصصة لمديري النظام فقط (Administrators)." },
+  return_dashboard: { en: "Return to Dashboard", ar: "العودة للوحة المؤشرات" },
+  view_interactive: { en: "Interactive View", ar: "العرض التفاعلي" },
+  view_matrix: { en: "Matrix", ar: "جدول الصلاحيات" },
+  users_count: { en: "Users Count", ar: "عدد المستخدمين" },
+  projects_count: { en: "Projects Count", ar: "عدد المشاريع" },
+  assignments_count: { en: "Total Assignments", ar: "إجمالي الإسنادات" },
+  search_users: { en: "Search users...", ar: "ابحث عن مستخدم..." },
+  search_projects: { en: "Search projects...", ar: "ابحث في المشاريع..." },
+  select_user: { en: "Select a User", ar: "اختر مستخدم" },
+  assigned_projects_count: { en: "projects", ar: "مشاريع" },
+  assigned_badge: { en: "Assigned", ar: "مُسند" },
+  unassigned_badge: { en: "Not Assigned", ar: "غير مُسند" },
+  project_name: { en: "Project Name", ar: "المشروع" },
+  project_env: { en: "Environment", ar: "البيئة" },
+  project_status: { en: "Status", ar: "الحالة" },
+  assign_action: { en: "Assign/Unassign", ar: "إسناد/إلغاء" },
+  error_load_failed: { en: "Failed to load data", ar: "فشل تحميل البيانات" },
+  success_loaded: { en: "Data loaded successfully", ar: "تم تحميل البيانات بنجاح" },
+  assign_error: { en: "Failed to assign project", ar: "فشل إسناد المشروع" },
+  unassign_error: { en: "Failed to unassign project", ar: "فشل إلغاء إسناد المشروع" },
+  dashboard_link: { en: "Dashboard", ar: "لوحة المؤشرات" },
+  assign_projects_link: { en: "Assign Projects", ar: "إسناد المشاريع" },
 
   // Users & Permissions Management
   users_management_title: { en: "Users & Permissions", ar: "إدارة المستخدمين والصلاحيات" },

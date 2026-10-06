@@ -54,7 +54,7 @@ interface BackendUser {
 }
 
 export default function AssignProjectsPage() {
-  const { dir } = useLanguage();
+  const { dir, t } = useLanguage();
   const isRTL = dir === "rtl";
   const { data: session, status } = useSession();
 
@@ -75,10 +75,11 @@ export default function AssignProjectsPage() {
   const [projectSearch, setProjectSearch] = useState("");
 
   useEffect(() => {
-    if (status === "authenticated") {
+    // Only load if users array is empty (initial load)
+    if (status === "authenticated" && users.length === 0) {
       loadData();
     }
-  }, [session]);
+  }, [status]);
 
   async function loadData() {
     setLoading(true);
@@ -97,343 +98,419 @@ export default function AssignProjectsPage() {
         setSelectedUserId(mappedUsers[0].id);
       }
     } else {
-      toast.error(res.error || "فشل تحميل البيانات");
+      toast.error(res.error || t("error_load_failed"));
     }
     setLoading(false);
   }
 
-  // Active User
-  const activeUser = useMemo(() => {
-    return users.find((u) => u.id === selectedUserId) || users[0];
-  }, [users, selectedUserId]);
-
-  // Filtered Users
-  const filteredUsers = useMemo(() => {
-    return users.filter((u) => {
-      const q = userSearch.toLowerCase();
-      return u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
-    });
-  }, [users, userSearch]);
-
-  // Filtered Projects
-  const filteredProjects = useMemo(() => {
-    return projects.filter((p) => {
-      const q = projectSearch.toLowerCase();
-      return p.name.toLowerCase().includes(q);
-    });
-  }, [projects, projectSearch]);
-
-  // Toggle Assignment API Call
   const toggleProject = async (projectId: number) => {
-    if (!activeUser) return;
+    if (!selectedUserId) return;
     
-    const isAssigned = activeUser.assignedProjectIds.includes(projectId);
+    // Optimistic Update
+    const userIndex = users.findIndex(u => u.id === selectedUserId);
+    if (userIndex === -1) return;
     
-    // Optimistic UI Update
-    setUsers(prev => prev.map(u => {
-      if (u.id !== activeUser.id) return u;
-      const newIds = isAssigned 
-        ? u.assignedProjectIds.filter(id => id !== projectId)
-        : [...u.assignedProjectIds, projectId];
-      return { ...u, assignedProjectIds: newIds };
-    }));
-
+    const user = users[userIndex];
+    const isAssigned = user.assignedProjectIds.includes(projectId);
+    
+    const newAssignedIds = isAssigned 
+      ? user.assignedProjectIds.filter(id => id !== projectId)
+      : [...user.assignedProjectIds, projectId];
+      
+    // Update local state immediately for snappy UI
+    const updatedUsers = [...users];
+    updatedUsers[userIndex] = { ...user, assignedProjectIds: newAssignedIds };
+    setUsers(updatedUsers);
+    
     // API Call
     let res;
     if (isAssigned) {
-      res = await unassignProjectFromUser(activeUser.id, projectId);
+       res = await unassignProjectFromUser(selectedUserId, projectId);
     } else {
-      res = await assignProjectToUser(activeUser.id, projectId);
+       res = await assignProjectToUser(selectedUserId, projectId);
     }
-
-    if (res.success) {
-      toast.success(res.message || "تم التحديث بنجاح");
-    } else {
-      // Revert on failure
-      toast.error(res.error);
-      loadData(); 
+    
+    // Revert if failed
+    if (!res.success) {
+      toast.error(res.error || (isAssigned ? t("unassign_error") : t("assign_error")));
+      setUsers(users); // Revert to old state
     }
   };
 
   const BackIcon = isRTL ? ArrowRight : ArrowLeft;
 
   if (status === "loading" || loading) {
-    return <div className="min-h-screen flex items-center justify-center font-bold text-slate-500">جاري التحميل...</div>;
+    return <div className="min-h-screen flex items-center justify-center font-bold text-[#38CAF0]">{t("login_loading")}</div>;
   }
 
   if (!isAdmin) {
     return (
-      <div className="min-h-[80vh] flex items-center justify-center p-4">
-        <Card className="max-w-md w-full border-red-200/80 shadow-lg text-center">
-          <CardHeader className="space-y-3 pb-3">
-            <div className="mx-auto w-16 h-16 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center ring-8 ring-red-50/50">
-              <ShieldAlert className="w-8 h-8" />
-            </div>
-            <CardTitle className="text-xl font-bold text-[#0b1c30]">صلاحيات غير كافية</CardTitle>
-            <CardDescription className="text-sm text-[#6d797f]">
-              إسناد المشاريع وتحديد الصلاحيات مقتصر حصرياً على مديري النظام (Administrators).
-            </CardDescription>
-          </CardHeader>
-          <CardFooter>
-            <Link href="/dashboard" className="w-full">
-              <Button variant="ghost" className="w-full text-xs text-slate-500">
-                <BackIcon className="w-4 h-4" />
-                العودة إلى لوحة المؤشرات
-              </Button>
-            </Link>
-          </CardFooter>
-        </Card>
+      <div className="p-6 md:p-12 min-h-[80vh] flex flex-col items-center justify-center bg-[#f8f9ff]">
+        <div className="w-24 h-24 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6 shadow-sm border border-red-100">
+          <ShieldAlert className="w-12 h-12" />
+        </div>
+        <h1 className="text-2xl font-bold text-slate-800 mb-3">{t("access_denied_title")}</h1>
+        <p className="text-slate-500 mb-8 text-center max-w-md leading-relaxed">
+          {t("access_denied_desc")}
+        </p>
+        <Button asChild className="bg-[#38CAF0] hover:bg-[#00aee0] shadow-md px-8 h-12 rounded-xl">
+          <Link href="/dashboard" className="flex items-center gap-2">
+            <BackIcon className="w-4 h-4" />
+            <span>{t("return_dashboard")}</span>
+          </Link>
+        </Button>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-[#f8f9ff] py-6 px-4 sm:px-6 lg:px-8 space-y-6">
-      {/* ── Page Header ──────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <Link href="/dashboard" className="text-xs font-medium text-slate-400 hover:text-[#38CAF0] transition-colors">
-              {isRTL ? "لوحة التحكم" : "Dashboard"}
-            </Link>
-            <span className="text-slate-300">/</span>
-            <span className="text-xs font-semibold text-[#38CAF0]">
-              {isRTL ? "إسناد المشاريع" : "Assign Projects"}
-            </span>
-            <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 text-[10px] font-bold px-2 py-0.5 gap-1">
-              <ShieldCheck className="w-3 h-3" /> Admin Only
-            </Badge>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#0b1c30] tracking-tight">
-            {isRTL ? "إسناد وتعيين المشاريع للمستخدمين" : "Assign Projects to Users"}
-          </h1>
-          <p className="text-xs sm:text-sm text-[#6d797f] mt-1">
-            {isRTL
-              ? "حدد المشاريع التي يحق لكل مستخدم الوصول إليها واختبارها (يتم الحفظ تلقائياً)"
-              : "Select which projects each user can access (Auto-saves instantly)"}
-          </p>
-        </div>
+  // Filtered data
+  const filteredUsers = users.filter(u => 
+    u.name.toLowerCase().includes(userSearch.toLowerCase()) || 
+    u.email.toLowerCase().includes(userSearch.toLowerCase())
+  );
+  
+  const selectedUser = users.find(u => u.id === selectedUserId);
+  
+  const filteredProjects = projects.filter(p => 
+    p.name.toLowerCase().includes(projectSearch.toLowerCase())
+  );
 
-        {/* View Mode Toggle */}
-        <div className="flex items-center bg-white p-1 rounded-xl border border-slate-200 shadow-2xs">
-          <button
-            onClick={() => setViewTab("interactive")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              viewTab === "interactive" ? "bg-[#38CAF0] text-white shadow-xs" : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <LayoutGrid className="w-3.5 h-3.5" />
-            <span>{isRTL ? "تخصيص تفاعلي" : "Interactive View"}</span>
-          </button>
-          <button
-            onClick={() => setViewTab("matrix")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              viewTab === "matrix" ? "bg-[#38CAF0] text-white shadow-xs" : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <TableIcon className="w-3.5 h-3.5" />
-            <span>{isRTL ? "مصفوفة الإسناد" : "Matrix"}</span>
-          </button>
+  const totalAssignments = users.reduce((acc, user) => acc + user.assignedProjectIds.length, 0);
+
+  return (
+    <div className="p-6 space-y-8 bg-[#f8f9ff] min-h-screen pb-20">
+      
+      {/* Header section */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-2 text-sm text-[#6d797f] mb-1 font-medium">
+          <Link href="/dashboard" className="hover:text-[#38CAF0] transition-colors">{t("dashboard_link")}</Link>
+          <span className="text-slate-300">/</span>
+          <span className="text-[#38CAF0]">{t("assign_projects_link")}</span>
+        </div>
+        
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <CardTitle className="text-xl font-bold text-[#0b1c30]">{t("assign_title")}</CardTitle>
+            <p className="text-sm text-[#6d797f] mt-1.5">
+              {t("assign_subtitle")}
+            </p>
+          </div>
+          
+          <div className="flex bg-white p-1 rounded-xl shadow-sm border border-slate-200">
+            <button
+              onClick={() => setViewTab("interactive")}
+              className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+                viewTab === "interactive" 
+                ? "bg-[#e5eeff] text-[#38CAF0] shadow-sm" 
+                : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              <LayoutGrid className="w-4 h-4" />
+              <span>{t("view_interactive")}</span>
+            </button>
+            <button
+              onClick={() => setViewTab("matrix")}
+              className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+                viewTab === "matrix" 
+                ? "bg-[#e5eeff] text-[#38CAF0] shadow-sm" 
+                : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              <TableIcon className="w-4 h-4" />
+              <span>{t("view_matrix")}</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* ── KPI Metric Cards ──────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="border-slate-200/80 shadow-xs">
-          <CardContent className="p-4 sm:p-5 flex items-center justify-between">
-            <div className="space-y-1">
-              <span className="text-xs font-semibold text-[#6d797f] block">إجمالي المستخدمين</span>
-              <span className="text-2xl font-extrabold text-[#0b1c30]">{users.length}</span>
-            </div>
-            <div className="w-12 h-12 rounded-xl bg-[#e5eeff] text-[#38CAF0] flex items-center justify-center shrink-0">
+      {/* Stats row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="border-slate-200/60 shadow-sm bg-white">
+          <CardContent className="p-5 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
               <User className="w-6 h-6" />
             </div>
+            <div>
+              <span className="text-xs font-semibold text-[#6d797f] block">{t("users_count")}</span>
+              <span className="text-2xl font-bold text-[#0b1c30]">{users.length}</span>
+            </div>
           </CardContent>
         </Card>
-        <Card className="border-slate-200/80 shadow-xs">
-          <CardContent className="p-4 sm:p-5 flex items-center justify-between">
-            <div className="space-y-1">
-              <span className="text-xs font-semibold text-[#6d797f] block">إجمالي المشاريع</span>
-              <span className="text-2xl font-extrabold text-[#38CAF0]">{projects.length}</span>
-            </div>
-            <div className="w-12 h-12 rounded-xl bg-[#bfe9ff]/50 text-[#38CAF0] flex items-center justify-center shrink-0">
+        
+        <Card className="border-slate-200/60 shadow-sm bg-white">
+          <CardContent className="p-5 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
               <FolderKanban className="w-6 h-6" />
             </div>
+            <div>
+              <span className="text-xs font-semibold text-[#6d797f] block">{t("projects_count")}</span>
+              <span className="text-2xl font-bold text-[#0b1c30]">{projects.length}</span>
+            </div>
           </CardContent>
         </Card>
-        <Card className="border-slate-200/80 shadow-xs">
-          <CardContent className="p-4 sm:p-5 flex items-center justify-between">
-            <div className="space-y-1">
-              <span className="text-xs font-semibold text-[#6d797f] block">متوسط الإسناد</span>
-              <span className="text-2xl font-extrabold text-[#006c49]">
-                {(users.reduce((acc, u) => acc + (u.assignedProjectIds?.length || 0), 0) / (users.length || 1)).toFixed(1)}
-              </span>
-            </div>
+        
+        <Card className="border-slate-200/60 shadow-sm bg-white">
+          <CardContent className="p-5 flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-              <Layers className="w-6 h-6" />
+              <ShieldCheck className="w-6 h-6" />
+            </div>
+            <div>
+              <span className="text-xs font-semibold text-[#6d797f] block">{t("assignments_count")}</span>
+              <span className="text-2xl font-bold text-[#0b1c30]">{totalAssignments}</span>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* ── TAB 1: Interactive Assignment ── */}
       {viewTab === "interactive" && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Column: Users List */}
-          <div className="lg:col-span-4 space-y-4">
-            <Card className="border-slate-200/80 shadow-xs overflow-hidden">
-              <CardHeader className="p-4 border-b border-slate-100 pb-3">
-                <CardTitle className="text-sm font-bold text-[#0b1c30]">اختر المستخدم</CardTitle>
-                <div className="relative mt-2">
-                  <Search className={`w-3.5 h-3.5 absolute top-1/2 -translate-y-1/2 text-slate-400 ${isRTL ? "right-3" : "left-3"}`} />
-                  <Input
+          <div className="lg:col-span-4 flex flex-col gap-4">
+            <Card className="border-slate-200/60 shadow-sm flex-1">
+              <CardHeader className="pb-3 border-b border-slate-100">
+                <CardTitle className="text-sm font-bold text-[#0b1c30]">{t("select_user")}</CardTitle>
+              </CardHeader>
+              <div className="p-3 border-b border-slate-100 bg-slate-50/50">
+                <div className="relative">
+                  <Search className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400`} />
+                  <Input 
+                    placeholder={t("search_users")}
+                    className={`h-9 bg-white text-sm ${isRTL ? 'pr-9 pl-3' : 'pl-9 pr-3'}`}
                     value={userSearch}
                     onChange={(e) => setUserSearch(e.target.value)}
-                    placeholder="بحث بالاسم أو الإيميل..."
-                    className={`h-9 text-xs rounded-lg ${isRTL ? "pr-9 pl-3 text-right" : "pl-9 pr-3 text-left"}`}
                   />
                 </div>
-              </CardHeader>
-              <CardContent className="p-2 space-y-1.5 max-h-[540px] overflow-y-auto">
-                {filteredUsers.map((u) => {
-                  const isSelected = u.id === activeUser?.id;
-                  return (
-                    <div
-                      key={u.id}
-                      onClick={() => setSelectedUserId(u.id)}
-                      className={`p-3 rounded-xl border text-xs cursor-pointer transition-all ${
-                        isSelected
-                          ? "bg-[#eff4ff] border-[#38CAF0] ring-1 ring-[#38CAF0]/30 shadow-xs"
-                          : "bg-white border-slate-200/70 hover:bg-slate-50"
+              </div>
+              <div className="p-2 max-h-[500px] overflow-y-auto custom-scrollbar">
+                <div className="space-y-1">
+                  {filteredUsers.map((user) => (
+                    <button
+                      key={user.id}
+                      onClick={() => setSelectedUserId(user.id)}
+                      className={`w-full text-left flex items-center gap-3 p-3 rounded-xl transition-all border cursor-pointer ${
+                        selectedUserId === user.id 
+                        ? "bg-[#e5eeff] border-[#38CAF0]/30 shadow-sm" 
+                        : "bg-white border-transparent hover:bg-slate-50 hover:border-slate-200"
                       }`}
                     >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="relative w-9 h-9 rounded-full overflow-hidden bg-slate-100 ring-1 ring-slate-200 shrink-0">
-                             <Image src={u.profileImage || u.photo || "/avatar.png"} alt={u.name} fill className="object-cover"/>
-                          </div>
-                          <div className="flex flex-col min-w-0">
-                            <span className="font-bold text-[#0b1c30] truncate">{u.name}</span>
-                            <span className="text-[10px] text-slate-400 truncate">{u.email}</span>
-                          </div>
-                        </div>
-                        <Badge variant="outline" className="text-[10px] shrink-0 bg-emerald-50 text-emerald-700">
-                          {u.assignedProjectIds.length} مشاريع
-                        </Badge>
+                      <div className="relative w-10 h-10 rounded-full overflow-hidden border border-slate-200 shrink-0 bg-white">
+                        <Image
+                          src={user.profileImage || user.photo || "/avatar.png"}
+                          alt={user.name}
+                          fill
+                          className="object-cover"
+                        />
                       </div>
+                      <div className={`flex flex-col flex-1 min-w-0 ${isRTL ? 'text-right' : 'text-left'}`}>
+                        <span className={`text-sm font-bold truncate ${selectedUserId === user.id ? 'text-[#38CAF0]' : 'text-slate-800'}`}>
+                          {user.name}
+                        </span>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 h-4 border-slate-200 ${selectedUserId === user.id ? 'bg-white' : ''}`}>
+                            {user.role}
+                          </Badge>
+                          <span className="text-[10px] text-slate-500 font-medium">
+                            • {user.assignedProjectIds.length} {t("assigned_projects_count")}
+                          </span>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                  
+                  {filteredUsers.length === 0 && (
+                    <div className="py-8 text-center text-slate-400 text-sm">
+                      {t("users_empty_search")}
                     </div>
-                  );
-                })}
-              </CardContent>
+                  )}
+                </div>
+              </div>
             </Card>
           </div>
 
-          {/* Right Column: Manage Projects */}
-          <div className="lg:col-span-8 space-y-4">
-            {activeUser && (
-              <Card className="border-slate-200/80 shadow-xs bg-linear-to-r from-[#eff4ff]/60 via-white to-white">
-                <CardContent className="p-5 flex items-center justify-between">
-                  <div className="flex items-center gap-3.5">
-                    <div className="relative w-12 h-12 rounded-2xl overflow-hidden bg-slate-100 shadow-md ring-2 ring-white">
-                       <Image src={activeUser.profileImage || activeUser.photo || "/avatar.png"} alt={activeUser.name} fill className="object-cover"/>
-                    </div>
-                    <div>
-                      <h2 className="text-lg font-bold text-[#0b1c30]">{activeUser.name}</h2>
-                      <span className="text-xs text-slate-500 block">{activeUser.role} • {activeUser.email}</span>
-                    </div>
+          {/* Right Column: Projects for Selected User */}
+          <div className="lg:col-span-8 flex flex-col gap-4">
+            {selectedUser ? (
+              <Card className="border-slate-200/60 shadow-sm flex-1">
+                <CardHeader className="pb-4 border-b border-slate-100 flex flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                     <div className="relative w-12 h-12 rounded-full overflow-hidden border border-slate-200 shrink-0 shadow-sm">
+                        <Image
+                          src={selectedUser.profileImage || selectedUser.photo || "/avatar.png"}
+                          alt={selectedUser.name}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg font-bold text-[#0b1c30]">{selectedUser.name}</CardTitle>
+                        <span className="text-[11px] text-slate-500 block">{selectedUser.email}</span>
+                      </div>
                   </div>
-                  <div className="text-center">
-                    <span className="text-[11px] text-slate-500 block">المشاريع المسندة</span>
-                    <span className="text-lg font-black text-[#38CAF0]">{activeUser.assignedProjectIds.length} / {projects.length}</span>
+                  
+                  <div className="relative w-64">
+                    <Search className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400`} />
+                    <Input 
+                      placeholder={t("search_projects")}
+                      className={`h-9 bg-slate-50 text-sm ${isRTL ? 'pr-9 pl-3' : 'pl-9 pr-3'}`}
+                      value={projectSearch}
+                      onChange={(e) => setProjectSearch(e.target.value)}
+                    />
                   </div>
-                </CardContent>
+                </CardHeader>
+                
+                <div className="p-0">
+                  <Table>
+                    <TableHeader className="bg-slate-50/50">
+                      <TableRow>
+                        <TableHead className={isRTL ? "text-right" : "text-left"}>{t("project_name")}</TableHead>
+                        <TableHead className={isRTL ? "text-right" : "text-left"}>{t("project_env")}</TableHead>
+                        <TableHead className="text-center">{t("project_status")}</TableHead>
+                        <TableHead className={isRTL ? "text-left pr-4" : "text-right pl-4"}>{t("assign_action")}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredProjects.map((project) => {
+                        const isAssigned = selectedUser.assignedProjectIds.includes(project.id);
+                        
+                        return (
+                          <TableRow key={project.id} className={isAssigned ? "bg-[#f8f9ff]/50" : ""}>
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${isAssigned ? 'bg-[#38CAF0] text-white' : 'bg-slate-100 text-slate-400'}`}>
+                                  <Layers className="w-4 h-4" />
+                                </div>
+                                <div>
+                                  <div className={`font-bold text-sm ${isAssigned ? 'text-[#0b1c30]' : 'text-slate-600'}`}>
+                                    {project.name}
+                                  </div>
+                                  <div className="text-xs text-slate-400 max-w-[200px] truncate">
+                                    {project.description}
+                                  </div>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="bg-white text-xs font-medium">
+                                {project.environment}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge 
+                                className={`text-[10px] font-semibold border-none px-2 ${
+                                  project.status === 'Active' 
+                                  ? 'bg-emerald-100 text-emerald-700' 
+                                  : 'bg-amber-100 text-amber-700'
+                                }`}
+                              >
+                                {project.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className={isRTL ? "text-left" : "text-right"}>
+                               <Button
+                                  variant={isAssigned ? "default" : "outline"}
+                                  size="sm"
+                                  onClick={() => toggleProject(project.id)}
+                                  className={`h-8 px-3 rounded-lg text-xs font-bold transition-all shadow-none ${
+                                    isAssigned 
+                                    ? "bg-[#38CAF0] hover:bg-red-500 hover:text-white border-none" 
+                                    : "bg-white border-slate-200 text-slate-600 hover:border-[#38CAF0] hover:text-[#38CAF0]"
+                                  }`}
+                                >
+                                  {isAssigned ? (
+                                    <span className="flex items-center gap-1.5">
+                                      <CheckCircle2 className="w-3.5 h-3.5" />
+                                      {t("assigned_badge")}
+                                    </span>
+                                  ) : (
+                                    <span>{t("unassigned_badge")}</span>
+                                  )}
+                                </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                      
+                      {filteredProjects.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={4} className="h-32 text-center text-slate-500">
+                            {t("users_empty_search")}
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </Card>
+            ) : (
+              <Card className="border-slate-200/60 shadow-sm flex-1 flex flex-col items-center justify-center p-12 text-slate-400">
+                <User className="w-16 h-16 mb-4 text-slate-200" />
+                <p className="font-medium text-slate-500">{t("select_user")}</p>
               </Card>
             )}
-
-            <Card className="border-slate-200/80 shadow-xs">
-              <CardContent className="p-4">
-                <div className="relative w-full sm:w-1/2">
-                  <Search className={`w-3.5 h-3.5 absolute top-1/2 -translate-y-1/2 text-slate-400 ${isRTL ? "right-3" : "left-3"}`} />
-                  <Input
-                    value={projectSearch}
-                    onChange={(e) => setProjectSearch(e.target.value)}
-                    placeholder="ابحث عن مشروع..."
-                    className={`h-9 text-xs rounded-lg ${isRTL ? "pr-9 pl-3 text-right" : "pl-9 pr-3 text-left"}`}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-              {filteredProjects.map((project) => {
-                const isAssigned = activeUser?.assignedProjectIds.includes(project.id);
-                return (
-                  <Card
-                    key={project.id}
-                    onClick={() => toggleProject(project.id)}
-                    className={`border transition-all cursor-pointer rounded-xl ${
-                      isAssigned ? "bg-white border-[#00aee0] shadow-md ring-1 ring-[#00aee0]" : "bg-white hover:border-slate-300"
-                    }`}
-                  >
-                    <CardContent className="p-4 flex items-center justify-between">
-                      <div className="flex flex-col min-w-0 pr-2">
-                        <span className="font-bold text-sm text-[#0b1c30] truncate">{project.name}</span>
-                        <span className="text-xs text-slate-400 mt-0.5">{project.environment}</span>
-                      </div>
-                      <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
-                        isAssigned ? "bg-[#38CAF0] text-white" : "border border-slate-300 bg-slate-50"
-                      }`}>
-                        {isAssigned && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
           </div>
         </div>
       )}
 
-      {/* ── TAB 2: Matrix View ── */}
       {viewTab === "matrix" && (
-        <Card className="border-slate-200/80 shadow-xs overflow-hidden bg-white">
+        <Card className="border-slate-200/60 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <Table>
-              <TableHeader className="bg-slate-50/70">
+              <TableHeader className="bg-slate-50">
                 <TableRow>
-                  <TableHead className={isRTL ? "text-right" : "text-left"}>المستخدم</TableHead>
-                  <TableHead className={isRTL ? "text-right" : "text-left"}>الصلاحية</TableHead>
-                  <TableHead className="text-center">العدد</TableHead>
-                  <TableHead className={isRTL ? "text-right" : "text-left"}>المشاريع المسندة</TableHead>
+                  <TableHead className={`min-w-[200px] border-r border-slate-100 ${isRTL ? 'text-right' : 'text-left'}`}>
+                    {t("users_col_user")}
+                  </TableHead>
+                  {projects.map(project => (
+                    <TableHead key={project.id} className="text-center border-r border-slate-100 min-w-[120px]">
+                      <div className="font-bold text-[#0b1c30] text-xs">{project.name}</div>
+                      <div className="text-[10px] text-slate-400 font-normal">{project.environment}</div>
+                    </TableHead>
+                  ))}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((u) => (
-                  <TableRow key={u.id} className="hover:bg-slate-50/80">
-                    <TableCell>
+                {users.map(user => (
+                  <TableRow key={user.id} className="hover:bg-slate-50/50">
+                    <TableCell className="border-r border-slate-100 font-medium">
                       <div className="flex items-center gap-3">
-                         <div className="relative w-8 h-8 rounded-full overflow-hidden bg-slate-100 ring-1 ring-slate-200">
-                             <Image src={u.profileImage || u.photo || "/avatar.png"} alt={u.name} fill className="object-cover"/>
+                        <div className="relative w-8 h-8 rounded-full overflow-hidden border border-slate-200 shrink-0">
+                          <Image
+                            src={user.profileImage || user.photo || "/avatar.png"}
+                            alt={user.name}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-sm text-slate-800 font-bold">{user.name}</span>
+                          <span className="text-[10px] text-slate-500">{user.role}</span>
+                        </div>
+                      </div>
+                    </TableCell>
+                    
+                    {projects.map(project => {
+                      const isAssigned = user.assignedProjectIds.includes(project.id);
+                      return (
+                        <TableCell 
+                          key={`${user.id}-${project.id}`} 
+                          className="text-center border-r border-slate-100 p-1 cursor-pointer hover:bg-slate-100 transition-colors"
+                          onClick={() => {
+                            setSelectedUserId(user.id);
+                            toggleProject(project.id);
+                          }}
+                        >
+                          <div className="flex justify-center">
+                            {isAssigned ? (
+                              <div className="w-6 h-6 rounded bg-[#e5eeff] text-[#38CAF0] flex items-center justify-center">
+                                <Check className="w-4 h-4" strokeWidth={3} />
+                              </div>
+                            ) : (
+                              <div className="w-6 h-6 rounded border border-slate-200 bg-white hover:border-[#38CAF0] transition-colors" />
+                            )}
                           </div>
-                        <span className="font-semibold text-sm">{u.name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-xs text-slate-500">{u.role}</TableCell>
-                    <TableCell className="text-center font-bold text-emerald-600">{u.assignedProjectIds.length}</TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {u.assignedProjectIds.map(pid => {
-                          const p = projects.find(x => x.id === pid);
-                          if (!p) return null;
-                          return (
-                            <Badge key={pid} variant="outline" className="bg-[#eff4ff] text-[#38CAF0] border-[#00aee0]/30 text-[10px]">
-                              {p.name}
-                            </Badge>
-                          );
-                        })}
-                      </div>
-                    </TableCell>
+                        </TableCell>
+                      )
+                    })}
                   </TableRow>
                 ))}
               </TableBody>
