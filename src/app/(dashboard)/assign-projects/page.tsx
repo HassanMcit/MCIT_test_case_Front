@@ -153,12 +153,12 @@ export default function AssignProjectsPage() {
         <p className="text-slate-500 mb-8 text-center max-w-md leading-relaxed">
           {t("access_denied_desc")}
         </p>
-        <Button asChild className="bg-[#38CAF0] hover:bg-[#00aee0] shadow-md px-8 h-12 rounded-xl">
-          <Link href="/dashboard" className="flex items-center gap-2">
+        <Link href="/dashboard">
+          <Button className="bg-[#38CAF0] hover:bg-[#00aee0] shadow-md px-8 h-12 rounded-xl flex items-center gap-2">
             <BackIcon className="w-4 h-4" />
             <span>{t("return_dashboard")}</span>
-          </Link>
-        </Button>
+          </Button>
+        </Link>
       </div>
     );
   }
