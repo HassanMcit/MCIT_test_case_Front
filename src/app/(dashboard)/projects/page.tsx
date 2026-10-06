@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import {
   Search,
   Plus,
@@ -256,6 +257,10 @@ export default function ProjectsPage() {
   const { dir } = useLanguage();
   const isRTL = dir === "rtl";
 
+  // Only admins can create new projects
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === "admin";
+
   const [projectsList] = useState<ProjectItem[]>(initialProjects);
   const [search, setSearch] = useState("");
   const [envFilter, setEnvFilter] = useState("all");
@@ -267,10 +272,10 @@ export default function ProjectsPage() {
   const [selectedProject, setSelectedProject] = useState<ProjectItem | null>(null);
   const [editingProject, setEditingProject] = useState<ProjectItem | null>(null);
 
-  // User assignments state for Add/Edit modals (Design Only)
-  const [addAssignedUserIds, setAddAssignedUserIds] = useState<string[]>(["u1", "u2", "u3"]);
-  const [addLeadTester, setAddLeadTester] = useState("م. حسن علي");
-  const [editAssignedUserIds, setEditAssignedUserIds] = useState<string[]>(["u1", "u2"]);
+  // User assignments state for Add/Edit modals — assignment is OPTIONAL (starts empty)
+  const [addAssignedUserIds, setAddAssignedUserIds] = useState<string[]>([]);
+  const [addLeadTester, setAddLeadTester] = useState("none");
+  const [editAssignedUserIds, setEditAssignedUserIds] = useState<string[]>([]);
 
   const toggleAddAssignedUser = (userId: string) => {
     setAddAssignedUserIds((prev) =>
@@ -336,13 +341,15 @@ export default function ProjectsPage() {
             </p>
           </div>
 
-          <Button
-            onClick={() => setShowAddModal(true)}
-            className="gap-2 bg-[#38CAF0] hover:bg-[#00526b] text-white shadow-md shadow-[#38CAF0]/20 rounded-xl px-5 h-11 shrink-0 font-bold cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>{isRTL ? "إضافة مشروع جديد" : "Add New Project"}</span>
-          </Button>
+          {isAdmin && (
+            <Button
+              onClick={() => setShowAddModal(true)}
+              className="gap-2 bg-[#38CAF0] hover:bg-[#00526b] text-white shadow-md shadow-[#38CAF0]/20 rounded-xl px-5 h-11 shrink-0 font-bold cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>{isRTL ? "إضافة مشروع جديد" : "Add New Project"}</span>
+            </Button>
+          )}
         </CardContent>
       </Card>
 
@@ -922,7 +929,7 @@ export default function ProjectsPage() {
       )}
 
       {/* ── MODAL 1: Add New Project (Design Only) ────────────────────── */}
-      {showAddModal && (
+      {isAdmin && showAddModal && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
           <Card className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
             <CardHeader className="p-6 border-b border-slate-100 flex flex-row items-center justify-between">
@@ -1020,16 +1027,22 @@ export default function ProjectsPage() {
                 </div>
               </div>
 
-              {/* Lead QA Tester Selection */}
+              {/* Lead QA Tester Selection (Optional) */}
               <div className="space-y-1.5 pt-1 border-t border-slate-100">
                 <Label className="text-xs font-bold text-slate-700">
-                  {isRTL ? "المسؤول الرئيسي عن اختبارات المشروع (Lead QA) *" : "Lead QA Tester *"}
+                  {isRTL ? "المسؤول الرئيسي عن اختبارات المشروع (Lead QA)" : "Lead QA Tester"}
+                  <span className="text-[10px] font-normal text-slate-400 ms-1">
+                    {isRTL ? "(اختياري)" : "(Optional)"}
+                  </span>
                 </Label>
-                <Select value={addLeadTester} onValueChange={(val) => setAddLeadTester(val || "")}>
+                <Select value={addLeadTester} onValueChange={(val) => setAddLeadTester(val || "none")}>
                   <SelectTrigger className="h-10 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="none">
+                      {isRTL ? "— بدون تحديد —" : "— None —"}
+                    </SelectItem>
                     {availableTeamMembers.map((member) => (
                       <SelectItem key={member.id} value={member.name}>
                         {member.name} — {member.role}
@@ -1039,11 +1052,14 @@ export default function ProjectsPage() {
                 </Select>
               </div>
 
-              {/* Assign Team Members (Users Assigned to Project) */}
+              {/* Assign Team Members (Optional) */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs font-bold text-slate-700">
-                    {isRTL ? "المستخدمين المسند إليهم المشروع (فريق الاختبارات) *" : "Assigned Team Members *"}
+                    {isRTL ? "المستخدمين المسند إليهم المشروع (فريق الاختبارات)" : "Assigned Team Members"}
+                    <span className="text-[10px] font-normal text-slate-400 ms-1">
+                      {isRTL ? "(اختياري)" : "(Optional)"}
+                    </span>
                   </Label>
                   <Badge variant="outline" className="text-[10px] text-[#38CAF0] border-[#00aee0]/40 font-semibold">
                     {isRTL ? `${addAssignedUserIds.length} مستخدمين مسندين` : `${addAssignedUserIds.length} assigned`}
@@ -1351,7 +1367,10 @@ export default function ProjectsPage() {
               <div className="space-y-2 pt-1 border-t border-slate-100">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs font-bold text-slate-700">
-                    {isRTL ? "المستخدمين المسند إليهم المشروع (فريق العمل) *" : "Assigned Team Members *"}
+                    {isRTL ? "المستخدمين المسند إليهم المشروع (فريق العمل)" : "Assigned Team Members"}
+                    <span className="text-[10px] font-normal text-slate-400 ms-1">
+                      {isRTL ? "(اختياري)" : "(Optional)"}
+                    </span>
                   </Label>
                   <Badge variant="outline" className="text-[10px] text-[#38CAF0] border-[#00aee0]/40 font-semibold">
                     {isRTL ? `${editAssignedUserIds.length} مستخدمين` : `${editAssignedUserIds.length} assigned`}
