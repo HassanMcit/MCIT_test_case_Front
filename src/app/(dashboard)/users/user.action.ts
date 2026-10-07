@@ -5,21 +5,28 @@ import { GetAllUsersResponse } from "./user.interface";
 import { revalidatePath, updateTag } from "next/cache";
 
 export async function getAllUsers() {
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/api/users`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${await getUserToken()}`,
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_BASE_URL}/api/users`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${await getUserToken()}`,
+        },
+        next: { tags: ["users"] },
+        cache: "no-store"
       },
-      cache: "force-cache",
-      next: { tags: ["users"] },
-    },
-  );
+    );
 
-  const resData: GetAllUsersResponse[] = await response.json();
-//   console.log("res", resData);
-  return resData;
+    if (!response.ok) {
+      return [];
+    }
+
+    const resData = await response.json();
+    return Array.isArray(resData) ? resData : [];
+  } catch (error) {
+    return [];
+  }
 }
 
 export async function deleteThisUser(id: number) {
