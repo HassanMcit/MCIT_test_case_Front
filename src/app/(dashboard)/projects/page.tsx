@@ -930,7 +930,12 @@ export default function ProjectsPage() {
 
       {/* ── MODAL 1: Add New Project (Design Only) ────────────────────── */}
       {isAdmin && showAddModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+        <div
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setShowAddModal(false);
+          }}
+        >
           <Card className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
             <CardHeader className="p-6 border-b border-slate-100 flex flex-row items-center justify-between">
               <div>
@@ -1126,7 +1131,12 @@ export default function ProjectsPage() {
 
       {/* ── MODAL 2: View Project Details (Design Only) ───────────────── */}
       {selectedProject && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+        <div
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setSelectedProject(null);
+          }}
+        >
           <Card className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
             <CardHeader className="p-6 border-b border-slate-100 flex flex-row items-start justify-between bg-linear-to-r from-[#eff4ff] to-white">
               <div className="flex items-center gap-3">
@@ -1246,11 +1256,7 @@ export default function ProjectsPage() {
                   </Badge>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {(selectedProject.assignedUsers || [
-                    { name: "م. حسن علي", role: "مدير نظام / Lead QA", email: "h.ali@mcit.gov.eg" },
-                    { name: "سارة خليل", role: "مهندس اختبارات (Automation)", email: "s.khalil@mcit.gov.eg" },
-                    { name: "عمر الشريف", role: "مختبر أمان (Security QA)", email: "o.elserif@mcit.gov.eg" },
-                  ]).map((user, idx) => (
+                  {(selectedProject.assignedUsers!).map((user, idx) => (
                     <div
                       key={idx}
                       className="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs"
@@ -1283,7 +1289,12 @@ export default function ProjectsPage() {
 
       {/* ── MODAL 3: Edit Project (Design Only) ───────────────────────── */}
       {editingProject && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+        <div
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setEditingProject(null);
+          }}
+        >
           <Card className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
             <CardHeader className="p-6 border-b border-slate-100 flex flex-row items-center justify-between">
               <div>
