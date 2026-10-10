@@ -1,6 +1,6 @@
 "use server";
 
-import { getUserToken } from "@/app/myUtil";
+import { getUserToken, getCurrentUserSession } from "@/app/myUtil";
 
 export interface ProjectApiItem {
   id: number;
@@ -37,15 +37,28 @@ export async function getProjects(params?: {
   assignedToUserId?: number;
 }): Promise<ProjectApiItem[]> {
   try {
-    const token = await getUserToken();
+    const sessionUser = await getCurrentUserSession();
+    const token = sessionUser?.token || (await getUserToken());
     if (!token) return [];
 
     const query = new URLSearchParams();
     if (params?.environment) query.set("environment", params.environment);
     if (params?.status) query.set("status", params.status);
     if (params?.search) query.set("search", params.search);
-    if (params?.assignedToMe) query.set("assignedToMe", "true");
-    if (params?.assignedToUserId) query.set("assignedToUserId", String(params.assignedToUserId));
+
+    // If assignedToMe is requested OR user is not admin, filter projects assigned to current user
+    const shouldFilterToMe = params?.assignedToMe || (sessionUser && sessionUser.role !== "admin");
+    if (shouldFilterToMe) {
+      query.set("assignedToMe", "true");
+    }
+    if (params?.assignedToUserId) {
+      query.set("assignedToUserId", String(params.assignedToUserId));
+    }
+
+    // Partition cache URL by role and userId so Next.js force-cache doesn't leak between users
+    if (sessionUser?.id) {
+      query.set("cacheUser", `${sessionUser.role}_${sessionUser.id}`);
+    }
 
     const qs = query.toString() ? `?${query.toString()}` : "";
     const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/projects${qs}`, {

@@ -1,7 +1,9 @@
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useLanguage } from "@/context/language-context";
+import { getDashboardStats, DashboardStatsResponse } from "./sidebar.action";
 import {
   LayoutDashboard,
   PlusCircle,
@@ -29,6 +31,31 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const isRTL = dir === "rtl";
   const { data: session } = useSession();
   const isAdmin = session?.user?.role === "admin";
+
+  const [stats, setStats] = useState<DashboardStatsResponse>({
+    total: 0,
+    passed: 0,
+    failed: 0,
+    pending: 0,
+    passRate: 0,
+    totalProjects: 0,
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+    getDashboardStats()
+      .then((data) => {
+        if (isMounted && data) {
+          setStats(data);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load sidebar stats:", err);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [pathname]);
 
   const navItems = [
     {
@@ -142,7 +169,7 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
           {isAdmin && (
             <div className="mt-4 pt-3 border-t border-slate-100">
               <div className="flex items-center justify-between px-3 mb-2">
-                <span className="text-[11px] font-bold tracking-wider text-[#38CAF0] uppercase">
+                <span className="text-[11px] font-bold tracking-wider text-[#00A2D2] uppercase">
                   {t("admin_section")}
                 </span>
                 <span className="px-1.5 py-0.5 text-[9px] font-semibold bg-[#bfe9ff] text-[#004f68] rounded-full">
@@ -205,13 +232,17 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
 
       {/* ── Bottom Section: Live Execution Widget & Export ─────────── */}
       <div className="p-3.5 flex flex-col gap-2.5 border-t border-slate-100 shrink-0">
-        <div className="p-2.5 rounded-xl bg-[#eff4ff] shadow-xs">
+        <Link
+          href="/test-cases"
+          onClick={onClose}
+          className="block p-2.5 rounded-xl bg-[#eff4ff] hover:bg-[#e4eeff] transition-colors shadow-xs cursor-pointer group"
+        >
           <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#6d797f]">
-              {t("live_execution")}
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#6d797f] group-hover:text-[#006685] transition-colors">
+              {isAdmin ? t("live_execution_all") : t("live_execution_tester")}
             </span>
             <span className="text-[11px] font-mono text-[#0b1c30] font-semibold">
-              1,420 {t("total_tests_short")}
+              {stats.total.toLocaleString()} {isRTL ? t("tests_count_unit") : t("total_tests_short")}
             </span>
           </div>
           <div className="grid grid-cols-3 gap-1.5 text-center">
@@ -220,32 +251,39 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
                 <span className="w-1.5 h-1.5 rounded-full bg-[#08b77f]"></span>
                 <span className="text-[10px] text-[#3d484f]">{t("passed")}</span>
               </div>
-              <span className="text-[13px] font-bold text-[#006c49]">1,180</span>
+              <span className="text-[13px] font-bold text-[#006c49]">
+                {stats.passed.toLocaleString()}
+              </span>
             </div>
             <div className="flex flex-col items-center bg-white p-1 rounded-md shadow-xs">
               <div className="flex items-center gap-1 mb-0.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#ba1a1a]"></span>
                 <span className="text-[10px] text-[#3d484f]">{t("failed")}</span>
               </div>
-              <span className="text-[13px] font-bold text-[#ba1a1a]">145</span>
+              <span className="text-[13px] font-bold text-[#ba1a1a]">
+                {stats.failed.toLocaleString()}
+              </span>
             </div>
             <div className="flex flex-col items-center bg-white p-1 rounded-md shadow-xs">
               <div className="flex items-center gap-1 mb-0.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#bec6e0]"></span>
                 <span className="text-[10px] text-[#3d484f]">{t("pending")}</span>
               </div>
-              <span className="text-[13px] font-bold text-[#565e74]">95</span>
+              <span className="text-[13px] font-bold text-[#565e74]">
+                {stats.pending.toLocaleString()}
+              </span>
             </div>
           </div>
-        </div>
+        </Link>
 
-        <button
-          type="button"
-          className="w-full p-3 flex items-center justify-center gap-2 h-8.5 rounded-lg bg-white text-[#0b1c30] border border-slate-200 shadow-xs hover:bg-[#eff4ff] transition-all text-[12px] font-medium cursor-pointer"
+        <Link
+          href="/test-cases"
+          onClick={onClose}
+          className="w-full p-2.5 flex items-center justify-center gap-2 h-8.5 rounded-lg bg-white text-[#0b1c30] border border-slate-200 shadow-xs hover:bg-[#eff4ff] transition-all text-[12px] font-medium cursor-pointer"
         >
           <Table className="w-4 h-4 text-[#006c49]" />
           <span>{t("export_excel")}</span>
-        </button>
+        </Link>
       </div>
     </aside>
   );

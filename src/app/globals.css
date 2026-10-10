@@ -60,8 +60,8 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
+  --primary: #00A2D2;
+  --primary-foreground: #ffffff;
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
@@ -71,7 +71,7 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --ring: #00A2D2;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -80,16 +80,16 @@
   --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-primary: #00A2D2;
+  --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-  /* Brand cyan */
-  --brand: #00C3F3;
-  --brand-hover: #00ade1;
-  --brand-light: #e0f8ff;
+  --sidebar-ring: #00A2D2;
+  /* Brand cyan - User Specified #00A2D2 */
+  --brand: #00A2D2;
+  --brand-hover: #008eb8;
+  --brand-light: #e6f6fa;
 }
 
 .dark {
@@ -110,7 +110,7 @@
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --ring: #00A2D2;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -123,7 +123,7 @@
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-ring: #00A2D2;
 }
 
 @layer base {
@@ -137,6 +137,29 @@
   html {
     font-family: var(--font-almarai), "Almarai", sans-serif;
   }
+
+  /* Global input focus ring with user specified brand color #00A2D2 */
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  [data-slot="input"]:focus-visible,
+  [data-slot="textarea"]:focus-visible,
+  [data-slot="select-trigger"]:focus-visible {
+    border-color: #00A2D2 !important;
+    --tw-ring-color: rgba(0, 162, 210, 0.25) !important;
+    box-shadow: 0 0 0 2px rgba(0, 162, 210, 0.25) !important;
+    outline: none !important;
+  }
+
+  input[aria-invalid="true"]:focus-visible,
+  textarea[aria-invalid="true"]:focus-visible,
+  [data-slot="input"][aria-invalid="true"]:focus-visible,
+  [data-slot="textarea"][aria-invalid="true"]:focus-visible,
+  [data-slot="select-trigger"][aria-invalid="true"]:focus-visible {
+    border-color: #ef4444 !important;
+    --tw-ring-color: rgba(239, 68, 68, 0.2) !important;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
+  }
 }
 
 /* Subtle grid background used on the login page */
@@ -149,8 +172,8 @@
 
 /* Stitch design system tokens */
 :root {
-  --stitch-primary: #38CAF0;
-  --stitch-primary-container: #00aee0;
+  --stitch-primary: #00A2D2;
+  --stitch-primary-container: #00A2D2;
   --stitch-surface: #f8f9ff;
   --stitch-surface-low: #eff4ff;
   --stitch-surface-container: #e5eeff;
@@ -213,19 +236,19 @@
 
 .sidebar-nav-link:hover {
   background-color: #e5eeff !important;
-  color: #04C2F3 !important;
+  color: #00A2D2 !important;
 }
 
 .sidebar-nav-link:hover svg {
-  color: #04C2F3 !important;
+  color: #00A2D2 !important;
 }
 
 .sidebar-nav-link.active {
   background-color: #e5eeff !important;
-  color: #04C2F3 !important;
+  color: #00A2D2 !important;
   font-weight: 700 !important;
 }
 
 .sidebar-nav-link.active svg {
-  color: #04C2F3 !important;
+  color: #00A2D2 !important;
 }

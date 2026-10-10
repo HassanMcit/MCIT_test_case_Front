@@ -16,6 +16,11 @@ import { revalidatePath } from "next/cache";
     });
 
     const userData:AddProjectResponse = await response.json();
-
-    revalidatePath('/assign-projects')
+    revalidatePath("/add");
+    revalidatePath("/assign-projects");
+    revalidatePath("/projects");
+    revalidatePath("/test-cases");
+    revalidatePath("/dashboard");
+    revalidatePath("/", "layout");
+    return userData;
 }

@@ -154,7 +154,7 @@ export default function AssignProjectsPage() {
           {t("access_denied_desc")}
         </p>
         <Link href="/dashboard">
-          <Button className="bg-[#38CAF0] hover:bg-[#00aee0] shadow-md px-8 h-12 rounded-xl flex items-center gap-2">
+          <Button className="bg-[#00A2D2] hover:bg-[#008eb8] text-white shadow-md shadow-[#00A2D2]/20 px-8 h-12 rounded-xl flex items-center gap-2 cursor-pointer transition-colors">
             <BackIcon className="w-4 h-4" />
             <span>{t("return_dashboard")}</span>
           </Button>
@@ -410,10 +410,10 @@ export default function AssignProjectsPage() {
                                   variant={isAssigned ? "default" : "outline"}
                                   size="sm"
                                   onClick={() => toggleProject(project.id)}
-                                  className={`h-8 px-3 rounded-lg text-xs font-bold transition-all shadow-none ${
+                                  className={`h-8 px-3 rounded-lg text-xs font-bold transition-all shadow-none cursor-pointer ${
                                     isAssigned 
-                                    ? "bg-[#38CAF0] hover:bg-red-500 hover:text-white border-none" 
-                                    : "bg-white border-slate-200 text-slate-600 hover:border-[#38CAF0] hover:text-[#38CAF0]"
+                                    ? "bg-[#00A2D2] text-white hover:bg-red-500 hover:text-white border-none" 
+                                    : "bg-white border-slate-200 text-slate-600 hover:border-[#00A2D2] hover:text-[#00A2D2]"
                                   }`}
                                 >
                                   {isAssigned ? (

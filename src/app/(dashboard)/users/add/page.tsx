@@ -634,7 +634,7 @@ export default function AddUserPage() {
           </Link>
           <Button
             type="submit"
-            className="h-11 px-6 text-xs font-bold bg-[#39C9F6] hover:bg-[#39C9F6]/80 text-white shadow-md shadow-[#38CAF0]/20 gap-2 cursor-pointer"
+            className="h-11 px-6 text-xs font-bold bg-[#00A2D2] hover:bg-[#008eb8] text-white shadow-md shadow-[#00A2D2]/20 gap-2 cursor-pointer transition-colors"
           >
             <UserPlus className="w-4 h-4" />
             <span>{isRTL ? "إنشاء وتفعيل حساب المستخدم" : "Create & Activate User"}</span>

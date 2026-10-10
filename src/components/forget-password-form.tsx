@@ -57,7 +57,7 @@ export function ForgetPasswordForm() {
           className={cn(
             "px-2.5 py-1 rounded-full font-semibold transition-all cursor-pointer",
             lang === "en"
-              ? "bg-[#00C3F3] text-white shadow-xs"
+              ? "bg-[#00A2D2] text-white shadow-xs"
               : "text-slate-600 hover:text-slate-900"
           )}
         >
@@ -69,7 +69,7 @@ export function ForgetPasswordForm() {
           className={cn(
             "px-2.5 py-1 rounded-full font-semibold transition-all cursor-pointer",
             lang === "ar"
-              ? "bg-[#00C3F3] text-white shadow-xs"
+              ? "bg-[#00A2D2] text-white shadow-xs"
               : "text-slate-600 hover:text-slate-900"
           )}
         >
@@ -133,7 +133,7 @@ export function ForgetPasswordForm() {
                       isRTL
                         ? "pr-11 pl-4 text-right placeholder:text-right"
                         : "pl-11 pr-4 text-left placeholder:text-left",
-                      "border-[#E2E8F0] focus-visible:border-[#00C3F3] focus-visible:ring-[#00C3F3]/15",
+                      "border-[#E2E8F0] focus-visible:border-[#00A2D2] focus-visible:ring-2 focus-visible:ring-[#00A2D2]/25",
                       "placeholder:text-slate-400"
                     )}
                   />
@@ -153,8 +153,8 @@ export function ForgetPasswordForm() {
                 type="submit"
                 className={cn(
                   "w-full cursor-pointer h-12 mt-1 rounded-[10px] text-base font-bold text-white",
-                  "bg-[#00C3F3] hover:bg-[#00ade1] active:scale-[0.99]",
-                  "shadow-[0_4px_14px_0_rgba(0,195,243,0.35)] hover:shadow-[0_6px_20px_rgba(0,195,243,0.45)]",
+                  "bg-[#00A2D2] hover:bg-[#008eb8] active:scale-[0.99]",
+                  "shadow-[0_4px_14px_0_rgba(0,162,210,0.35)] hover:shadow-[0_6px_20px_rgba(0,162,210,0.45)]",
                   "transition-all duration-200"
                 )}
               >

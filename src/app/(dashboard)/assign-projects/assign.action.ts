@@ -1,6 +1,7 @@
 "use server"
 
 import { getUserToken } from "@/app/myUtil";
+import { revalidatePath } from "next/cache";
 
 export async function fetchAssignData() {
     try {
@@ -19,7 +20,9 @@ export async function fetchAssignData() {
 
         const users = await usersRes.json();
         const projects = await projectsRes.json();
-
+        revalidatePath("/projects");
+        revalidatePath("/add");
+        revalidatePath("/assign-projects");
         return { success: true, users, projects };
     } catch (error: any) {
         return { success: false, error: error.message };
@@ -40,6 +43,13 @@ export async function assignProjectToUser(userId: number, projectId: number) {
         const data = await res.json().catch(() => ({}));
         if (!res.ok) return { success: false, error: data.message || "Failed to assign project" };
         
+        revalidatePath("/projects");
+        revalidatePath("/assign-projects");
+        revalidatePath("/add");
+        revalidatePath("/test-cases");
+        revalidatePath("/dashboard");
+        revalidatePath("/", "layout");
+
         return { success: true, message: data.message };
     } catch (error: any) {
         return { success: false, error: "Network error" };
@@ -58,6 +68,13 @@ export async function unassignProjectFromUser(userId: number, projectId: number)
         const data = await res.json().catch(() => ({}));
         if (!res.ok) return { success: false, error: data.message || "Failed to unassign project" };
         
+        revalidatePath("/projects");
+        revalidatePath("/assign-projects");
+        revalidatePath("/add");
+        revalidatePath("/test-cases");
+        revalidatePath("/dashboard");
+        revalidatePath("/", "layout");
+
         return { success: true, message: data.message };
     } catch (error: any) {
         return { success: false, error: "Network error" };

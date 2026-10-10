@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 
@@ -26,6 +26,10 @@ const translations: Record<string, Record<Language, string>> = {
   assign_projects: { en: "Assign Projects", ar: "إسناد المشاريع للمختبرين" },
   admin_section: { en: "ADMINISTRATION", ar: "الإدارة والنظام" },
   live_execution: { en: "Live Execution", ar: "التنفيذ الحي" },
+  live_execution_all: { en: "Live Execution (All)", ar: "إجمالي الاختبارات (الكل)" },
+  live_execution_tester: { en: "My Projects Tests", ar: "اختبارات مشاريعي" },
+  tests_count_unit: { en: "Tests", ar: "حالة" },
+  view_all_test_cases: { en: "View Test Cases", ar: "عرض حالات الاختبار" },
   total_tests_short: { en: "Total", ar: "الإجمالي" },
   passed: { en: "Passed", ar: "ناجح" },
   failed: { en: "Failed", ar: "راسب" },
@@ -303,6 +307,104 @@ error_password_regex: {
   users_admin_nav: {
     en: "Users & Permissions",
     ar: "المستخدمين والصلاحيات",
+  },
+
+  // Email Defect Report (Outlook)
+  email_defect_action: {
+    en: "Send Defect via Outlook",
+    ar: "إرسال تقرير الخلل عبر Outlook",
+  },
+  email_page_title: {
+    en: "Defect Report via Outlook",
+    ar: "إرسال تقرير الخلل عبر Outlook",
+  },
+  email_page_subtitle: {
+    en: "Review defect details and launch Microsoft Outlook with pre-filled fields",
+    ar: "مراجعة تفاصيل الخلل وفتح برنامج Microsoft Outlook بالحقول المجهزة للإرسال",
+  },
+  email_select_failed_case: {
+    en: "Select Failed Test Case",
+    ar: "اختر حالة الاختبار الفاشلة",
+  },
+  email_to_label: {
+    en: "To (Recipient)",
+    ar: "إلى (المستلم - To)",
+  },
+  email_to_placeholder: {
+    en: "developer@example.com",
+    ar: "developer@example.com",
+  },
+  email_cc_label: {
+    en: "CC (Carbon Copy)",
+    ar: "نسخة إلى (CC)",
+  },
+  email_cc_placeholder: {
+    en: "team-lead@example.com, qa@example.com",
+    ar: "team-lead@example.com, qa@example.com",
+  },
+  email_subject_label: {
+    en: "Subject",
+    ar: "موضوع الرسالة (Subject)",
+  },
+  email_subject_placeholder: {
+    en: "Enter email subject...",
+    ar: "أدخل عنوان الرسالة...",
+  },
+  email_content_label: {
+    en: "Content / Bug Details",
+    ar: "محتوى التقرير والتفاصيل (Content)",
+  },
+  email_content_placeholder: {
+    en: "Enter bug report content...",
+    ar: "أدخل محتوى وتفاصيل تقرير الخلل...",
+  },
+  email_send_outlook_btn: {
+    en: "Send via Outlook (classic)",
+    ar: "إرسال عبر Outlook (classic)",
+  },
+  email_open_web_btn: {
+    en: "MCIT Webmail (OWA)",
+    ar: "بريد الوزارة (MCIT OWA)",
+  },
+  email_copy_content_btn: {
+    en: "Copy Report Text",
+    ar: "نسخ نص التقرير",
+  },
+  email_download_eml_btn: {
+    en: "Download (.eml)",
+    ar: "تحميل كملف (.eml)",
+  },
+  email_copied_toast: {
+    en: "Report text copied to clipboard",
+    ar: "تم نسخ نص التقرير إلى الحافظة بنجاح",
+  },
+  email_opening_outlook_toast: {
+    en: "Opening Outlook (classic)...",
+    ar: "جاري فتح برنامج Outlook (classic)...",
+  },
+  email_set_default_win: {
+    en: "Set Outlook (classic) as Default App in Windows",
+    ar: "ضبط Outlook (classic) كالتطبيق الافتراضي في ويندوز",
+  },
+  email_back_to_test_cases: {
+    en: "Back to All Test Cases",
+    ar: "العودة لقائمة حالات الاختبار",
+  },
+  email_failed_only_badge: {
+    en: "Failed Test Case Only",
+    ar: "مخصص لحالات الاختبار الفاشلة فقط",
+  },
+  email_no_failed_found: {
+    en: "No failed test cases available for reporting.",
+    ar: "لا توجد أي حالات اختبار فاشلة حالياً لإرسال تقرير عنها.",
+  },
+  email_error_no_to: {
+    en: "Please enter a recipient email address (To)",
+    ar: "يرجى إدخال عنوان البريد الإلكتروني للمستلم (To)",
+  },
+  email_error_no_subject: {
+    en: "Please enter an email subject",
+    ar: "يرجى إدخال موضوع الرسالة (Subject)",
   },
 };
 

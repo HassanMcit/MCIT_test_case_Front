@@ -136,7 +136,7 @@ export default function ChangePasswordPage() {
                       isRTL ? "pr-11 pl-11 text-right" : "pl-11 pr-11 text-left",
                       errors.oldPassword
                         ? "border-red-400 focus-visible:border-red-400"
-                        : "border-slate-200 focus-visible:border-[#00aee0]"
+                        : "border-slate-200 focus-visible:border-[#00A2D2] focus-visible:ring-2 focus-visible:ring-[#00A2D2]/25"
                     )}
                   />
                   <span
@@ -187,7 +187,7 @@ export default function ChangePasswordPage() {
                       isRTL ? "pr-11 pl-11 text-right" : "pl-11 pr-11 text-left",
                       errors.newPassword
                         ? "border-red-400 focus-visible:border-red-400"
-                        : "border-slate-200 focus-visible:border-[#00aee0]"
+                        : "border-slate-200 focus-visible:border-[#00A2D2] focus-visible:ring-2 focus-visible:ring-[#00A2D2]/25"
                     )}
                   />
                   <span
@@ -238,7 +238,7 @@ export default function ChangePasswordPage() {
                       isRTL ? "pr-11 pl-11 text-right" : "pl-11 pr-11 text-left",
                       errors.confirmPassword
                         ? "border-red-400 focus-visible:border-red-400"
-                        : "border-slate-200 focus-visible:border-[#00aee0]"
+                        : "border-slate-200 focus-visible:border-[#00A2D2] focus-visible:ring-2 focus-visible:ring-[#00A2D2]/25"
                     )}
                   />
                   <span
@@ -273,8 +273,8 @@ export default function ChangePasswordPage() {
                 disabled={isSubmitting}
                 className={cn(
                   "w-full h-12 mt-2 rounded-xl text-base font-bold text-white cursor-pointer",
-                  "bg-[#38CAF0] hover:bg-[#00aee0] active:scale-[0.99]",
-                  "shadow-[0_4px_14px_0_rgba(0,102,133,0.3)] hover:shadow-[0_6px_20px_rgba(0,174,224,0.4)]",
+                  "bg-[#00A2D2] hover:bg-[#008eb8] active:scale-[0.99]",
+                  "shadow-[0_4px_14px_0_rgba(0,162,210,0.3)] hover:shadow-[0_6px_20px_rgba(0,162,210,0.4)]",
                   "transition-all duration-200",
                   isSubmitting && "opacity-70 cursor-not-allowed"
                 )}

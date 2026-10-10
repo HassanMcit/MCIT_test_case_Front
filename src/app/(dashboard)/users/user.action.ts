@@ -2,7 +2,7 @@
 
 import { getUserToken } from "@/app/myUtil";
 import { GetAllUsersResponse } from "./user.interface";
-import {  updateTag } from "next/cache";
+import { updateTag, revalidatePath } from "next/cache";
 
 export async function getAllUsers() {
   try {
@@ -38,5 +38,7 @@ export async function deleteThisUser(id: number) {
   });
 
   updateTag("users");
+  revalidatePath("/users");
+  revalidatePath("/assign-projects");
   return true;
 }

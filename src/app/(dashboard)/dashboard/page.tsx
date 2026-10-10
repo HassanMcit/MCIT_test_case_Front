@@ -263,7 +263,7 @@ export default function DashboardPage() {
           {/* New Test Case Button */}
           <Link
             href="/add"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00aee0] hover:bg-[#009ac7] text-white text-xs font-bold shadow-xs hover:shadow-md hover:brightness-105 active:scale-[0.98] transition-all"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00A2D2] hover:bg-[#008eb8] text-white text-xs font-bold shadow-xs hover:shadow-md active:scale-[0.98] transition-all cursor-pointer"
           >
             <PlusCircle className="w-4 h-4" />
             <span>{t("new_test_case")}</span>
@@ -747,7 +747,7 @@ export default function DashboardPage() {
                 placeholder={t("search_placeholder")}
                 className={`w-full ${
                   isRTL ? "pr-9 pl-16" : "pl-9 pr-16"
-                } py-2 rounded-xl bg-[#f8f9ff] text-[#0b1c30] text-xs font-medium border border-slate-200/80 placeholder:text-[#6d797f] focus:outline-none focus:ring-2 focus:ring-[#00aee0]/30 focus:border-[#00aee0] transition-all`}
+                } py-2 rounded-xl bg-[#f8f9ff] text-[#0b1c30] text-xs font-medium border border-slate-200/80 placeholder:text-[#6d797f] focus:outline-none focus:ring-2 focus:ring-[#00A2D2]/25 focus:border-[#00A2D2] transition-all`}
               />
               {searchQuery ? (
                 <button
@@ -779,7 +779,7 @@ export default function DashboardPage() {
                     onClick={() => setActiveModule(m.id)}
                     className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
                       isSelected
-                        ? "bg-[#00aee0] text-white shadow-xs"
+                        ? "bg-[#00A2D2] text-white shadow-xs"
                         : "bg-[#eff4ff] text-[#3d484f] hover:bg-[#dce9ff]"
                     }`}
                   >
@@ -984,7 +984,7 @@ export default function DashboardPage() {
             </button>
             <button
               type="button"
-              className="w-7 h-7 rounded-lg bg-[#00aee0] text-white font-bold flex items-center justify-center text-xs shadow-2xs"
+              className="w-7 h-7 rounded-lg bg-[#00A2D2] text-white font-bold flex items-center justify-center text-xs shadow-2xs"
             >
               1
             </button>

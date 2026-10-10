@@ -3,14 +3,7 @@
 import { getUserToken } from "@/app/myUtil";
 import { revalidatePath } from "next/cache";
 
-export interface UpdateProjectInput {
-  name: string;
-  description?: string;
-  environment: "production" | "staging";
-  status: "active" | "archived";
-}
-
-export async function updateProject(id: number, data: UpdateProjectInput) {
+export async function deleteProject(id: number) {
   try {
     const token = await getUserToken();
     if (!token) {
@@ -18,20 +11,18 @@ export async function updateProject(id: number, data: UpdateProjectInput) {
     }
 
     const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/projects/${id}`, {
-      method: "PATCH",
+      method: "DELETE",
       headers: {
-        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(data),
     });
 
-    const result = await response.json();
+    const result = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      const errorMsg = Array.isArray(result.message)
+      const errorMsg = Array.isArray(result?.message)
         ? result.message.join(", ")
-        : (result.message || "Failed to update project");
+        : (result?.message || "فشل حذف المشروع");
       return { success: false, message: errorMsg };
     }
 
@@ -41,7 +32,8 @@ export async function updateProject(id: number, data: UpdateProjectInput) {
     revalidatePath("/test-cases");
     revalidatePath("/dashboard");
     revalidatePath("/", "layout");
-    return { success: true, data: result };
+
+    return { success: true, message: result?.message || "تم حذف المشروع بنجاح" };
   } catch (err: any) {
     return {
       success: false,

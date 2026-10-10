@@ -101,7 +101,7 @@ throw new Error("Incorrect Email or Password");
           className={cn(
             "px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer",
             lang === "en"
-              ? "bg-[#00C3F3] text-white shadow-xs"
+              ? "bg-[#00A2D2] text-white shadow-xs"
               : "text-[#565e74] hover:text-[#0b1c30] hover:bg-slate-100"
           )}
         >
@@ -113,7 +113,7 @@ throw new Error("Incorrect Email or Password");
           className={cn(
             "px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer font-[family-name:var(--font-almarai),sans-serif]",
             lang === "ar"
-              ? "bg-[#00C3F3] text-white shadow-xs"
+              ? "bg-[#00A2D2] text-white shadow-xs"
               : "text-[#565e74] hover:text-[#0b1c30] hover:bg-slate-100"
           )}
         >
@@ -177,7 +177,7 @@ throw new Error("Incorrect Email or Password");
                         : "pl-11 pr-4 text-left placeholder:text-left",
                       errors.email
                         ? "border-[#F00] focus-visible:border-[#F00] focus-visible:ring-[#F00]/15"
-                        : "border-[#E2E8F0] focus-visible:border-[#00C3F3] focus-visible:ring-[#00C3F3]/15",
+                        : "border-[#E2E8F0] focus-visible:border-[#00A2D2] focus-visible:ring-2 focus-visible:ring-[#00A2D2]/25",
                       "placeholder:text-slate-400"
                     )}
                   />
@@ -229,7 +229,7 @@ throw new Error("Incorrect Email or Password");
                         : "pl-11 pr-11 text-left placeholder:text-left",
                       errors.password
                         ? "border-[#F00] focus-visible:border-[#F00] focus-visible:ring-[#F00]/15"
-                        : "border-[#E2E8F0] focus-visible:border-[#00C3F3] focus-visible:ring-[#00C3F3]/15",
+                        : "border-[#E2E8F0] focus-visible:border-[#00A2D2] focus-visible:ring-2 focus-visible:ring-[#00A2D2]/25",
                       "placeholder:text-slate-400"
                     )}
                   />
@@ -292,8 +292,8 @@ throw new Error("Incorrect Email or Password");
                 type="submit"
                 className={cn(
                   "w-full cursor-pointer h-12 mt-2 rounded-[10px] text-base font-bold text-white",
-                  "bg-[#00C3F3] hover:bg-[#00ade1] active:scale-[0.99]",
-                  "shadow-[0_4px_14px_0_rgba(0,195,243,0.35)] hover:shadow-[0_6px_20px_rgba(0,195,243,0.45)]",
+                  "bg-[#00A2D2] hover:bg-[#008eb8] active:scale-[0.99]",
+                  "shadow-[0_4px_14px_0_rgba(0,162,210,0.35)] hover:shadow-[0_6px_20px_rgba(0,162,210,0.45)]",
                   "transition-all duration-200"
                 )}
               >

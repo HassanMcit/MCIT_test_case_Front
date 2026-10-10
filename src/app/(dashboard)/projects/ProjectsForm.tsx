@@ -30,6 +30,7 @@ import {
   X,
   Check,
   Users,
+  AlertTriangle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -127,6 +128,7 @@ function getInitials(name?: string, isRTL?: boolean): string {
 import toast from "react-hot-toast";
 import { addNewProject } from "./addprodject.action";
 import { updateProject } from "./updateProject.action";
+import { deleteProject } from "./deleteProject.action";
 import { getProjects, ProjectApiItem } from "./getProjects.action";
 import { getAllTester } from "./getAllUsers.action";
 
@@ -166,7 +168,7 @@ const initialProjects: ProjectItem[] = [
     failed: 19,
     pending: 10,
     successRate: 98.0,
-    color: "text-[#38CAF0]",
+    color: "text-[#00A2D2]",
     bg: "bg-[#bfe9ff]/50",
     lastUpdated: "منذ ساعتين",
     leadTester: "م. حسن علي",
@@ -223,7 +225,7 @@ const initialProjects: ProjectItem[] = [
     failed: 12,
     pending: 10,
     successRate: 96.0,
-    color: "text-[#38CAF0]",
+    color: "text-[#00A2D2]",
     bg: "bg-[#bfe9ff]/50",
     lastUpdated: "منذ 3 أيام",
     leadTester: "م. حسن علي",
@@ -262,7 +264,7 @@ const initialProjects: ProjectItem[] = [
     failed: 50,
     pending: 40,
     successRate: 92.0,
-    color: "text-[#38CAF0]",
+    color: "text-[#00A2D2]",
     bg: "bg-[#bfe9ff]/50",
     lastUpdated: "منذ أسبوع",
     leadTester: "إيمان الشريف",
@@ -361,7 +363,7 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
 
   const ICONS = [Globe, BarChart3, Shield, Cpu, Landmark, FileText];
   const COLORS = [
-    { color: "text-[#38CAF0]", bg: "bg-[#bfe9ff]/50" },
+    { color: "text-[#00A2D2]", bg: "bg-[#bfe9ff]/50" },
     { color: "text-[#006c49]", bg: "bg-emerald-50" },
     { color: "text-[#006685]", bg: "bg-sky-50" },
     { color: "text-amber-600", bg: "bg-amber-50" },
@@ -483,6 +485,38 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
     }
   };
 
+  // Delete Project State & Handler (Admin Only)
+  const [projectToDelete, setProjectToDelete] = useState<ProjectItem | null>(null);
+  const [isDeletingProject, setIsDeletingProject] = useState(false);
+
+  const confirmDeleteProject = async () => {
+    if (!projectToDelete) return;
+    const target = projectToDelete;
+    setIsDeletingProject(true);
+
+    const deletePromise = deleteProject(target.id).then((res) => {
+      if (!res.success) {
+        throw new Error(res.message);
+      }
+      setRawProjects((prev) => prev.filter((p: any) => p.id !== target.id));
+      if (selectedProject?.id === target.id) setSelectedProject(null);
+      if (editingProject?.id === target.id) setEditingProject(null);
+      return res;
+    });
+
+    toast.promise(
+      deletePromise,
+      {
+        loading: isRTL ? "جاري حذف المشروع..." : "Deleting project...",
+        success: isRTL ? "تم حذف المشروع بنجاح" : "Project deleted successfully",
+        error: isRTL ? "فشل حذف المشروع" : "Failed to delete project",
+      }
+    ).finally(() => {
+      setIsDeletingProject(false);
+      setProjectToDelete(null);
+    });
+  };
+
   // User assignments state for Add/Edit modals — assignment is OPTIONAL (starts empty)
   const [addAssignedUserIds, setAddAssignedUserIds] = useState<string[]>([]);
   // const [addLeadTester, setAddLeadTester] = useState("none");
@@ -562,13 +596,13 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
     <div className="flex flex-col w-full p-4 sm:p-6 lg:p-8 gap-6 max-w-7xl mx-auto">
       {/* ── Top Header Banner ────────────────────────────────────────── */}
       <Card className="border border-slate-200/80 shadow-xs bg-linear-to-r from-[#eff4ff] via-white to-[#eff4ff]/60 rounded-2xl overflow-hidden relative">
-        <div className="absolute top-0 right-0 w-2 h-full bg-[#38CAF0]" />
+        <div className="absolute top-0 right-0 w-2 h-full bg-[#00A2D2]" />
         <CardContent className="p-6 sm:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="flex flex-col gap-2 max-w-2xl">
             <div className="flex items-center gap-2">
               <Badge
                 variant="outline"
-                className="bg-[#38CAF0]/10 text-[#38CAF0] border-[#38CAF0]/20 font-bold px-2.5 py-0.5"
+                className="bg-[#00A2D2]/10 text-[#00A2D2] border-[#00A2D2]/20 font-bold px-2.5 py-0.5"
               >
                 <Sparkles className="w-3 h-3 me-1" />
                 {isRTL ? "منظومة المشاريع القومية" : "National Projects Hub"}
@@ -594,7 +628,7 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
           {isAdmin && (
             <Button
               onClick={() => setShowAddModal(true)}
-              className="gap-2 bg-[#38CAF0] hover:bg-[#00526b] text-white shadow-md shadow-[#38CAF0]/20 rounded-xl px-5 h-11 shrink-0 font-bold cursor-pointer"
+              className="gap-2 bg-[#00A2D2] hover:bg-[#008eb8] text-white shadow-md shadow-[#00A2D2]/20 rounded-xl px-5 h-11 shrink-0 font-bold cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>{isRTL ? "إضافة مشروع جديد" : "Add New Project"}</span>
@@ -605,7 +639,7 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
 
       {/* ── KPI Metric Cards ─────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border border-slate-200/80 shadow-xs rounded-xl bg-white hover:border-[#38CAF0]/40 transition-colors">
+        <Card className="border border-slate-200/80 shadow-xs rounded-xl bg-white hover:border-[#00A2D2]/40 transition-colors">
           <CardContent className="p-4 flex items-center justify-between">
             <div className="flex flex-col">
               <span className="text-xs font-semibold text-[#6d797f]">
@@ -619,7 +653,7 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
                 {isRTL ? "محدث بالكامل" : "All Active"}
               </span>
             </div>
-            <div className="w-12 h-12 rounded-xl bg-[#eff4ff] flex items-center justify-center text-[#38CAF0] shrink-0">
+            <div className="w-12 h-12 rounded-xl bg-[#eff4ff] flex items-center justify-center text-[#00A2D2] shrink-0">
               <FolderGit2 className="w-6 h-6" />
             </div>
           </CardContent>
@@ -669,7 +703,7 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
               <span className="text-xs font-semibold text-[#6d797f]">
                 {isRTL ? "متوسط نسبة النجاح" : "Avg. Pass Rate"}
               </span>
-              <span className="text-2xl font-black text-[#38CAF0] mt-1">
+              <span className="text-2xl font-black text-[#00A2D2] mt-1">
                 %{avgSuccessRate}
               </span>
               <span className="text-[11px] text-[#6d797f] font-medium mt-0.5">
@@ -760,7 +794,7 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
                 onClick={() => setViewMode("grid")}
                 className={`h-8 px-2.5 rounded-md cursor-pointer ${
                   viewMode === "grid"
-                    ? "bg-[#38CAF0] text-white hover:bg-[#00526b]"
+                    ? "bg-[#00A2D2] text-white hover:bg-[#008eb8]"
                     : "text-slate-600 hover:text-slate-900"
                 }`}
                 title={isRTL ? "عرض الكروت" : "Grid View"}
@@ -773,7 +807,7 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
                 onClick={() => setViewMode("table")}
                 className={`h-8 px-2.5 rounded-md cursor-pointer ${
                   viewMode === "table"
-                    ? "bg-[#38CAF0] text-white hover:bg-[#00526b]"
+                    ? "bg-[#00A2D2] text-white hover:bg-[#008eb8]"
                     : "text-slate-600 hover:text-slate-900"
                 }`}
                 title={isRTL ? "عرض الجدول" : "Table View"}
@@ -797,7 +831,7 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
               <Card
                 key={p.id}
                 onClick={() => router.push(`/test-cases?projectId=${p.id}`)}
-                className="border border-slate-200/80 shadow-xs hover:shadow-lg transition-all duration-200 rounded-2xl overflow-hidden flex flex-col justify-between group hover:border-[#38CAF0]/60 bg-white cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
+                className="border border-slate-200/80 shadow-xs hover:shadow-lg transition-all duration-200 rounded-2xl overflow-hidden flex flex-col justify-between group hover:border-[#00A2D2]/60 bg-white cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
               >
                 <div>
                   {/* Card Header Top */}
@@ -810,7 +844,7 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
                           <IconComponent className={`w-5 h-5 ${p.color}`} />
                         </div>
                         <div className="flex flex-col min-w-0">
-                          <CardTitle className="text-base font-bold text-[#0b1c30] truncate group-hover:text-[#38CAF0] transition-colors">
+                          <CardTitle className="text-base font-bold text-[#0b1c30] truncate group-hover:text-[#00A2D2] transition-colors">
                             {isRTL ? p.name : p.nameEn}
                           </CardTitle>
                           <span className="text-[11px] text-[#6d797f] truncate">
@@ -907,7 +941,7 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
                     {/* Assigned Users Avatar Stack */}
                     <div className="flex items-center justify-between pt-2.5 mt-2 border-t border-slate-100 text-[11px] text-slate-500">
                       <span className="flex items-center gap-1 font-medium text-slate-600">
-                        <Users className="w-3.5 h-3.5 text-[#38CAF0]" />
+                        <Users className="w-3.5 h-3.5 text-[#00A2D2]" />
                         <span>{isRTL ? "المسند إليهم:" : "Assigned:"}</span>
                       </span>
                       {p.assignedUsers && p.assignedUsers.length > 0 ? (
@@ -972,21 +1006,32 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
                       variant="outline"
                       size="sm"
                       onClick={(e) => { e.stopPropagation(); setSelectedProject(p); }}
-                      className="h-8 px-2.5 text-xs text-[#38CAF0] hover:bg-[#eff4ff] border-slate-200 cursor-pointer"
+                      className="h-8 px-2.5 text-xs text-[#00A2D2] hover:bg-[#eff4ff] border-slate-200 cursor-pointer"
                     >
                       <Eye className="w-3.5 h-3.5 me-1" />
                       <span>{isRTL ? "تفاصيل" : "View"}</span>
                     </Button>
                     {isAdmin && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => { e.stopPropagation(); setEditingProject(p); }}
-                        className="h-8 w-8 p-0 text-slate-500 hover:text-slate-800 hover:bg-slate-200/60 cursor-pointer"
-                        title={isRTL ? "تعديل" : "Edit"}
-                      >
-                        <Edit3 className="w-3.5 h-3.5" />
-                      </Button>
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => { e.stopPropagation(); setEditingProject(p); }}
+                          className="h-8 w-8 p-0 text-slate-500 hover:text-slate-800 hover:bg-slate-200/60 cursor-pointer"
+                          title={isRTL ? "تعديل" : "Edit"}
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => { e.stopPropagation(); setProjectToDelete(p); }}
+                          className="h-8 w-8 p-0 text-slate-500 hover:text-red-600 hover:bg-red-50 cursor-pointer"
+                          title={isRTL ? "حذف المشروع" : "Delete Project"}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </>
                     )}
                   </div>
                 </CardFooter>
@@ -1181,24 +1226,38 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
                                 e.stopPropagation();
                                 setSelectedProject(p);
                               }}
-                              className="h-8 px-2.5 text-xs text-[#38CAF0] hover:bg-[#eff4ff] border-slate-200 cursor-pointer"
+                              className="h-8 px-2.5 text-xs text-[#00A2D2] hover:bg-[#eff4ff] border-slate-200 cursor-pointer"
                             >
                               <Eye className="w-3.5 h-3.5 me-1" />
                               <span>{isRTL ? "تفاصيل" : "View"}</span>
                             </Button>
                             {isAdmin && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditingProject(p);
-                                }}
-                                className="h-8 w-8 p-0 text-slate-500 hover:text-slate-800 hover:bg-slate-100 cursor-pointer"
-                                title={isRTL ? "تعديل" : "Edit"}
-                              >
-                                <Edit3 className="w-3.5 h-3.5" />
-                              </Button>
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingProject(p);
+                                  }}
+                                  className="h-8 w-8 p-0 text-slate-500 hover:text-slate-800 hover:bg-slate-100 cursor-pointer"
+                                  title={isRTL ? "تعديل" : "Edit"}
+                                >
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setProjectToDelete(p);
+                                  }}
+                                  className="h-8 w-8 p-0 text-slate-500 hover:text-red-600 hover:bg-red-50 cursor-pointer"
+                                  title={isRTL ? "حذف المشروع" : "Delete Project"}
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
+                              </>
                             )}
                           </div>
                         </TableCell>
@@ -1438,7 +1497,7 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
                       {isRTL ? "(اختياري)" : "(Optional)"}
                     </span>
                   </Label>
-                  <Badge variant="outline" className="text-[10px] text-[#38CAF0] border-[#00aee0]/40 font-semibold">
+                  <Badge variant="outline" className="text-[10px] text-[#00A2D2] border-[#00aee0]/40 font-semibold">
                     {isRTL ? `${addAssignedUserIds.length} مستخدمين مسندين` : `${addAssignedUserIds.length} assigned`}
                   </Badge>
                 </div>
@@ -1458,7 +1517,7 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
                         <div className="flex items-center gap-2 min-w-0">
                           <div
                             className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
-                              isAssigned ? "bg-[#38CAF0] border-[#38CAF0] text-white" : "border-slate-300 bg-white"
+                              isAssigned ? "bg-[#00A2D2] border-[#00A2D2] text-white" : "border-slate-300 bg-white"
                             }`}
                           >
                             {isAssigned && <Check className="w-3 h-3 stroke-[3]" />}
@@ -1493,7 +1552,7 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
                 size="sm"
                 type="submit"
                 // onClick={() => setShowAddModal(false)}
-                className="bg-[#38CAF0] cursor-pointer hover:bg-[#00526b] text-white text-xs font-bold px-4"
+                className="bg-[#00A2D2] cursor-pointer hover:bg-[#008eb8] text-white text-xs font-bold px-4"
               >
                 {isRTL ? "حفظ المشروع" : "Save Project"}
               </Button>
@@ -1596,13 +1655,13 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
                       ? "معدل نجاح الاختبارات العام"
                       : "Overall Quality Index"}
                   </span>
-                  <span className="text-[#38CAF0]">
+                  <span className="text-[#00A2D2]">
                     %{selectedProject.successRate}
                   </span>
                 </div>
                 <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-[#38CAF0] rounded-full"
+                    className="h-full bg-[#00A2D2] rounded-full"
                     style={{ width: `${selectedProject.successRate}%` }}
                   />
                 </div>
@@ -1638,7 +1697,7 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
                   </span>
                   <Badge
                     variant="outline"
-                    className="text-[10px] text-[#38CAF0] border-[#00aee0]/40"
+                    className="text-[10px] text-[#00A2D2] border-[#00aee0]/40"
                   >
                     {isRTL ? "مكلفون بمتابعة الاختبارات" : "Assigned Testers"}
                   </Badge>
@@ -1688,7 +1747,7 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
               <Button
                 size="sm"
                 onClick={() => setSelectedProject(null)}
-                className="bg-[#38CAF0] hover:bg-[#00526b] text-white text-xs font-bold px-5"
+                className="bg-[#00A2D2] hover:bg-[#008eb8] text-white text-xs font-bold px-5"
               >
                 {isRTL ? "إغلاق" : "Close"}
               </Button>
@@ -1821,7 +1880,7 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
                 type="submit"
                 size="sm"
                 disabled={isUpdatingProject}
-                className="bg-[#38CAF0] hover:bg-[#00526b] text-white text-xs font-bold px-4 cursor-pointer"
+                className="bg-[#00A2D2] hover:bg-[#008eb8] text-white text-xs font-bold px-4 cursor-pointer"
               >
                 {isUpdatingProject
                   ? (isRTL ? "جاري الحفظ..." : "Saving...")
@@ -1830,6 +1889,108 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
             </CardFooter>
           </Card>
         </form>
+      )}
+
+      {/* ── MODAL 4: Delete Project Confirmation (Admin Only, NO native alerts) ── */}
+      {projectToDelete && (
+        <div
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget && !isDeletingProject) setProjectToDelete(null);
+          }}
+        >
+          <div
+            className="bg-white rounded-2xl max-w-md w-full border border-slate-200 shadow-2xl p-6 space-y-5"
+            dir={dir}
+          >
+            {/* Header */}
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-base sm:text-lg font-bold text-[#0b1c30]">
+                  {isRTL ? "تأكيد حذف المشروع" : "Confirm Project Deletion"}
+                </h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  {isRTL
+                    ? "هل أنت متأكد من رغبتك في حذف هذا المشروع نهائياً؟ سيتم إلغاء إسناد المشروع من جميع المستخدمين وإزالته من قوائمهم."
+                    : "Are you sure you want to permanently delete this project? It will be unassigned and removed from all users."}
+                </p>
+              </div>
+            </div>
+
+            {/* Target Project Info */}
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 font-medium">
+                  {isRTL ? "اسم المشروع:" : "Project Name:"}
+                </span>
+                <span className="font-bold text-[#0b1c30]">
+                  {projectToDelete.name}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 font-medium">
+                  {isRTL ? "البيئة:" : "Environment:"}
+                </span>
+                <span className="font-medium text-slate-700 capitalize">
+                  {projectToDelete.env}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 font-medium">
+                  {isRTL ? "الأعضاء المسندين:" : "Assigned Members:"}
+                </span>
+                <span className="font-bold text-[#006685]">
+                  {projectToDelete.assignedUsers?.length || 0}
+                </span>
+              </div>
+            </div>
+
+            {/* Warning Note */}
+            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[11px] leading-relaxed flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <span>
+                {isRTL
+                  ? "هذا الإجراء متاح لمدير النظام (Admin) فقط، ولا يمكن التراجع عنه بعد الحذف."
+                  : "This action is restricted to Administrators and cannot be undone."}
+              </span>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={isDeletingProject}
+                onClick={() => setProjectToDelete(null)}
+                className="h-10 px-4 text-xs font-semibold rounded-xl cursor-pointer"
+              >
+                {isRTL ? "إلغاء" : "Cancel"}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                disabled={isDeletingProject}
+                onClick={confirmDeleteProject}
+                className="h-10 px-4 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer gap-2 transition-all"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>
+                  {isDeletingProject
+                    ? isRTL
+                      ? "جاري الحذف..."
+                      : "Deleting..."
+                    : isRTL
+                    ? "تأكيد الحذف"
+                    : "Delete"}
+                </span>
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

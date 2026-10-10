@@ -223,7 +223,7 @@ export default function UsersManagementPage() {
         {/* Quick Add Button */}
         <div className="flex items-center gap-3 shrink-0">
           <Link href="/users/add">
-            <Button className="h-11 px-5 bg-[#39C9F6] hover:bg-[#00aee0] text-white rounded-xl shadow-sm font-semibold text-xs sm:text-sm gap-2 cursor-pointer transition-all">
+            <Button className="h-11 px-5 bg-[#00A2D2] hover:bg-[#008eb8] text-white rounded-xl shadow-sm font-semibold text-xs sm:text-sm gap-2 cursor-pointer transition-all">
               <UserPlus className="w-4 h-4" />
               <span>{t("users_add_button")}</span>
             </Button>
@@ -350,7 +350,7 @@ export default function UsersManagementPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={t("users_search_placeholder")}
             className={cn(
-              "h-11 text-xs sm:text-sm rounded-xl border-slate-200 focus-visible:ring-[#38CAF0]",
+              "h-11 text-xs sm:text-sm rounded-xl border-slate-200 focus-visible:border-[#00A2D2] focus-visible:ring-2 focus-visible:ring-[#00A2D2]/25",
               isRTL ? "pr-10 pl-3 text-right" : "pl-10 pr-3 text-left"
             )}
           />

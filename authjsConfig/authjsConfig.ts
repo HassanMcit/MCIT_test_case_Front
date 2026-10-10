@@ -6,11 +6,12 @@ declare module "next-auth" {
     interface User {
         access_token:string
         role: string
-        
+        id?: string | number; 
     }
 
     interface Session {
     user: {
+      id?: string;
       role?: string;
       image?: string | null;
       loginAt?: number;       // تاريخ الدخول الأول (Timestamp)
@@ -48,9 +49,10 @@ export const authConfig:NextAuthConfig = {
                         }
 
                         const data:LoginResponseType = await response.json()
+                        
 
-                            const {user:{name,email,photo,role}, access_token} = data
-                            return {name,email,image: photo,access_token, role}
+                            const {user:{name,email,photo,role,id}, access_token} = data
+                            return {name,email,image: photo,access_token, role, id: String(id)}
                         
                         
                         
@@ -70,6 +72,7 @@ export const authConfig:NextAuthConfig = {
                 token.role = user.role;
                 token.loginAt = Date.now();
                 token.loginDate = new Date().toISOString();
+                token.id = user.id;
             }
             if(trigger === "update") {
                 const newImage = session?.image || session?.user?.image || session?.picture;
@@ -86,6 +89,7 @@ export const authConfig:NextAuthConfig = {
             session.user.image = (token.picture as string) || session.user?.image;
             session.user.loginAt = token.loginAt as number;
             session.user.loginDate = token.loginDate as string;
+            session.user.id = token.id as string
             return session;
         }
     }
