@@ -32,7 +32,6 @@ export async function handleUserChangePassword(
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(data),
-      cache: "no-store",
     });
 
     let result: any = null;
