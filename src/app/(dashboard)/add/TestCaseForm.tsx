@@ -45,10 +45,6 @@ export default function AddTestCasePage({allProjects}:{allProjects:ProjectApiIte
 
     const { data } = useSession();
 
-    console.log(data?.user.id)
-
-    console.log(allProjects.filter(e => e.assignedUsers?.some(e => e.userId === Number(data?.user.id))))
-
   return (
     <div className="flex flex-col w-full p-6 gap-6 max-w-7xl mx-auto">
       {/* Title */}
