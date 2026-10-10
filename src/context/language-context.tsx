@@ -406,6 +406,18 @@ error_password_regex: {
     en: "Please enter an email subject",
     ar: "يرجى إدخال موضوع الرسالة (Subject)",
   },
+
+  // Loading & NotFound
+  loading_text: { en: "Loading...", ar: "جاري التحميل..." },
+  loading_subtext: { en: "Please wait a moment", ar: "يرجى الانتظار قليلاً" },
+  not_found_code: { en: "404", ar: "404" },
+  not_found_title: { en: "Page Not Found", ar: "الصفحة غير موجودة" },
+  not_found_desc: {
+    en: "Sorry, the page you are looking for does not exist or has been moved.",
+    ar: "عذراً، الصفحة التي تحاول الوصول إليها غير موجودة أو ربما تم نقلها إلى عنوان آخر.",
+  },
+  not_found_back_dashboard: { en: "Back to Dashboard", ar: "العودة للوحة المؤشرات" },
+  not_found_test_cases: { en: "All Test Cases", ar: "جميع حالات الاختبار" },
 };
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
