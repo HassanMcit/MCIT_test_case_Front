@@ -17,9 +17,6 @@ import { changePasswordSchema } from "./changepassword.zod";
 import { ChangePasswordForm } from "./changepassword.interface";
 import { handleUserChangePassword } from "./changepassword.action";
 
-
-
-
 export default function ChangePasswordPage() {
   const router = useRouter();
   const { lang, dir, t } = useLanguage();
@@ -70,18 +67,42 @@ export default function ChangePasswordPage() {
 
   async function onSubmit(data: ChangePasswordForm) {
     setIsSubmitting(true);
+    const toastId = toast.loading(
+      isRTL ? "جاري تغيير كلمة المرور..." : "Updating password..."
+    );
 
-    toast.promise(handleUserChangePassword(data), {
-      loading: isRTL ? "جاري تغير كلمة السر..." : "Please Wait....",
-      success: res => {
+    try {
+      const res = await handleUserChangePassword(data);
+      toast.dismiss(toastId);
+
+      if (res.success) {
+        toast.success(
+          <span className="font-semibold text-emerald-600">
+            {isRTL ? res.message : res.messageEn}
+          </span>
+        );
         reset();
-      setTimeout(() => router.push("/dashboard"), 1000);
-      return <h1 className="text-emerald-500">{t("cp_success")}</h1>
-      },
-      error: err => <h1 className="text-red-600">{isRTL ? err.message : "Current Password Not Correct"}</h1>
-    })
-
-    setIsSubmitting(false);
+        setTimeout(() => router.push("/dashboard"), 1200);
+      } else {
+        toast.error(
+          <span className="font-semibold text-red-600">
+            {isRTL ? res.message : res.messageEn}
+          </span>
+        );
+        if (res.status === 401) {
+          setTimeout(() => router.push("/login"), 1500);
+        }
+      }
+    } catch {
+      toast.dismiss(toastId);
+      toast.error(
+        <span className="font-semibold text-red-600">
+          {isRTL ? "حدث خطأ غير متوقع" : "An unexpected error occurred"}
+        </span>
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
@@ -93,7 +114,7 @@ export default function ChangePasswordPage() {
         <button
           type="button"
           onClick={() => router.push("/dashboard")}
-          className="flex items-center gap-2 text-[#38CAF0] hover:text-[#00aee0] transition-colors mb-6 cursor-pointer"
+          className="flex items-center gap-2 text-[#00A2D2] hover:text-[#008eb8] transition-colors mb-6 cursor-pointer"
         >
           <BackArrow className="w-4 h-4" />
           <span className="text-sm font-medium">{t("cp_back")}</span>
@@ -102,7 +123,7 @@ export default function ChangePasswordPage() {
         <Card className="shadow-[0_4px_20px_-4px_rgba(0,0,0,0.06)] border-slate-200/80 rounded-2xl">
           <CardHeader className="text-center pb-2">
             <div className="mx-auto w-14 h-14 rounded-2xl bg-[#e5eeff] flex items-center justify-center mb-3">
-              <ShieldCheck className="w-7 h-7 text-[#38CAF0]" />
+              <ShieldCheck className="w-7 h-7 text-[#00A2D2]" />
             </div>
             <CardTitle className="text-xl font-bold text-[#0b1c30]">
               {t("cp_title")}
