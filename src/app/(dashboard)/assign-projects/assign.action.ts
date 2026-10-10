@@ -9,8 +9,8 @@ export async function fetchAssignData() {
 
         // Fetch users and projects in parallel
         const [usersRes, projectsRes] = await Promise.all([
-            fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/users`, { headers, cache: "no-store" }),
-            fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/projects`, { headers, cache: "no-store" })
+            fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/users`, { headers, cache: "force-cache" }),
+            fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/projects`, { headers, cache: "force-cache" })
         ]);
 
         if (!usersRes.ok || !projectsRes.ok) {

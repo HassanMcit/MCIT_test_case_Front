@@ -11,6 +11,7 @@ const almarai = Almarai({
   subsets: ["arabic"],
   variable: "--font-almarai",
   display: "swap",
+  preload: false,
 });
 
 const geistMono = Geist_Mono({

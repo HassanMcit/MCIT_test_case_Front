@@ -13,6 +13,7 @@ export async function addNewUser(data: AddUserType) {
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(data),
+    cache: "force-cache"
   });
 
   const result: AddNewUserResponse = await response.json();
@@ -20,6 +21,7 @@ export async function addNewUser(data: AddUserType) {
     throw new Error(result.message)
   }
   revalidatePath('/users')
+  revalidatePath('/assign-projects')
   return true
 //   return result;
 }

@@ -647,7 +647,9 @@ export default function UsersManagementPage() {
                       ? "جاري الحذف..."
                       : "Deleting..."
                     : t("users_confirm_delete")}
+                    
                 </span>
+                
               </Button>
             </div>
           </div>

@@ -2,7 +2,7 @@
 
 import { getUserToken } from "@/app/myUtil";
 import { GetAllUsersResponse } from "./user.interface";
-import { revalidatePath, updateTag } from "next/cache";
+import {  updateTag } from "next/cache";
 
 export async function getAllUsers() {
   try {
@@ -14,7 +14,7 @@ export async function getAllUsers() {
           Authorization: `Bearer ${await getUserToken()}`,
         },
         next: { tags: ["users"] },
-        cache: "no-store"
+        cache: "force-cache"
       },
     );
 
