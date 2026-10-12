@@ -553,7 +553,17 @@ export default function AddTestCasePage({
                           placeholder={
                             isRTL ? "اختر الأولوية" : "Priority"
                           }
-                        />
+                        >
+                          {field.value === "critical"
+                            ? (isRTL ? "عالية جداً" : "Critical")
+                            : field.value === "high"
+                            ? (isRTL ? "عالية" : "High")
+                            : field.value === "medium"
+                            ? (isRTL ? "متوسطة" : "Medium")
+                            : field.value === "low"
+                            ? (isRTL ? "منخفضة" : "Low")
+                            : (isRTL ? "اختر الأولوية" : "Priority")}
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="critical">
@@ -622,7 +632,15 @@ export default function AddTestCasePage({
                       >
                         <SelectValue
                           placeholder={isRTL ? "اختر الحالة" : "Status"}
-                        />
+                        >
+                          {field.value === "passed"
+                            ? (isRTL ? "ناجح" : "Passed")
+                            : field.value === "failed"
+                            ? (isRTL ? "فاشل" : "Failed")
+                            : field.value === "pending"
+                            ? (isRTL ? "قيد الانتظار" : "Pending")
+                            : (isRTL ? "اختر الحالة" : "Status")}
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="passed">
@@ -672,7 +690,17 @@ export default function AddTestCasePage({
                             placeholder={
                               isRTL ? "اختر درجة الخطورة" : "Severity"
                             }
-                          />
+                          >
+                            {field.value === "critical"
+                              ? (isRTL ? "حرجة جداً (Critical)" : "Critical")
+                              : field.value === "high"
+                              ? (isRTL ? "عالية (High)" : "High")
+                              : field.value === "medium"
+                              ? (isRTL ? "متوسطة (Medium)" : "Medium")
+                              : field.value === "low"
+                              ? (isRTL ? "منخفضة (Low)" : "Low")
+                              : (isRTL ? "اختر درجة الخطورة" : "Severity")}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="critical">

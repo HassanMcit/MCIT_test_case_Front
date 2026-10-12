@@ -785,13 +785,18 @@ export default function TestCasesTable({
                       className="hover:bg-[#f8f9ff]/70 transition-colors h-14"
                     >
                       {/* ID */}
-                      <td className="px-4 font-mono font-bold text-xs text-[#006685] whitespace-nowrap">
-                        <button
-                          onClick={() => setSelectedItem(row)}
-                          className="hover:underline cursor-pointer"
-                        >
-                          {row.testId}
-                        </button>
+                      <td className="px-4 font-mono font-bold text-xs whitespace-nowrap">
+                        {row.status === "failed" ? (
+                          <button
+                            onClick={() => setSelectedItem(row)}
+                            className="hover:underline cursor-pointer text-red-600 font-bold"
+                            title={isRTL ? "عرض تقرير الخلل (Defect Report)" : "View Defect Report"}
+                          >
+                            {row.testId.startsWith("TC-") ? row.testId.replace(/^TC-/, "BUG-") : row.testId}
+                          </button>
+                        ) : (
+                          <span className="text-[#006685] font-semibold">{row.testId}</span>
+                        )}
                       </td>
 
                       {/* Module & Page */}
@@ -878,15 +883,17 @@ export default function TestCasesTable({
                       {/* Actions */}
                       <td className="px-4 text-center whitespace-nowrap">
                         <div className="flex items-center justify-center gap-1">
-                          {/* View Button */}
-                          <button
-                            type="button"
-                            onClick={() => setSelectedItem(row)}
-                            className="p-1.5 hover:bg-[#eff4ff] rounded-lg text-[#565e74] hover:text-[#006685] transition-colors cursor-pointer"
-                            title={isRTL ? "عرض التفاصيل" : "View Details"}
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
+                          {/* View Defect Button - ONLY for Failed test cases */}
+                          {row.status === "failed" && (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedItem(row)}
+                              className="p-1.5 hover:bg-red-50 rounded-lg text-red-600 hover:text-red-700 transition-colors cursor-pointer"
+                              title={isRTL ? "عرض تقرير الخلل (Defect Report)" : "View Defect Report"}
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                          )}
 
                           {/* Edit Button */}
                           <button
@@ -1037,8 +1044,8 @@ export default function TestCasesTable({
         </div>
       )}
 
-      {/* ── Details View Modal ────────────────────────────────────── */}
-      {selectedItem && (
+      {/* ── Defect Details View Modal (FAILED CASES ONLY) ─────────── */}
+      {selectedItem && selectedItem.status === "failed" && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
           onClick={() => setSelectedItem(null)}
@@ -1048,22 +1055,26 @@ export default function TestCasesTable({
             onClick={(e) => e.stopPropagation()}
             dir={dir}
           >
-            {/* Modal Header */}
-            <div className="flex items-start justify-between border-b border-slate-100 pb-4">
+            {/* Defect Header */}
+            <div className="flex items-start justify-between border-b border-red-100 pb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#eff4ff] flex items-center justify-center text-[#006685] font-mono font-bold text-sm">
-                  {selectedItem.testId.slice(0, 2)}
+                <div className="w-11 h-11 rounded-2xl bg-red-100 flex items-center justify-center text-red-600 font-bold text-lg ring-4 ring-red-50">
+                  ⚠️
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-[#0b1c30]">
-                    {selectedItem.testId} - {selectedItem.module}
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-md">
+                      {isRTL ? "تقرير خلل برمجى" : "Defect Report"}
+                    </span>
+                    <span className="text-xs font-mono font-bold text-slate-500">
+                      {selectedItem.testId.startsWith("TC-")
+                        ? selectedItem.testId.replace(/^TC-/, "BUG-")
+                        : selectedItem.testId}
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-bold text-[#0b1c30] mt-0.5">
+                    {isRTL ? "تفاصيل الخلل البرمجي" : "Defect / Bug Details"}
                   </h3>
-                  {selectedItem.pageName && (
-                    <p className="text-xs text-[#6d797f]">
-                      {isRTL ? "الصفحة: " : "Page: "}
-                      {selectedItem.pageName}
-                    </p>
-                  )}
                 </div>
               </div>
               <button
@@ -1075,343 +1086,178 @@ export default function TestCasesTable({
               </button>
             </div>
 
-            {selectedItem.status === "failed" ? (
-              /* ── DEFECT / BUG DETAILS VIEW (Failed cases only) ──────── */
-              <div className="space-y-5">
-                {/* Defect Header */}
-                <div className="flex items-start justify-between border-b border-red-100 pb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-2xl bg-red-100 flex items-center justify-center text-red-600 font-bold text-lg ring-4 ring-red-50">
-                      ⚠️
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-md">
-                          {isRTL ? "تقرير خلل برمجى" : "Defect Report"}
-                        </span>
-                        <span className="text-xs font-mono font-bold text-slate-500">
-                          {selectedItem.testId}
-                        </span>
-                      </div>
-                      <h3 className="text-lg font-bold text-[#0b1c30] mt-0.5">
-                        {isRTL ? "تفاصيل الخلل البرمجي" : "Defect / Bug Details"}
-                      </h3>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedItem(null)}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-
-                {/* 1. Defect ID */}
-                <div className="p-3.5 bg-red-50/60 border border-red-200 rounded-xl flex items-center justify-between">
-                  <div>
-                    <span className="text-xs font-bold text-red-700 block">
-                      {isRTL ? "معرّف الخلل (Defect ID)" : "Defect ID"}
-                    </span>
-                    <span className="text-lg font-mono font-black text-red-600 tracking-wider">
-                      {selectedItem.testId.startsWith("TC-")
-                        ? selectedItem.testId.replace(/^TC-/, "BUG-")
-                        : selectedItem.testId}
-                    </span>
-                  </div>
-                  <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300 font-bold text-xs px-2.5 py-1">
-                    {isRTL ? "فاشل / خلل" : "Failed / Defect"}
-                  </Badge>
-                </div>
-
-                {/* 2. Title */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-[#565e74] flex items-center gap-1.5">
-                    <FileText className="w-4 h-4 text-[#006685]" />
-                    <span>{isRTL ? "العنوان (Title):" : "Title:"}</span>
-                  </label>
-                  <div className="p-3.5 bg-[#f8f9ff] rounded-xl text-sm font-semibold text-[#0b1c30] leading-relaxed border border-[#e5eeff]">
-                    {selectedItem.scenario}
-                  </div>
-                </div>
-
-                {/* 3. Module */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-[#565e74] flex items-center gap-1.5">
-                    <FolderGit2 className="w-4 h-4 text-[#006685]" />
-                    <span>{isRTL ? "الوحدة البرمجية / المشروع (Module):" : "Module:"}</span>
-                  </label>
-                  <div className="p-3 bg-white rounded-xl text-xs font-bold text-[#0b1c30] border border-slate-200 flex items-center justify-between">
-                    <span>{selectedItem.module || selectedItem.project?.name || "-"}</span>
-                    {selectedItem.pageName && (
-                      <span className="text-[11px] text-[#6d797f] font-normal">
-                        {isRTL ? "الصفحة: " : "Page: "}{selectedItem.pageName}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* 4. Description */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-[#565e74] flex items-center gap-1.5">
-                    <AlertCircle className="w-4 h-4 text-red-600" />
-                    <span>{isRTL ? "الوصف (Description):" : "Description:"}</span>
-                  </label>
-                  <div className="p-4 bg-slate-50 rounded-xl text-xs text-[#0b1c30] border border-slate-200 space-y-3 leading-relaxed">
-                    {selectedItem.actualResult && (
-                      <div>
-                        <span className="font-bold text-red-700 block mb-1">
-                          {isRTL ? "النتيجة الفعلية / الخلل الملاحظ:" : "Actual Result / Observed Failure:"}
-                        </span>
-                        <p className="text-slate-800 bg-white p-2.5 rounded-lg border border-red-100">
-                          {selectedItem.actualResult}
-                        </p>
-                      </div>
-                    )}
-                    {selectedItem.expectedResult && (
-                      <div>
-                        <span className="font-bold text-emerald-700 block mb-1">
-                          {isRTL ? "النتيجة المتوقعة:" : "Expected Behavior:"}
-                        </span>
-                        <p className="text-slate-700 bg-white p-2.5 rounded-lg border border-emerald-100">
-                          {selectedItem.expectedResult}
-                        </p>
-                      </div>
-                    )}
-                    {Array.isArray(selectedItem.steps) && selectedItem.steps.length > 0 && (
-                      <div>
-                        <span className="font-bold text-slate-700 block mb-1.5">
-                          {isRTL ? "خطوات إعادة الإنتاج (Steps to Reproduce):" : "Steps to Reproduce:"}
-                        </span>
-                        <div className="space-y-1.5">
-                          {selectedItem.steps.map((st, i) => (
-                            <div key={i} className="flex items-start gap-2 bg-white p-2 rounded-lg border border-slate-100">
-                              <span className="w-4 h-4 rounded bg-red-100 text-red-700 font-mono font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">
-                                {i + 1}
-                              </span>
-                              <span className="text-slate-700">{st}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {selectedItem.notes && (
-                      <div>
-                        <span className="font-bold text-slate-700 block mb-1">
-                          {isRTL ? "ملاحظات إضافية:" : "Additional Notes:"}
-                        </span>
-                        <p className="text-slate-600 bg-white p-2 rounded-lg border border-slate-100">
-                          {selectedItem.notes}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* 5. Severity, 6. Priority, 7. Status */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-                  {/* Severity */}
-                  <div className="p-3 bg-red-50/40 border border-red-200 rounded-xl space-y-1">
-                    <span className="text-[11px] font-bold text-red-700 block">
-                      {isRTL ? "درجة الخطورة (Severity)" : "Severity"}
-                    </span>
-                    <Badge
-                      variant="outline"
-                      className={`text-xs px-2.5 py-1 font-bold ${
-                        severityMap[selectedItem.severity || "medium"]?.badgeClass ||
-                        "bg-amber-50 text-amber-700 border-amber-200"
-                      }`}
-                    >
-                      {isRTL
-                        ? severityMap[selectedItem.severity || "medium"]?.labelAr || "متوسطة"
-                        : severityMap[selectedItem.severity || "medium"]?.labelEn || "Medium"}
-                    </Badge>
-                  </div>
-
-                  {/* Priority */}
-                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
-                    <span className="text-[11px] font-bold text-[#565e74] block">
-                      {isRTL ? "الأولوية (Priority)" : "Priority"}
-                    </span>
-                    <Badge
-                      variant="outline"
-                      className={`text-xs px-2.5 py-1 font-bold ${
-                        priorityMap[selectedItem.priority]?.badgeClass || ""
-                      }`}
-                    >
-                      {isRTL
-                        ? priorityMap[selectedItem.priority]?.labelAr
-                        : priorityMap[selectedItem.priority]?.labelEn}
-                    </Badge>
-                  </div>
-
-                  {/* Status */}
-                  <div className="p-3 bg-red-50/60 border border-red-200 rounded-xl space-y-1">
-                    <span className="text-[11px] font-bold text-red-700 block">
-                      {isRTL ? "الحالة (Status)" : "Status"}
-                    </span>
-                    <Badge
-                      variant="outline"
-                      className="text-xs px-2.5 py-1 font-bold bg-red-50 text-red-700 border-red-200 flex items-center gap-1.5 w-fit"
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                      <span>{isRTL ? "فاشل" : "Failed"}</span>
-                    </Badge>
-                  </div>
-                </div>
-
-                {/* Defect Modal Footer */}
-                <div className="pt-2 flex items-center justify-between gap-3 border-t border-slate-100">
-                  <Link
-                    href={`/test-cases/email?id=${selectedItem.id}`}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
-                  >
-                    <Mail className="w-4 h-4" />
-                    <span>
-                      {isRTL ? "إرسال تقرير الخلل عبر Outlook" : "Send Defect Report (Outlook)"}
-                    </span>
-                  </Link>
-                  <Button
-                    variant="outline"
-                    onClick={() => setSelectedItem(null)}
-                    className="rounded-xl text-xs font-bold px-5 cursor-pointer"
-                  >
-                    {isRTL ? "إغلاق" : "Close"}
-                  </Button>
-                </div>
+            {/* 1. Defect ID */}
+            <div className="p-3.5 bg-red-50/60 border border-red-200 rounded-xl flex items-center justify-between">
+              <div>
+                <span className="text-xs font-bold text-red-700 block">
+                  {isRTL ? "معرّف الخلل (Defect ID)" : "Defect ID"}
+                </span>
+                <span className="text-lg font-mono font-black text-red-600 tracking-wider">
+                  {selectedItem.testId.startsWith("TC-")
+                    ? selectedItem.testId.replace(/^TC-/, "BUG-")
+                    : selectedItem.testId}
+                </span>
               </div>
-            ) : (
-              /* ── STANDARD TEST CASE DETAILS VIEW (Passed / Pending / etc.) ── */
-              <>
-                {/* Badges Bar */}
-                <div className="flex flex-wrap items-center gap-3">
-                  <Badge
-                    variant="outline"
-                    className={`text-xs px-2.5 py-1 font-bold ${
-                      statusMap[selectedItem.status]?.badgeClass || ""
-                    }`}
-                  >
-                    {isRTL
-                      ? statusMap[selectedItem.status]?.labelAr
-                      : statusMap[selectedItem.status]?.labelEn}
-                  </Badge>
-                  <Badge
-                    variant="outline"
-                    className={`text-xs px-2.5 py-1 font-bold ${
-                      priorityMap[selectedItem.priority]?.badgeClass || ""
-                    }`}
-                  >
-                    {isRTL ? "الأولوية: " : "Priority: "}
-                    {isRTL
-                      ? priorityMap[selectedItem.priority]?.labelAr
-                      : priorityMap[selectedItem.priority]?.labelEn}
-                  </Badge>
-                  {selectedItem.tester?.name && (
-                    <div className="flex items-center gap-1.5 text-xs text-[#565e74]">
-                      <User className="w-3.5 h-3.5 text-[#006685]" />
-                      <span>{selectedItem.tester.name}</span>
-                    </div>
-                  )}
-                  {selectedItem.executedAt && (
-                    <div className="flex items-center gap-1.5 text-xs text-[#565e74]">
-                      <Calendar className="w-3.5 h-3.5 text-[#006685]" />
-                      <span>{new Date(selectedItem.executedAt).toLocaleString(lang === "ar" ? "ar-EG" : "en-US")}</span>
-                    </div>
-                  )}
-                </div>
+              <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300 font-bold text-xs px-2.5 py-1">
+                {isRTL ? "فاشل / خلل" : "Failed / Defect"}
+              </Badge>
+            </div>
 
-                {/* Scenario */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-[#565e74] flex items-center gap-1.5">
-                    <FileText className="w-4 h-4 text-[#006685]" />
-                    <span>{isRTL ? "سيناريو الاختبار:" : "Test Scenario:"}</span>
-                  </label>
-                  <p className="p-3.5 bg-[#f8f9ff] rounded-xl text-sm text-[#0b1c30] leading-relaxed border border-[#e5eeff]">
-                    {selectedItem.scenario}
-                  </p>
-                </div>
+            {/* 2. Title */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-[#565e74] flex items-center gap-1.5">
+                <FileText className="w-4 h-4 text-[#006685]" />
+                <span>{isRTL ? "العنوان (Title):" : "Title:"}</span>
+              </label>
+              <div className="p-3.5 bg-[#f8f9ff] rounded-xl text-sm font-semibold text-[#0b1c30] leading-relaxed border border-[#e5eeff]">
+                {selectedItem.scenario}
+              </div>
+            </div>
 
-                {/* Preconditions */}
-                {selectedItem.preConditions && (
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-[#565e74]">
-                      {isRTL ? "الشروط المسبقة:" : "Pre-conditions:"}
-                    </label>
-                    <p className="p-3 bg-[#f8f9ff] rounded-xl text-xs text-[#3d484f] border border-[#e5eeff]">
-                      {selectedItem.preConditions}
+            {/* 3. Module */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-[#565e74] flex items-center gap-1.5">
+                <FolderGit2 className="w-4 h-4 text-[#006685]" />
+                <span>{isRTL ? "الوحدة البرمجية / المشروع (Module):" : "Module:"}</span>
+              </label>
+              <div className="p-3 bg-white rounded-xl text-xs font-bold text-[#0b1c30] border border-slate-200 flex items-center justify-between">
+                <span>{selectedItem.module || selectedItem.project?.name || "-"}</span>
+                {selectedItem.pageName && (
+                  <span className="text-[11px] text-[#6d797f] font-normal">
+                    {isRTL ? "الصفحة: " : "Page: "}{selectedItem.pageName}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* 4. Description */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-[#565e74] flex items-center gap-1.5">
+                <AlertCircle className="w-4 h-4 text-red-600" />
+                <span>{isRTL ? "الوصف (Description):" : "Description:"}</span>
+              </label>
+              <div className="p-4 bg-slate-50 rounded-xl text-xs text-[#0b1c30] border border-slate-200 space-y-3 leading-relaxed">
+                {selectedItem.actualResult && (
+                  <div>
+                    <span className="font-bold text-red-700 block mb-1">
+                      {isRTL ? "النتيجة الفعلية / الخلل الملاحظ:" : "Actual Result / Observed Failure:"}
+                    </span>
+                    <p className="text-slate-800 bg-white p-2.5 rounded-lg border border-red-100">
+                      {selectedItem.actualResult}
                     </p>
                   </div>
                 )}
-
-                {/* Steps */}
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-[#565e74] flex items-center gap-1.5">
-                    <Layers className="w-4 h-4 text-[#006685]" />
-                    <span>{isRTL ? "خطوات التنفيذ:" : "Test Steps:"}</span>
-                  </label>
-                  <div className="space-y-2">
-                    {Array.isArray(selectedItem.steps) && selectedItem.steps.length > 0 ? (
-                      selectedItem.steps.map((step, idx) => (
-                        <div
-                          key={idx}
-                          className="flex items-start gap-3 p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs text-[#0b1c30]"
-                        >
-                          <span className="w-5 h-5 rounded-md bg-[#006685] text-white flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
-                            {idx + 1}
-                          </span>
-                          <span className="leading-relaxed">{step}</span>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-xs text-slate-400">-</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Expected & Actual Results */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-[#006c49]">
-                      {isRTL ? "النتيجة المتوقعة:" : "Expected Result:"}
-                    </label>
-                    <div className="p-3 bg-emerald-50/60 border border-emerald-100 rounded-xl text-xs text-emerald-900 leading-relaxed min-h-[60px]">
+                {selectedItem.expectedResult && (
+                  <div>
+                    <span className="font-bold text-emerald-700 block mb-1">
+                      {isRTL ? "النتيجة المتوقعة:" : "Expected Behavior:"}
+                    </span>
+                    <p className="text-slate-700 bg-white p-2.5 rounded-lg border border-emerald-100">
                       {selectedItem.expectedResult}
+                    </p>
+                  </div>
+                )}
+                {Array.isArray(selectedItem.steps) && selectedItem.steps.length > 0 && (
+                  <div>
+                    <span className="font-bold text-slate-700 block mb-1.5">
+                      {isRTL ? "خطوات إعادة الإنتاج (Steps to Reproduce):" : "Steps to Reproduce:"}
+                    </span>
+                    <div className="space-y-1.5">
+                      {selectedItem.steps.map((st, i) => (
+                        <div key={i} className="flex items-start gap-2 bg-white p-2 rounded-lg border border-slate-100">
+                          <span className="w-4 h-4 rounded bg-red-100 text-red-700 font-mono font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">
+                            {i + 1}
+                          </span>
+                          <span className="text-slate-700">{st}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-[#565e74]">
-                      {isRTL ? "النتيجة الفعلية:" : "Actual Result:"}
-                    </label>
-                    <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl text-xs text-[#3d484f] leading-relaxed min-h-[60px]">
-                      {selectedItem.actualResult || (isRTL ? "لم تُسجل بعد" : "Not recorded")}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Notes */}
+                )}
                 {selectedItem.notes && (
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-[#565e74]">
-                      {isRTL ? "ملاحظات إضافية:" : "Notes:"}
-                    </label>
-                    <p className="p-3 bg-slate-50 rounded-xl text-xs text-[#3d484f]">
+                  <div>
+                    <span className="font-bold text-slate-700 block mb-1">
+                      {isRTL ? "ملاحظات إضافية:" : "Additional Notes:"}
+                    </span>
+                    <p className="text-slate-600 bg-white p-2 rounded-lg border border-slate-100">
                       {selectedItem.notes}
                     </p>
                   </div>
                 )}
+              </div>
+            </div>
 
-                {/* Standard Modal Footer */}
-                <div className="pt-2 flex items-center justify-end gap-3">
-                  <Button
-                    variant="outline"
-                    onClick={() => setSelectedItem(null)}
-                    className="rounded-xl text-xs font-bold px-5 cursor-pointer"
-                  >
-                    {isRTL ? "إغلاق" : "Close"}
-                  </Button>
-                </div>
-              </>
-            )}
+            {/* 5. Severity, 6. Priority, 7. Status */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+              {/* Severity */}
+              <div className="p-3 bg-red-50/40 border border-red-200 rounded-xl space-y-1">
+                <span className="text-[11px] font-bold text-red-700 block">
+                  {isRTL ? "درجة الخطورة (Severity)" : "Severity"}
+                </span>
+                <Badge
+                  variant="outline"
+                  className={`text-xs px-2.5 py-1 font-bold ${
+                    severityMap[selectedItem.severity || "medium"]?.badgeClass ||
+                    "bg-amber-50 text-amber-700 border-amber-200"
+                  }`}
+                >
+                  {isRTL
+                    ? severityMap[selectedItem.severity || "medium"]?.labelAr || "متوسطة"
+                    : severityMap[selectedItem.severity || "medium"]?.labelEn || "Medium"}
+                </Badge>
+              </div>
+
+              {/* Priority */}
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                <span className="text-[11px] font-bold text-[#565e74] block">
+                  {isRTL ? "الأولوية (Priority)" : "Priority"}
+                </span>
+                <Badge
+                  variant="outline"
+                  className={`text-xs px-2.5 py-1 font-bold ${
+                    priorityMap[selectedItem.priority]?.badgeClass || ""
+                  }`}
+                >
+                  {isRTL
+                    ? priorityMap[selectedItem.priority]?.labelAr
+                    : priorityMap[selectedItem.priority]?.labelEn}
+                </Badge>
+              </div>
+
+              {/* Status */}
+              <div className="p-3 bg-red-50/60 border border-red-200 rounded-xl space-y-1">
+                <span className="text-[11px] font-bold text-red-700 block">
+                  {isRTL ? "الحالة (Status)" : "Status"}
+                </span>
+                <Badge
+                  variant="outline"
+                  className="text-xs px-2.5 py-1 font-bold bg-red-50 text-red-700 border-red-200 flex items-center gap-1.5 w-fit"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                  <span>{isRTL ? "فاشل" : "Failed"}</span>
+                </Badge>
+              </div>
+            </div>
+
+            {/* Defect Modal Footer */}
+            <div className="pt-2 flex items-center justify-between gap-3 border-t border-slate-100">
+              <Link
+                href={`/test-cases/email?id=${selectedItem.id}`}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+              >
+                <Mail className="w-4 h-4" />
+                <span>
+                  {isRTL ? "إرسال تقرير الخلل عبر Outlook" : "Send Defect Report (Outlook)"}
+                </span>
+              </Link>
+              <Button
+                variant="outline"
+                onClick={() => setSelectedItem(null)}
+                className="rounded-xl text-xs font-bold px-5 cursor-pointer"
+              >
+                {isRTL ? "إغلاق" : "Close"}
+              </Button>
+            </div>
           </div>
         </div>
       )}

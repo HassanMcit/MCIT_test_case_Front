@@ -353,34 +353,128 @@ export default function AddUserPage() {
           <CardContent className="pt-5 space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Role Selection */}
-              <div className="space-y-1.5 ">
-                <Label className="text-xs font-bold text-slate-700">
+              <div className="space-y-3 sm:col-span-2">
+                <Label className="text-xs font-bold text-slate-700 block">
                   {isRTL ? "الدور الوظيفي في النظام *" : "System Role *"}
                 </Label>
                 <Controller
                   name="role"
                   control={control}
                   render={({ field }) => (
-                    <Select
-                      value={field.value}
-                      onValueChange={(val) => {
-                        const nextVal = val || "tester";
-                        field.onChange(nextVal);
-                        setSelectedRole(nextVal);
-                      }}
-                    >
-                      <SelectTrigger className="h-10 text-xs sm:text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="w-52">
-                        <SelectItem value="admin">
-                          {isRTL ? "مدير نظام " : "Administrator "}
-                        </SelectItem>
-                        <SelectItem value="tester">
-                          {isRTL ? "مهندس اختبار " : "QA Tester"}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="space-y-3">
+                      {/* Interactive Visual Role Cards for effortless selection */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {/* Option 1: QA Tester */}
+                        <div
+                          onClick={() => {
+                            field.onChange("tester");
+                            setSelectedRole("tester");
+                          }}
+                          className={cn(
+                            "p-3.5 rounded-xl border-2 transition-all cursor-pointer flex items-center justify-between",
+                            field.value === "tester"
+                              ? "border-[#006685] bg-[#eff4ff] ring-2 ring-[#006685]/15 shadow-xs"
+                              : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
+                          )}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={cn(
+                                "w-9 h-9 rounded-xl flex items-center justify-center",
+                                field.value === "tester"
+                                  ? "bg-[#006685] text-white"
+                                  : "bg-slate-100 text-slate-600"
+                              )}
+                            >
+                              <User className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <span className="text-xs font-bold text-[#0b1c30] block">
+                                {isRTL ? "مهندس اختبار (QA Tester)" : "QA Tester"}
+                              </span>
+                              <span className="text-[11px] text-[#6d797f] block">
+                                {isRTL
+                                  ? "صلاحية تنفيذ وتوثيق حالات الاختبار"
+                                  : "Execute and log test cases"}
+                              </span>
+                            </div>
+                          </div>
+                          {field.value === "tester" && (
+                            <div className="w-5 h-5 rounded-full bg-[#006685] text-white flex items-center justify-center shrink-0">
+                              <Check className="w-3 h-3 stroke-[3]" />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Option 2: Administrator */}
+                        <div
+                          onClick={() => {
+                            field.onChange("admin");
+                            setSelectedRole("admin");
+                          }}
+                          className={cn(
+                            "p-3.5 rounded-xl border-2 transition-all cursor-pointer flex items-center justify-between",
+                            field.value === "admin"
+                              ? "border-purple-600 bg-purple-50/60 ring-2 ring-purple-600/15 shadow-xs"
+                              : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
+                          )}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={cn(
+                                "w-9 h-9 rounded-xl flex items-center justify-center",
+                                field.value === "admin"
+                                  ? "bg-purple-600 text-white"
+                                  : "bg-slate-100 text-slate-600"
+                              )}
+                            >
+                              <ShieldCheck className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <span className="text-xs font-bold text-[#0b1c30] block">
+                                {isRTL ? "مدير نظام (Administrator)" : "Administrator"}
+                              </span>
+                              <span className="text-[11px] text-[#6d797f] block">
+                                {isRTL
+                                  ? "كامل الصلاحيات وإدارة المستخدمين والمشاريع"
+                                  : "Full admin privileges & system management"}
+                              </span>
+                            </div>
+                          </div>
+                          {field.value === "admin" && (
+                            <div className="w-5 h-5 rounded-full bg-purple-600 text-white flex items-center justify-center shrink-0">
+                              <Check className="w-3 h-3 stroke-[3]" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Dropdown Select (Synced with Base-UI) */}
+                      <Select
+                        value={field.value}
+                        onValueChange={(val) => {
+                          const nextVal = val || "tester";
+                          field.onChange(nextVal);
+                          setSelectedRole(nextVal);
+                        }}
+                      >
+                        <SelectTrigger className="h-10 text-xs sm:text-sm w-full bg-[#f8f9ff] border-slate-200">
+                          <SelectValue>
+                            {field.value === "admin"
+                              ? (isRTL ? "مدير نظام (Administrator)" : "Administrator")
+                              : (isRTL ? "مهندس اختبار (QA Tester)" : "QA Tester")}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent className="w-60">
+                          <SelectItem value="admin">
+                            {isRTL ? "مدير نظام (Administrator)" : "Administrator"}
+                          </SelectItem>
+                          <SelectItem value="tester">
+                            {isRTL ? "مهندس اختبار (QA Tester)" : "QA Tester"}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   )}
                 />
               </div>
