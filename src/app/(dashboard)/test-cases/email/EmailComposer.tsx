@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -19,6 +19,10 @@ import {
   Download,
   Settings,
   Loader2,
+  Eye,
+  Edit3,
+  Globe,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,88 +46,444 @@ interface EmailComposerProps {
   failedCases: TestCaseItem[];
 }
 
-function generateBugTemplate(tc: TestCaseItem, lang: "ar" | "en") {
-  const isAr = lang === "ar";
-  const priorityLabels: Record<string, string> = {
-    critical: isAr ? "حرجة (Critical)" : "Critical",
-    high: isAr ? "عالية (High)" : "High",
-    medium: isAr ? "متوسطة (Medium)" : "Medium",
-    low: isAr ? "منخفضة (Low)" : "Low",
-  };
+/**
+ * Returns formatted bug ID (e.g. TC-0001 -> Bug-0001)
+ */
+export function getBugDisplayId(tc: TestCaseItem): string {
+  if (!tc.testId) return "Bug-0001";
+  if (tc.testId.toUpperCase().startsWith("TC-")) {
+    return tc.testId.replace(/^TC-/i, "Bug-");
+  }
+  return tc.testId;
+}
 
-  const stepsList =
-    Array.isArray(tc.steps) && tc.steps.length > 0
-      ? tc.steps.map((s, i) => `${i + 1}. ${s}`).join("\r\n")
-      : isAr
-      ? "- لا توجد خطوات مسجلة"
-      : "- No steps recorded";
-
-  if (isAr) {
-    const lines = [
-      `=== تقرير عيب برمجي (Defect Report) ===`,
-      ``,
-      `• معرّف حالة الاختبار: ${tc.testId}`,
-      `• المشروع: ${tc.project?.name || tc.module || "غير محدد"}`,
-      `• الوحدة / الصفحة: ${tc.module}${tc.pageName ? ` / ${tc.pageName}` : ""}`,
-      tc.severity ? `• درجة الخطورة: ${tc.severity}` : "",
-      `• درجة الأولوية: ${priorityLabels[tc.priority] || tc.priority}`,
-      `• الحالة: فشل (Failed)`,
-      tc.tester?.name ? `• تم الفحص بواسطة: ${tc.tester.name}` : "",
-      tc.executedAt ? `• تاريخ الفحص: ${new Date(tc.executedAt).toLocaleString("ar-EG")}` : "",
-      ``,
-      `--- سيناريو الاختبار (Scenario) ---`,
-      `${tc.scenario}`,
-      ``,
-      `--- خطوات إعادة الإنتاج (Steps to Reproduce) ---`,
-      stepsList,
-      ``,
-      tc.preConditions ? `--- الشروط المسبقة (Pre-conditions) ---\r\n${tc.preConditions}\r\n` : "",
-      `--- النتيجة المتوقعة (Expected Result) ---`,
-      `${tc.expectedResult || "-"}`,
-      ``,
-      `--- النتيجة الفعلية (Actual Result) ---`,
-      `${tc.actualResult || "فشل الاختبار، حدث خطأ غير متوقع"}`,
-      ``,
-      tc.notes ? `--- ملاحظات إضافية (Notes) ---\r\n${tc.notes}\r\n` : "",
-      `=== تم إنشاء هذا التقرير عبر نظام إدارة اختبارات الجودة MCIT ===`,
-    ].filter(Boolean);
-    return lines.join("\r\n");
-  } else {
-    const lines = [
-      `=== Defect Report ===`,
-      ``,
-      `• Test Case ID: ${tc.testId}`,
-      `• Project: ${tc.project?.name || tc.module || "N/A"}`,
-      `• Module / Page: ${tc.module}${tc.pageName ? ` / ${tc.pageName}` : ""}`,
-      tc.severity ? `• Severity: ${tc.severity}` : "",
-      `• Priority: ${priorityLabels[tc.priority] || tc.priority}`,
-      `• Status: Failed`,
-      tc.tester?.name ? `• Reported By: ${tc.tester.name}` : "",
-      tc.executedAt ? `• Date: ${new Date(tc.executedAt).toLocaleString("en-US")}` : "",
-      ``,
-      `--- Test Scenario ---`,
-      `${tc.scenario}`,
-      ``,
-      `--- Steps to Reproduce ---`,
-      stepsList,
-      ``,
-      tc.preConditions ? `--- Pre-conditions ---\r\n${tc.preConditions}\r\n` : "",
-      `--- Expected Result ---`,
-      `${tc.expectedResult || "-"}`,
-      ``,
-      `--- Actual Result ---`,
-      `${tc.actualResult || "Test failed with unexpected error"}`,
-      ``,
-      tc.notes ? `--- Additional Notes ---\r\n${tc.notes}\r\n` : "",
-      `=== Generated via MCIT QA Test Management System ===`,
-    ].filter(Boolean);
-    return lines.join("\r\n");
+/**
+ * Resolves localized priority details and emojis
+ */
+export function getPriorityInfo(priority?: string) {
+  const p = (priority || "high").toLowerCase();
+  switch (p) {
+    case "critical":
+      return {
+        key: "critical",
+        labelEn: "Critical",
+        labelAr: "حرجة",
+        adjEn: "critical",
+        adjAr: "عالي الخطورة",
+        badgeEmoji: "🔴",
+      };
+    case "high":
+      return {
+        key: "high",
+        labelEn: "High",
+        labelAr: "عالية",
+        adjEn: "high",
+        adjAr: "عالي الأولوية",
+        badgeEmoji: "🔴",
+      };
+    case "medium":
+      return {
+        key: "medium",
+        labelEn: "Medium",
+        labelAr: "متوسطة",
+        adjEn: "medium",
+        adjAr: "متوسط الأولوية",
+        badgeEmoji: "🟡",
+      };
+    case "low":
+    default:
+      return {
+        key: "low",
+        labelEn: "Low",
+        labelAr: "منخفضة",
+        adjEn: "low",
+        adjAr: "منخفض الأولوية",
+        badgeEmoji: "🟢",
+      };
   }
 }
 
-function generateSubject(tc: TestCaseItem, lang: "ar" | "en") {
-  const prefix = lang === "ar" ? "[تقرير خلل]" : "[Defect Report]";
-  return `${prefix} ${tc.testId}: ${tc.scenario}`;
+/**
+ * Formats report date matching the screenshot format:
+ * English: October 12, 2026 - 5:38 PM
+ * Arabic:  12 أكتوبر 2026 - 5:38 م
+ */
+export function formatReportDate(dateStr?: string | null, lang: "ar" | "en" = "en"): string {
+  const d = dateStr ? new Date(dateStr) : new Date();
+  const validDate = isNaN(d.getTime()) ? new Date() : d;
+
+  let hours = validDate.getHours();
+  const minutes = validDate.getMinutes().toString().padStart(2, "0");
+
+  if (lang === "ar") {
+    const monthsAr = [
+      "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
+      "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
+    ];
+    const month = monthsAr[validDate.getMonth()];
+    const day = validDate.getDate();
+    const year = validDate.getFullYear();
+    const ampm = hours >= 12 ? "م" : "ص";
+    hours = hours % 12 || 12;
+    return `${day} ${month} ${year} - ${hours}:${minutes} ${ampm}`;
+  } else {
+    const monthsEn = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+    const month = monthsEn[validDate.getMonth()];
+    const day = validDate.getDate();
+    const year = validDate.getFullYear();
+    const ampm = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12 || 12;
+    return `${month} ${day}, ${year} - ${hours}:${minutes} ${ampm}`;
+  }
+}
+
+/**
+ * Generates subject line matching user prompt:
+ * [Defect Report] High Priority - Bug-0001: Test Attendance Reports
+ */
+export function generateSubject(tc: TestCaseItem, lang: "ar" | "en"): string {
+  const bugId = getBugDisplayId(tc);
+  const pInfo = getPriorityInfo(tc.priority);
+  const projectName = tc.project?.name || tc.module || "Test Project";
+
+  if (lang === "ar") {
+    return `[تقرير خلل] أولوية ${pInfo.labelAr} - ${bugId}: ${projectName}`;
+  } else {
+    return `[Defect Report] ${pInfo.labelEn} Priority - ${bugId}: ${projectName}`;
+  }
+}
+
+/**
+ * Generates plain-text body matching exact template
+ */
+export function generateBugTextTemplate(tc: TestCaseItem, lang: "ar" | "en"): string {
+  const isAr = lang === "ar";
+  const bugId = getBugDisplayId(tc);
+  const pInfo = getPriorityInfo(tc.priority);
+  const projectName = tc.project?.name || tc.module || (isAr ? "مشروع الاختبار" : "Test Project");
+  const modulePage = tc.pageName ? `${tc.module} / ${tc.pageName}` : tc.module;
+  const reporterName = tc.tester?.name || "Tester Name";
+  const dateFormatted = formatReportDate(tc.executedAt, lang);
+  const preConditions = tc.preConditions || (isAr ? "لا توجد شروط مسبقة" : "None");
+  const scenario = tc.scenario || (isAr ? "سيناريو الاختبار" : "Test Scenario");
+  const expectedResult = tc.expectedResult || (isAr ? "النتيجة المتوقعة" : "Expected Result");
+  const actualResult = tc.actualResult || (isAr ? "فشل الاختبار، حدث خطأ غير متوقع" : "Test failed with unexpected error");
+
+  const stepsList =
+    Array.isArray(tc.steps) && tc.steps.length > 0
+      ? tc.steps.map((s, i) => `${i + 1}.\t${s}`).join("\r\n")
+      : isAr
+      ? "1.\tتنفيذ خطوات السيناريو"
+      : "1.\tExecute scenario steps";
+
+  if (isAr) {
+    return [
+      `فريق العمل المحترم،`,
+      `يرجى مراجعة الخلل البرمجي ${pInfo.adjAr} التالي والمسجل أثناء تنفيذ الاختبارات الأخيرة لمشروع ${projectName}.`,
+      ``,
+      `معلومات تتبع الخلل`,
+      `•\tمعرّف حالة الاختبار: ${bugId}`,
+      `•\tالمشروع: ${projectName}`,
+      `•\tالوحدة / الصفحة: ${modulePage}`,
+      `•\tدرجة الأولوية: ${pInfo.labelAr} ${pInfo.badgeEmoji}`,
+      `•\tالحالة: فشل ❌`,
+      `•\tتم الفحص بواسطة: ${reporterName}`,
+      `•\tتاريخ الإبلاغ: ${dateFormatted}`,
+      ``,
+      `تفاصيل الاختبار`,
+      `•\tالشروط المسبقة: ${preConditions}`,
+      `•\tسيناريو الاختبار: ${scenario}`,
+      ``,
+      `التنفيذ والنتائج`,
+      `خطوات إعادة الإنتاج:`,
+      stepsList,
+      `•\tالنتيجة المتوقعة: ${expectedResult}`,
+      `•\tالنتيجة الفعلية: ${actualResult}`,
+      ``,
+      `إشعار آلي تم إنشاؤه عبر نظام إدارة اختبارات الجودة MCIT.`,
+      `مع أطيب التحيات،`,
+      reporterName,
+    ].join("\r\n");
+  } else {
+    return [
+      `Dear Team,`,
+      `Please review the following ${pInfo.adjEn}-priority defect logged during the recent test execution for the ${projectName} project.`,
+      ``,
+      `Bug Tracking Information`,
+      `•\tTest Case ID: ${bugId}`,
+      `•\tProject: ${projectName}`,
+      `•\tModule / Page: ${modulePage}`,
+      `•\tPriority: ${pInfo.labelEn} ${pInfo.badgeEmoji}`,
+      `•\tStatus: Failed ❌`,
+      `•\tReported By: ${reporterName}`,
+      `•\tDate Reported: ${dateFormatted}`,
+      ``,
+      `Testing Details`,
+      `•\tPre-conditions: ${preConditions}`,
+      `•\tTest Scenario: ${scenario}`,
+      ``,
+      `Execution & Results`,
+      `Steps to Reproduce:`,
+      stepsList,
+      `•\tExpected Result: ${expectedResult}`,
+      `•\tActual Result: ${actualResult}`,
+      ``,
+      `Automated dispatch generated via MCIT QA Test Management System.`,
+      `Best regards,`,
+      reporterName,
+    ].join("\r\n");
+  }
+}
+
+/**
+ * Generates rich HTML template matching screenshot typography and bold styling
+ */
+export function generateBugHtmlTemplate(tc: TestCaseItem, lang: "ar" | "en"): string {
+  const isAr = lang === "ar";
+  const bugId = getBugDisplayId(tc);
+  const pInfo = getPriorityInfo(tc.priority);
+  const projectName = tc.project?.name || tc.module || (isAr ? "مشروع الاختبار" : "Test Project");
+  const modulePage = tc.pageName ? `${tc.module} / ${tc.pageName}` : tc.module;
+  const reporterName = tc.tester?.name || "Tester Name";
+  const dateFormatted = formatReportDate(tc.executedAt, lang);
+  const preConditions = tc.preConditions || (isAr ? "لا توجد شروط مسبقة" : "None");
+  const scenario = tc.scenario || (isAr ? "سيناريو الاختبار" : "Test Scenario");
+  const expectedResult = tc.expectedResult || (isAr ? "النتيجة المتوقعة" : "Expected Result");
+  const actualResult = tc.actualResult || (isAr ? "فشل الاختبار، حدث خطأ غير متوقع" : "Test failed with unexpected error");
+
+  const stepsHtml =
+    Array.isArray(tc.steps) && tc.steps.length > 0
+      ? tc.steps
+          .map(
+            (s) =>
+              `<li style="margin-bottom: 3px; font-size: 11pt; color: #000000; line-height: 1.5;">${s}</li>`
+          )
+          .join("")
+      : isAr
+      ? `<li style="margin-bottom: 3px; font-size: 11pt; color: #000000; line-height: 1.5;">تنفيذ خطوات السيناريو</li>`
+      : `<li style="margin-bottom: 3px; font-size: 11pt; color: #000000; line-height: 1.5;">Execute scenario steps</li>`;
+
+  if (isAr) {
+    return `<div dir="rtl" style="font-family: 'Segoe UI', Tahoma, Arial, sans-serif; font-size: 11pt; line-height: 1.5; color: #000000; text-align: right;">
+  <p style="margin: 0 0 10px 0; font-size: 11pt; color: #000000;">فريق العمل المحترم،</p>
+  <p style="margin: 0 0 16px 0; font-size: 11pt; color: #000000;">
+    يرجى مراجعة الخلل البرمجي ${pInfo.adjAr} التالي والمسجل أثناء تنفيذ الاختبارات الأخيرة لمشروع <b>${projectName}</b>.
+  </p>
+
+  <p style="margin: 16px 0 6px 0; font-size: 11pt; font-weight: bold; color: #000000;"><b>معلومات تتبع الخلل</b></p>
+  <ul style="margin: 4px 0 16px 0; padding-right: 28px; padding-left: 0; list-style-type: disc;">
+    <li style="margin-bottom: 3px; font-size: 11pt; color: #000000;"><b>معرّف حالة الاختبار:</b> ${bugId}</li>
+    <li style="margin-bottom: 3px; font-size: 11pt; color: #000000;"><b>المشروع:</b> ${projectName}</li>
+    <li style="margin-bottom: 3px; font-size: 11pt; color: #000000;"><b>الوحدة / الصفحة:</b> ${modulePage}</li>
+    <li style="margin-bottom: 3px; font-size: 11pt; color: #000000;"><b>درجة الأولوية:</b> ${pInfo.labelAr} ${pInfo.badgeEmoji}</li>
+    <li style="margin-bottom: 3px; font-size: 11pt; color: #000000;"><b>الحالة:</b> فشل ❌</li>
+    <li style="margin-bottom: 3px; font-size: 11pt; color: #000000;"><b>تم الفحص بواسطة:</b> ${reporterName}</li>
+    <li style="margin-bottom: 3px; font-size: 11pt; color: #000000;"><b>تاريخ الإبلاغ:</b> ${dateFormatted}</li>
+  </ul>
+
+  <p style="margin: 16px 0 6px 0; font-size: 11pt; font-weight: bold; color: #000000;"><b>تفاصيل الاختبار</b></p>
+  <ul style="margin: 4px 0 16px 0; padding-right: 28px; padding-left: 0; list-style-type: disc;">
+    <li style="margin-bottom: 3px; font-size: 11pt; color: #000000;"><b>الشروط المسبقة:</b> ${preConditions}</li>
+    <li style="margin-bottom: 3px; font-size: 11pt; color: #000000;"><b>سيناريو الاختبار:</b> ${scenario}</li>
+  </ul>
+
+  <p style="margin: 16px 0 6px 0; font-size: 11pt; font-weight: bold; color: #000000;"><b>التنفيذ والنتائج</b></p>
+  <p style="margin: 8px 0 4px 0; font-size: 11pt; font-weight: bold; color: #000000;"><b>خطوات إعادة الإنتاج:</b></p>
+  <ol style="margin: 4px 0 8px 0; padding-right: 28px; padding-left: 0;">
+    ${stepsHtml}
+  </ol>
+  <ul style="margin: 4px 0 16px 0; padding-right: 28px; padding-left: 0; list-style-type: disc;">
+    <li style="margin-bottom: 3px; font-size: 11pt; color: #000000;"><b>النتيجة المتوقعة:</b> ${expectedResult}</li>
+    <li style="margin-bottom: 3px; font-size: 11pt; color: #000000;"><b>النتيجة الفعلية:</b> ${actualResult}</li>
+  </ul>
+
+  <p style="margin: 18px 0 12px 0; font-size: 11pt; font-style: italic; color: #000000;">
+    <i>إشعار آلي تم إنشاؤه عبر <b>نظام إدارة اختبارات الجودة MCIT</b>.</i>
+  </p>
+
+  <p style="margin: 12px 0 0 0; font-size: 11pt; color: #000000; line-height: 1.4;">
+    مع أطيب التحيات،<br/>
+    <b>${reporterName}</b>
+  </p>
+</div>`;
+  } else {
+    return `<div style="font-family: Calibri, Aptos, Arial, sans-serif; font-size: 11pt; line-height: 1.5; color: #000000; text-align: left;">
+  <p style="margin: 0 0 10px 0; font-size: 11pt; color: #000000;">Dear Team,</p>
+  <p style="margin: 0 0 16px 0; font-size: 11pt; color: #000000;">
+    Please review the following ${pInfo.adjEn}-priority defect logged during the recent test execution for the <b>${projectName}</b> project.
+  </p>
+
+  <p style="margin: 16px 0 6px 0; font-size: 11pt; font-weight: bold; color: #000000;"><b>Bug Tracking Information</b></p>
+  <ul style="margin: 4px 0 16px 0; padding-left: 28px; list-style-type: disc;">
+    <li style="margin-bottom: 3px; font-size: 11pt; color: #000000;"><b>Test Case ID:</b> ${bugId}</li>
+    <li style="margin-bottom: 3px; font-size: 11pt; color: #000000;"><b>Project:</b> ${projectName}</li>
+    <li style="margin-bottom: 3px; font-size: 11pt; color: #000000;"><b>Module / Page:</b> ${modulePage}</li>
+    <li style="margin-bottom: 3px; font-size: 11pt; color: #000000;"><b>Priority:</b> ${pInfo.labelEn} ${pInfo.badgeEmoji}</li>
+    <li style="margin-bottom: 3px; font-size: 11pt; color: #000000;"><b>Status:</b> Failed ❌</li>
+    <li style="margin-bottom: 3px; font-size: 11pt; color: #000000;"><b>Reported By:</b> ${reporterName}</li>
+    <li style="margin-bottom: 3px; font-size: 11pt; color: #000000;"><b>Date Reported:</b> ${dateFormatted}</li>
+  </ul>
+
+  <p style="margin: 16px 0 6px 0; font-size: 11pt; font-weight: bold; color: #000000;"><b>Testing Details</b></p>
+  <ul style="margin: 4px 0 16px 0; padding-left: 28px; list-style-type: disc;">
+    <li style="margin-bottom: 3px; font-size: 11pt; color: #000000;"><b>Pre-conditions:</b> ${preConditions}</li>
+    <li style="margin-bottom: 3px; font-size: 11pt; color: #000000;"><b>Test Scenario:</b> ${scenario}</li>
+  </ul>
+
+  <p style="margin: 16px 0 6px 0; font-size: 11pt; font-weight: bold; color: #000000;"><b>Execution & Results</b></p>
+  <p style="margin: 8px 0 4px 0; font-size: 11pt; font-weight: bold; color: #000000;"><b>Steps to Reproduce:</b></p>
+  <ol style="margin: 4px 0 8px 0; padding-left: 28px;">
+    ${stepsHtml}
+  </ol>
+  <ul style="margin: 4px 0 16px 0; padding-left: 28px; list-style-type: disc;">
+    <li style="margin-bottom: 3px; font-size: 11pt; color: #000000;"><b>Expected Result:</b> ${expectedResult}</li>
+    <li style="margin-bottom: 3px; font-size: 11pt; color: #000000;"><b>Actual Result:</b> ${actualResult}</li>
+  </ul>
+
+  <p style="margin: 18px 0 12px 0; font-size: 11pt; font-style: italic; color: #000000;">
+    <i>Automated dispatch generated via <b>MCIT QA Test Management System</b>.</i>
+  </p>
+
+  <p style="margin: 12px 0 0 0; font-size: 11pt; color: #000000; line-height: 1.4;">
+    Best regards,<br/>
+    <b>${reporterName}</b>
+  </p>
+</div>`;
+  }
+}
+
+/**
+ * Converts user-edited plain text back to structured HTML with bold labels and lists
+ */
+function plainTextToHtml(text: string, isAr: boolean): string {
+  if (text.trim().startsWith("<div") || text.trim().startsWith("<p")) {
+    return text;
+  }
+  const lines = text.split(/\r?\n/);
+  const htmlLines: string[] = [];
+  let inUl = false;
+  let inOl = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const rawLine = lines[i];
+    const trimmed = rawLine.trim();
+
+    if (!trimmed) {
+      if (inUl) {
+        htmlLines.push("</ul>");
+        inUl = false;
+      }
+      if (inOl) {
+        htmlLines.push("</ol>");
+        inOl = false;
+      }
+      continue;
+    }
+
+    // Bullet lines: starts with • or - or *
+    if (trimmed.startsWith("•") || trimmed.startsWith("-") || trimmed.startsWith("*")) {
+      if (inOl) {
+        htmlLines.push("</ol>");
+        inOl = false;
+      }
+      if (!inUl) {
+        htmlLines.push(
+          isAr
+            ? `<ul style="margin: 4px 0 14px 0; padding-right: 28px; padding-left: 0; list-style-type: disc;">`
+            : `<ul style="margin: 4px 0 14px 0; padding-left: 28px; list-style-type: disc;">`
+        );
+        inUl = true;
+      }
+      const itemContent = trimmed.replace(/^[•\-*]\s*/, "");
+      const colonIdx = itemContent.indexOf(":");
+      let formattedItem = itemContent;
+      if (colonIdx > 0 && colonIdx < 40) {
+        const label = itemContent.slice(0, colonIdx);
+        const val = itemContent.slice(colonIdx + 1);
+        formattedItem = `<b>${label}:</b>${val}`;
+      }
+      htmlLines.push(`<li style="margin-bottom: 3px; font-size: 11pt; color: #000000;">${formattedItem}</li>`);
+      continue;
+    }
+
+    // Numbered step: starts with 1. 2. etc.
+    const stepMatch = trimmed.match(/^(\d+)\.\s*(.*)$/);
+    if (stepMatch) {
+      if (inUl) {
+        htmlLines.push("</ul>");
+        inUl = false;
+      }
+      if (!inOl) {
+        htmlLines.push(
+          isAr
+            ? `<ol style="margin: 4px 0 8px 0; padding-right: 28px; padding-left: 0;">`
+            : `<ol style="margin: 4px 0 8px 0; padding-left: 28px;">`
+        );
+        inOl = true;
+      }
+      htmlLines.push(`<li style="margin-bottom: 3px; font-size: 11pt; color: #000000;">${stepMatch[2]}</li>`);
+      continue;
+    }
+
+    // Close any open lists
+    if (inUl) {
+      htmlLines.push("</ul>");
+      inUl = false;
+    }
+    if (inOl) {
+      htmlLines.push("</ol>");
+      inOl = false;
+    }
+
+    // Section Titles
+    if (
+      trimmed === "Bug Tracking Information" ||
+      trimmed === "Testing Details" ||
+      trimmed === "Execution & Results" ||
+      trimmed === "معلومات تتبع الخلل" ||
+      trimmed === "تفاصيل الاختبار" ||
+      trimmed === "التنفيذ والنتائج"
+    ) {
+      htmlLines.push(`<p style="margin: 16px 0 6px 0; font-size: 11pt; font-weight: bold; color: #000000;"><b>${trimmed}</b></p>`);
+      continue;
+    }
+
+    if (trimmed === "Steps to Reproduce:" || trimmed === "خطوات إعادة الإنتاج:") {
+      htmlLines.push(`<p style="margin: 8px 0 4px 0; font-size: 11pt; font-weight: bold; color: #000000;"><b>${trimmed}</b></p>`);
+      continue;
+    }
+
+    if (
+      trimmed.includes("Automated dispatch generated via") ||
+      trimmed.includes("إشعار آلي تم إنشاؤه عبر")
+    ) {
+      htmlLines.push(`<p style="margin: 18px 0 12px 0; font-size: 11pt; font-style: italic; color: #000000;"><i>${trimmed}</i></p>`);
+      continue;
+    }
+
+    if (trimmed === "Best regards," || trimmed === "مع أطيب التحيات،") {
+      const nextLine = lines[i + 1]?.trim();
+      if (nextLine) {
+        htmlLines.push(`<p style="margin: 12px 0 0 0; font-size: 11pt; color: #000000; line-height: 1.4;">${trimmed}<br/><b>${nextLine}</b></p>`);
+        i++;
+        continue;
+      }
+    }
+
+    htmlLines.push(`<p style="margin: 0 0 10px 0; font-size: 11pt; color: #000000;">${trimmed}</p>`);
+  }
+
+  if (inUl) htmlLines.push("</ul>");
+  if (inOl) htmlLines.push("</ol>");
+
+  const font = isAr ? "'Segoe UI', Tahoma, Arial, sans-serif" : "Calibri, Aptos, Arial, sans-serif";
+  const dir = isAr ? "rtl" : "ltr";
+  const align = isAr ? "right" : "left";
+
+  return `<div dir="${dir}" style="font-family: ${font}; font-size: 11pt; line-height: 1.5; color: #000000; text-align: ${align};">\n${htmlLines.join("\n")}\n</div>`;
 }
 
 export default function EmailComposer({
@@ -140,18 +500,32 @@ export default function EmailComposer({
     initialTestCase || failedCases[0] || null
   );
 
+  // Email language toggle ("en" or "ar")
+  const [emailLang, setEmailLang] = useState<"ar" | "en">(lang === "en" ? "en" : "ar");
+
+  // View Mode: "preview" (Rich formatted card) or "edit" (Plain Textarea)
+  const [viewMode, setViewMode] = useState<"preview" | "edit">("preview");
+
   // Form Fields
   const [to, setTo] = useState("");
   const [cc, setCc] = useState("");
   const [subject, setSubject] = useState(
-    selectedCase ? generateSubject(selectedCase, lang) : ""
+    selectedCase ? generateSubject(selectedCase, emailLang) : ""
   );
   const [content, setContent] = useState(
-    selectedCase ? generateBugTemplate(selectedCase, lang) : ""
+    selectedCase ? generateBugTextTemplate(selectedCase, emailLang) : ""
+  );
+  const [htmlContent, setHtmlContent] = useState(
+    selectedCase ? generateBugHtmlTemplate(selectedCase, emailLang) : ""
   );
 
   const [copied, setCopied] = useState(false);
   const [isLaunching, setIsLaunching] = useState(false);
+
+  // Keep email language aligned if global language changes and user hasn't explicitly set it
+  useEffect(() => {
+    // If language changes, sync defaults
+  }, [lang]);
 
   // When changing selected test case, regenerate default subject and content
   const handleSelectCase = (caseId: string | null) => {
@@ -159,17 +533,35 @@ export default function EmailComposer({
     const found = failedCases.find((c) => String(c.id) === caseId);
     if (found) {
       setSelectedCase(found);
-      setSubject(generateSubject(found, lang));
-      setContent(generateBugTemplate(found, lang));
+      setSubject(generateSubject(found, emailLang));
+      setContent(generateBugTextTemplate(found, emailLang));
+      setHtmlContent(generateBugHtmlTemplate(found, emailLang));
       router.replace(`/test-cases/email?id=${found.id}`);
     }
+  };
+
+  // Toggle Email Language
+  const handleToggleEmailLang = (newLang: "ar" | "en") => {
+    setEmailLang(newLang);
+    if (selectedCase) {
+      setSubject(generateSubject(selectedCase, newLang));
+      setContent(generateBugTextTemplate(selectedCase, newLang));
+      setHtmlContent(generateBugHtmlTemplate(selectedCase, newLang));
+    }
+  };
+
+  // Handle plain text editing in textarea
+  const handleContentChange = (newText: string) => {
+    setContent(newText);
+    setHtmlContent(plainTextToHtml(newText, emailLang === "ar"));
   };
 
   // Reset to default template
   const handleResetTemplate = () => {
     if (selectedCase) {
-      setSubject(generateSubject(selectedCase, lang));
-      setContent(generateBugTemplate(selectedCase, lang));
+      setSubject(generateSubject(selectedCase, emailLang));
+      setContent(generateBugTextTemplate(selectedCase, emailLang));
+      setHtmlContent(generateBugHtmlTemplate(selectedCase, emailLang));
       toast.success(
         isRTL
           ? "تمت استعادة قالب التقرير الافتراضي بنجاح"
@@ -178,35 +570,69 @@ export default function EmailComposer({
     }
   };
 
-  // Copy to clipboard
+  // Copy to clipboard (rich HTML + plain text)
   const handleCopyContent = async () => {
     if (!content.trim()) return;
     try {
+      if (typeof window !== "undefined" && window.ClipboardItem) {
+        const blobHtml = new Blob([htmlContent], { type: "text/html" });
+        const blobText = new Blob([content], { type: "text/plain" });
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            "text/html": blobHtml,
+            "text/plain": blobText,
+          }),
+        ]);
+        setCopied(true);
+        toast.success(t("email_copied_rich") || t("email_copied_toast"));
+        setTimeout(() => setCopied(false), 2000);
+        return;
+      }
       await navigator.clipboard.writeText(content);
       setCopied(true);
       toast.success(t("email_copied_toast"));
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast.error(isRTL ? "فشل نسخ النص" : "Failed to copy text");
+      try {
+        await navigator.clipboard.writeText(content);
+        setCopied(true);
+        toast.success(t("email_copied_toast"));
+        setTimeout(() => setCopied(false), 2000);
+      } catch {
+        toast.error(isRTL ? "فشل نسخ النص" : "Failed to copy text");
+      }
     }
   };
 
-  // Download .eml file (opens in Outlook Classic when double-clicked)
+  // Download .eml file (opens in Outlook Classic when double-clicked with rich HTML)
   const handleDownloadEml = () => {
     if (!subject.trim()) {
       toast.error(t("email_error_no_subject"));
       return;
     }
 
+    const boundary = `----=_Part_${Date.now()}`;
     const emlContent = [
       `To: ${to.trim()}`,
       cc.trim() ? `Cc: ${cc.trim()}` : "",
       `Subject: ${subject.trim()}`,
       `X-Unsent: 1`,
       `MIME-Version: 1.0`,
+      `Content-Type: multipart/alternative; boundary="${boundary}"`,
+      ``,
+      `--${boundary}`,
       `Content-Type: text/plain; charset=utf-8`,
+      `Content-Transfer-Encoding: 8bit`,
       ``,
       content,
+      ``,
+      `--${boundary}`,
+      `Content-Type: text/html; charset=utf-8`,
+      `Content-Transfer-Encoding: 8bit`,
+      ``,
+      htmlContent,
+      ``,
+      `--${boundary}--`,
     ]
       .filter(Boolean)
       .join("\r\n");
@@ -215,7 +641,7 @@ export default function EmailComposer({
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `${selectedCase?.testId || "Defect"}-Report.eml`;
+    link.download = `${selectedCase ? getBugDisplayId(selectedCase) : "Defect"}-Report.eml`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -256,7 +682,7 @@ export default function EmailComposer({
     setIsLaunching(true);
 
     try {
-      // 1. First attempt: Direct Outlook (classic) launch via local COM backend
+      // 1. Direct Outlook (classic) launch via local COM backend
       const res = await fetch("/api/open-outlook-classic", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -265,6 +691,7 @@ export default function EmailComposer({
           cc: cc.trim(),
           subject: subject.trim(),
           content,
+          htmlContent,
         }),
       });
 
@@ -273,8 +700,8 @@ export default function EmailComposer({
       if (data?.success) {
         toast.success(
           isRTL
-            ? "تم فتح Outlook (classic) وتجهيز الرسالة بنجاح!"
-            : "Outlook (classic) launched and message composed!",
+            ? "تم فتح Outlook (classic) وتجهيز الرسالة بالصيغة المنسقة بنجاح!"
+            : "Outlook (classic) launched with formatted HTML message!",
           {
             icon: "📧",
             duration: 4000,
@@ -326,28 +753,23 @@ export default function EmailComposer({
     if (subject.trim()) params.set("subject", subject.trim());
     if (content.trim()) params.set("body", content.trim());
 
-    // Official MCIT Exchange Outlook Web App URL
     const mcitOwaUrl = `https://mail.mcit.gov.eg/owa/?${params.toString()}`;
 
-    // Also copy report content to clipboard for maximum reliability
-    try {
-      await navigator.clipboard.writeText(content);
-    } catch {
-      // ignore
-    }
+    // Also copy rich report content to clipboard for maximum reliability
+    await handleCopyContent();
 
     window.open(mcitOwaUrl, "_blank", "noopener,noreferrer");
 
     toast.success(
       isRTL
-        ? "جاري فتح بريد الوزارة MCIT OWA (تم نسخ التقرير أيضاً للحافظة)"
-        : "Opening MCIT OWA (report copied to clipboard as well)"
+        ? "جاري فتح بريد الوزارة MCIT OWA (تم نسخ التقرير المنسق للحافظة)"
+        : "Opening MCIT OWA (formatted report copied to clipboard)"
     );
   };
 
   return (
     <div className="min-h-screen bg-[#f8f9ff] py-8 px-4 sm:px-6 lg:px-8" dir={dir}>
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="max-w-5xl mx-auto space-y-6">
         {/* Navigation Bar */}
         <div className="flex items-center justify-between">
           <Link
@@ -430,11 +852,11 @@ export default function EmailComposer({
           </Card>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left Column: Form Inputs (2 cols) */}
+            {/* Left Column: Form Inputs & Rich Body (2 cols) */}
             <div className="lg:col-span-2 space-y-6">
               <Card className="rounded-2xl border-slate-200/80 shadow-sm overflow-hidden">
                 <CardHeader className="bg-slate-50/60 border-b border-slate-100 pb-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
                       <CardTitle className="text-base font-bold text-[#0b1c30]">
                         {isRTL ? "بيانات البريد الإلكتروني" : "Email Message Details"}
@@ -446,19 +868,50 @@ export default function EmailComposer({
                       </CardDescription>
                     </div>
 
-                    {selectedCase && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleResetTemplate}
-                        className="text-xs text-[#006685] hover:text-[#00aee0] hover:bg-[#eff4ff] rounded-lg gap-1.5 h-8 px-2.5 cursor-pointer"
-                        title={isRTL ? "إعادة تعيين القالب" : "Reset Template"}
-                      >
-                        <RefreshCw className="w-3.5 h-3.5" />
-                        <span>{isRTL ? "إعادة ضبط" : "Reset"}</span>
-                      </Button>
-                    )}
+                    {/* Controls: Language selector & Reset */}
+                    <div className="flex items-center gap-2 self-start sm:self-auto">
+                      {/* Language Toggle */}
+                      <div className="inline-flex items-center rounded-xl border border-slate-200 bg-white p-0.5 shadow-2xs">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleEmailLang("ar")}
+                          className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-1 ${
+                            emailLang === "ar"
+                              ? "bg-[#006685] text-white shadow-xs"
+                              : "text-slate-600 hover:text-slate-900"
+                          }`}
+                        >
+                          <span>🇪🇬</span>
+                          <span>عربي</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleEmailLang("en")}
+                          className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-1 ${
+                            emailLang === "en"
+                              ? "bg-[#006685] text-white shadow-xs"
+                              : "text-slate-600 hover:text-slate-900"
+                          }`}
+                        >
+                          <span>🇺🇸</span>
+                          <span>English</span>
+                        </button>
+                      </div>
+
+                      {selectedCase && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleResetTemplate}
+                          className="text-xs text-[#006685] hover:text-[#00aee0] hover:bg-[#eff4ff] rounded-lg gap-1.5 h-8 px-2.5 cursor-pointer"
+                          title={isRTL ? "إعادة تعيين القالب" : "Reset Template"}
+                        >
+                          <RefreshCw className="w-3.5 h-3.5" />
+                          <span>{isRTL ? "إعادة ضبط" : "Reset"}</span>
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </CardHeader>
 
@@ -468,8 +921,8 @@ export default function EmailComposer({
                     <Label className="text-xs font-bold text-[#3d484f] flex items-center justify-between">
                       <span>{t("email_select_failed_case")}</span>
                       {selectedCase && (
-                        <span className="font-mono text-[#006685] font-semibold">
-                          {selectedCase.testId}
+                        <span className="font-mono text-[#006685] font-bold">
+                          {getBugDisplayId(selectedCase)}
                         </span>
                       )}
                     </Label>
@@ -488,7 +941,7 @@ export default function EmailComposer({
                             className="text-xs cursor-pointer"
                           >
                             <span className="font-mono font-bold text-[#ba1a1a] mr-2">
-                              {tc.testId}
+                              {getBugDisplayId(tc)}
                             </span>
                             <span>{tc.scenario}</span>
                             <span className="text-slate-400 text-[11px] ml-2">
@@ -531,7 +984,7 @@ export default function EmailComposer({
                     </div>
                   </div>
 
-                  {/* CC (Carbon Copy - "css") */}
+                  {/* CC (Carbon Copy) */}
                   <div className="space-y-1.5">
                     <Label
                       htmlFor="email-cc"
@@ -578,13 +1031,13 @@ export default function EmailComposer({
                       value={subject}
                       onChange={(e) => setSubject(e.target.value)}
                       placeholder={t("email_subject_placeholder")}
-                      className="h-11 rounded-xl text-xs border-slate-200 focus-visible:border-[#00A2D2] focus-visible:ring-2 focus-visible:ring-[#00A2D2]/25 font-medium"
+                      className="h-11 rounded-xl text-xs border-slate-200 focus-visible:border-[#00A2D2] focus-visible:ring-2 focus-visible:ring-[#00A2D2]/25 font-bold text-[#0b1c30]"
                       required
                     />
                   </div>
 
-                  {/* Content (Body) */}
-                  <div className="space-y-1.5">
+                  {/* Content (Body) with Rich Preview / Edit Switcher */}
+                  <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label
                         htmlFor="email-content"
@@ -594,37 +1047,92 @@ export default function EmailComposer({
                         <span>{t("email_content_label")}</span>
                       </Label>
 
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleCopyContent}
-                        className="text-[11px] text-slate-500 hover:text-[#006685] h-7 px-2 gap-1 rounded-lg cursor-pointer"
-                      >
-                        {copied ? (
-                          <>
-                            <Check className="w-3 h-3 text-emerald-600" />
-                            <span className="text-emerald-600">
-                              {isRTL ? "تم النسخ" : "Copied"}
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3 h-3" />
-                            <span>{isRTL ? "نسخ النص" : "Copy"}</span>
-                          </>
-                        )}
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        {/* Tab Switcher: Preview vs Edit */}
+                        <div className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs">
+                          <button
+                            type="button"
+                            onClick={() => setViewMode("preview")}
+                            className={`flex items-center gap-1 px-2.5 py-1 rounded-md font-semibold transition-colors cursor-pointer ${
+                              viewMode === "preview"
+                                ? "bg-white text-[#006685] shadow-2xs"
+                                : "text-slate-500 hover:text-slate-900"
+                            }`}
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>{t("email_rich_preview") || (isRTL ? "معاينة منسقة" : "Rich Preview")}</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setViewMode("edit")}
+                            className={`flex items-center gap-1 px-2.5 py-1 rounded-md font-semibold transition-colors cursor-pointer ${
+                              viewMode === "edit"
+                                ? "bg-white text-[#006685] shadow-2xs"
+                                : "text-slate-500 hover:text-slate-900"
+                            }`}
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                            <span>{t("email_edit_mode") || (isRTL ? "تعديل النص" : "Edit Text")}</span>
+                          </button>
+                        </div>
+
+                        {/* Copy Button */}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleCopyContent}
+                          className="text-[11px] text-slate-500 hover:text-[#006685] h-7 px-2 gap-1 rounded-lg cursor-pointer"
+                        >
+                          {copied ? (
+                            <>
+                              <Check className="w-3 h-3 text-emerald-600" />
+                              <span className="text-emerald-600 font-bold">
+                                {isRTL ? "تم النسخ" : "Copied"}
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3 h-3" />
+                              <span>{isRTL ? "نسخ المنسق" : "Copy"}</span>
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     </div>
 
-                    <Textarea
-                      id="email-content"
-                      rows={14}
-                      value={content}
-                      onChange={(e) => setContent(e.target.value)}
-                      placeholder={t("email_content_placeholder")}
-                      className="rounded-xl text-xs font-mono leading-relaxed border-slate-200 focus-visible:border-[#00A2D2] focus-visible:ring-2 focus-visible:ring-[#00A2D2]/25 p-4 bg-slate-50/50 resize-y"
-                    />
+                    {/* View: Rich Preview Mode (Matching screenshot 1:1) */}
+                    {viewMode === "preview" ? (
+                      <div className="relative rounded-xl border border-slate-200/90 bg-white p-6 sm:p-7 shadow-xs overflow-x-auto min-h-[360px]">
+                        <div
+                          className="prose prose-sm max-w-none text-black select-text"
+                          dangerouslySetInnerHTML={{ __html: htmlContent }}
+                        />
+                      </div>
+                    ) : (
+                      /* View: Edit Plain Text Mode */
+                      <Textarea
+                        id="email-content"
+                        rows={16}
+                        value={content}
+                        onChange={(e) => handleContentChange(e.target.value)}
+                        placeholder={t("email_content_placeholder")}
+                        className="rounded-xl text-xs font-mono leading-relaxed border-slate-200 focus-visible:border-[#00A2D2] focus-visible:ring-2 focus-visible:ring-[#00A2D2]/25 p-4 bg-slate-50/50 resize-y"
+                      />
+                    )}
+
+                    <div className="flex items-center justify-between text-[11px] text-slate-400 px-1">
+                      <span>
+                        {isRTL
+                          ? "تنسيق مخصص لبرنامج Outlook (classic) و OWA"
+                          : "Tailored format for Outlook (classic) & OWA"}
+                      </span>
+                      <span>
+                        {viewMode === "preview"
+                          ? (isRTL ? "يتم الإرسال بصيغة HTML بالخط والخط العريض" : "Sends rich HTML with bold & lists")
+                          : (isRTL ? "يتم تحديث المعاينة المنسقة تلقائياً" : "Rich preview auto-syncs with text edits")}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Action Buttons Row */}
@@ -702,7 +1210,7 @@ export default function EmailComposer({
                         {isRTL ? "فشل (Failed)" : "Failed"}
                       </Badge>
                       <span className="font-mono text-xs font-bold text-[#ba1a1a]">
-                        {selectedCase.testId}
+                        {getBugDisplayId(selectedCase)}
                       </span>
                     </div>
                     <CardTitle className="text-sm font-bold text-[#0b1c30] mt-2 line-clamp-2">
@@ -714,7 +1222,7 @@ export default function EmailComposer({
                   </CardHeader>
 
                   <CardContent className="p-5 space-y-4 text-xs">
-                    {/* Module & Page */}
+                    {/* Module & Page & Severity */}
                     <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-slate-500 font-medium">
@@ -734,15 +1242,38 @@ export default function EmailComposer({
                           </span>
                         </div>
                       )}
+                      {selectedCase.severity && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-500 font-medium">
+                            {isRTL ? "درجة الخطورة:" : "Severity:"}
+                          </span>
+                          <span className="font-bold text-red-600 capitalize">
+                            {selectedCase.severity}
+                          </span>
+                        </div>
+                      )}
                       <div className="flex items-center justify-between">
                         <span className="text-slate-500 font-medium">
                           {isRTL ? "الأولوية:" : "Priority:"}
                         </span>
-                        <span className="font-bold text-amber-700 capitalize">
-                          {selectedCase.priority}
+                        <span className="font-bold text-amber-700 capitalize flex items-center gap-1">
+                          <span>{selectedCase.priority}</span>
+                          <span>{getPriorityInfo(selectedCase.priority).badgeEmoji}</span>
                         </span>
                       </div>
                     </div>
+
+                    {/* Pre-conditions */}
+                    {selectedCase.preConditions && (
+                      <div className="space-y-1">
+                        <span className="text-slate-600 font-bold block text-[11px]">
+                          {isRTL ? "الشروط المسبقة:" : "Pre-conditions:"}
+                        </span>
+                        <p className="p-2.5 rounded-lg bg-slate-100/70 border border-slate-200 text-slate-800 leading-relaxed text-[11px]">
+                          {selectedCase.preConditions}
+                        </p>
+                      </div>
+                    )}
 
                     {/* Expected Result */}
                     <div className="space-y-1">

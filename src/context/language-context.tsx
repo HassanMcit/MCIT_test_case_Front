@@ -406,6 +406,26 @@ error_password_regex: {
     en: "Please enter an email subject",
     ar: "يرجى إدخال موضوع الرسالة (Subject)",
   },
+  email_lang_selector: {
+    en: "Email Language",
+    ar: "لغة التقرير",
+  },
+  email_rich_preview: {
+    en: "Rich Preview",
+    ar: "المعاينة المنسقة",
+  },
+  email_edit_mode: {
+    en: "Edit Text",
+    ar: "تعديل النص",
+  },
+  email_reset_tooltip: {
+    en: "Reset to default template",
+    ar: "إعادة ضبط القالب الافتراضي",
+  },
+  email_copied_rich: {
+    en: "Formatted report copied to clipboard",
+    ar: "تم نسخ التقرير المنسق للحافظة بنجاح",
+  },
 
   // Loading & NotFound
   loading_text: { en: "Loading...", ar: "جاري التحميل..." },

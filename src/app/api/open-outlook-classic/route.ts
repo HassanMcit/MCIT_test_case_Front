@@ -4,7 +4,7 @@ import { spawn } from "child_process";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { to = "", cc = "", subject = "", content = "" } = body;
+    const { to = "", cc = "", subject = "", content = "", htmlContent = "" } = body;
 
     // Check if running on Windows server/machine
     if (process.platform !== "win32") {
@@ -19,6 +19,7 @@ export async function POST(req: Request) {
     const ccB64 = Buffer.from(String(cc), "utf-8").toString("base64");
     const subjectB64 = Buffer.from(String(subject), "utf-8").toString("base64");
     const bodyB64 = Buffer.from(String(content), "utf-8").toString("base64");
+    const htmlB64 = Buffer.from(String(htmlContent || ""), "utf-8").toString("base64");
 
     const script = `
 $ErrorActionPreference = 'Stop'
@@ -28,7 +29,12 @@ try {
   $m.To = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('${toB64}'))
   $m.CC = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('${ccB64}'))
   $m.Subject = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('${subjectB64}'))
-  $m.Body = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('${bodyB64}'))
+  $htmlRaw = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('${htmlB64}'))
+  if ($htmlRaw -and $htmlRaw.Trim() -ne '') {
+    $m.HTMLBody = $htmlRaw
+  } else {
+    $m.Body = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('${bodyB64}'))
+  }
   $m.Display($false)
   exit 0
 } catch {
