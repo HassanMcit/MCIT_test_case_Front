@@ -12,8 +12,8 @@ export const getTestCaseSchema = (lang: Language | boolean = "ar") => {
   return z.object({
     testId: z.string().min(1, {
       message: isArabic ? "معرّف حالة الاختبار مطلوب" : "Test ID is required",
-    }).regex(/^TC-[0-9]{4}$/, {
-      message: isArabic ? "يجب أن يكون المعرف بالصيغة TC-XXXX (مثل TC-0001)" : "ID must be in TC-XXXX format (e.g. TC-0001)",
+    }).regex(/^(TC|BUG)-[0-9]{4,}$/, {
+      message: isArabic ? "يجب أن يكون المعرف بالصيغة TC-XXXX أو BUG-XXXX" : "ID must be in TC-XXXX or BUG-XXXX format",
     }),
 
     module: z.string().min(1, {
@@ -55,6 +55,12 @@ export const getTestCaseSchema = (lang: Language | boolean = "ar") => {
         message: isArabic ? "حالة الاختبار غير صالحة" : "Invalid status value",
       })
       .default("pending"),
+
+    severity: z
+      .enum(["low", "medium", "high", "critical"] as const, {
+        message: isArabic ? "يرجى اختيار درجة الخطورة" : "Please select severity",
+      })
+      .optional(),
 
     notes: z.string().optional(),
 

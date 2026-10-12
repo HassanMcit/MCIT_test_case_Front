@@ -357,19 +357,32 @@ export default function AddUserPage() {
                 <Label className="text-xs font-bold text-slate-700">
                   {isRTL ? "الدور الوظيفي في النظام *" : "System Role *"}
                 </Label>
-                <Controller name="role" control={control} render={ ({field}) => <Select {...field} value={selectedRole}  >
-                  <SelectTrigger className="h-10 text-xs sm:text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="w-52">
-                    <SelectItem value="admin">
-                      {isRTL ? "مدير نظام " : "Administrator "}
-                    </SelectItem>
-                    <SelectItem value="tester">
-                      {isRTL ? "مهندس اختبار " : "QA Tester"}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>}/>
+                <Controller
+                  name="role"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      value={field.value}
+                      onValueChange={(val) => {
+                        const nextVal = val || "tester";
+                        field.onChange(nextVal);
+                        setSelectedRole(nextVal);
+                      }}
+                    >
+                      <SelectTrigger className="h-10 text-xs sm:text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="w-52">
+                        <SelectItem value="admin">
+                          {isRTL ? "مدير نظام " : "Administrator "}
+                        </SelectItem>
+                        <SelectItem value="tester">
+                          {isRTL ? "مهندس اختبار " : "QA Tester"}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
 
            

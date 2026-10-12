@@ -23,6 +23,7 @@ export interface TestCaseItem {
   actualResult: string | null;
   priority: "critical" | "high" | "medium" | "low";
   status: "passed" | "failed" | "pending" | "skipped" | "blocked";
+  severity?: "critical" | "high" | "medium" | "low" | null;
   notes: string | null;
   executedAt: string | null;
   testerId: number | null;

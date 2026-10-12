@@ -16,6 +16,7 @@ export interface AddTestCaseResponse {
   actualResult: string
   priority: string
   status: string
+  severity?: string
   notes: string
   executedAt: string
   testerId: number

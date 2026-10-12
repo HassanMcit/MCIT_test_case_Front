@@ -115,6 +115,7 @@ export async function updateTestCase(
     }
 
     const payload: Record<string, any> = {};
+    if (data.testId !== undefined) payload.testId = data.testId;
     if (data.module !== undefined) payload.module = data.module;
     if (data.pageName !== undefined) payload.pageName = data.pageName;
     if (data.scenario !== undefined) payload.scenario = data.scenario;
@@ -128,6 +129,7 @@ export async function updateTestCase(
     if (data.actualResult !== undefined) payload.actualResult = data.actualResult;
     if (data.priority !== undefined) payload.priority = data.priority;
     if (data.status !== undefined) payload.status = data.status;
+    if (data.severity !== undefined) payload.severity = data.severity;
     if (data.notes !== undefined) payload.notes = data.notes;
     if (data.projectId !== undefined) payload.projectId = data.projectId;
 

@@ -75,6 +75,7 @@ export default function AddTestCasePage({
       actualResult: "",
       priority: undefined,
       status: undefined,
+      severity: undefined,
       notes: "",
       executedAt: "",
       testerId: 1,
@@ -87,6 +88,24 @@ export default function AddTestCasePage({
 
   const { data } = useSession();
   const currentTestId = watch("testId");
+  const currentStatus = watch("status");
+
+  // Keep testId prefix in sync with status (TC- vs BUG-)
+  useEffect(() => {
+    const id = watch("testId") || "";
+    if (currentStatus === "failed") {
+      if (id.startsWith("TC-")) {
+        setValue("testId", id.replace(/^TC-/, "BUG-"), { shouldValidate: true });
+      }
+      if (!watch("severity")) {
+        setValue("severity", "medium", { shouldValidate: true });
+      }
+    } else if (currentStatus) {
+      if (id.startsWith("BUG-")) {
+        setValue("testId", id.replace(/^BUG-/, "TC-"), { shouldValidate: true });
+      }
+    }
+  }, [currentStatus, setValue, watch]);
 
   // Auto-select project if user only has 1 project assigned
   useEffect(() => {
@@ -97,10 +116,14 @@ export default function AddTestCasePage({
       setValue("module", singleProj.name, { shouldValidate: true });
       setValue("projectId", singleProj.id, { shouldValidate: true });
       getNextTestCaseId(singleProj.name, singleProj.id).then((nextId) => {
-        setValue("testId", nextId, { shouldValidate: true });
+        const finalId =
+          watch("status") === "failed"
+            ? nextId.replace(/^TC-/, "BUG-")
+            : nextId;
+        setValue("testId", finalId, { shouldValidate: true });
       });
     }
-  }, [allProjects, selectedProjectId, setValue]);
+  }, [allProjects, selectedProjectId, setValue, watch]);
 
   function handleAddNewTestCase(userData: TestCaseFormValues) {
     const targetProjId =
@@ -117,6 +140,10 @@ export default function AddTestCasePage({
 
     const updateUserdata: TestCaseFormValues = {
       ...userData,
+      severity:
+        userData.status === "failed"
+          ? userData.severity || "medium"
+          : undefined,
       steps: validSteps.length > 0 ? validSteps : ["Initial step"],
       executedAt: new Date().toISOString(),
       testerId: Number(data?.user.id) || 1,
@@ -140,6 +167,7 @@ export default function AddTestCasePage({
           actualResult: "",
           priority: undefined,
           status: undefined,
+          severity: undefined,
           notes: "",
           executedAt: "",
           testerId: Number(data?.user.id) || 1,
@@ -190,10 +218,21 @@ export default function AddTestCasePage({
               : "Enter test case details carefully to ensure accuracy and comprehensive digital transformation quality standards."}
           </p>
         </div>
-        <div className="flex items-center gap-2 bg-[#eff4ff] px-4 py-2 rounded-xl">
-          <span className="text-[#38CAF0] text-lg">✓</span>
-          <span className="text-[14px] font-bold text-[#0b1c30]">
-            {isRTL ? "حالة جديدة" : "New Test Case"}: {currentTestId || "TC-0001"}
+        <div
+          className={cn(
+            "flex items-center gap-2 px-4 py-2 rounded-xl transition-all border",
+            currentStatus === "failed"
+              ? "bg-red-50 border-red-200 text-red-700"
+              : "bg-[#eff4ff] border-transparent text-[#0b1c30]"
+          )}
+        >
+          <span className={currentStatus === "failed" ? "text-red-600 text-lg" : "text-[#38CAF0] text-lg"}>
+            {currentStatus === "failed" ? "⚠️" : "✓"}
+          </span>
+          <span className="text-[14px] font-bold">
+            {currentStatus === "failed"
+              ? `${isRTL ? "خلل جديد" : "New Defect / Bug"}: ${currentTestId || "BUG-0001"}`
+              : `${isRTL ? "حالة جديدة" : "New Test Case"}: ${currentTestId || "TC-0001"}`}
           </span>
         </div>
       </div>
@@ -255,7 +294,11 @@ export default function AddTestCasePage({
                             matchedProj.name,
                             matchedProj.id
                           );
-                          setValue("testId", nextId, { shouldValidate: true });
+                          const finalId =
+                            watch("status") === "failed"
+                              ? nextId.replace(/^TC-/, "BUG-")
+                              : nextId;
+                          setValue("testId", finalId, { shouldValidate: true });
                         }
                       }}
                     >
@@ -479,8 +522,13 @@ export default function AddTestCasePage({
               </div>
             </div>
 
-            {/* Row 6: Priority, Status, Tester, Date */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Row 6: Priority, Status, Severity, Tester, Date */}
+            <div
+              className={cn(
+                "grid grid-cols-1 md:grid-cols-2 gap-4",
+                currentStatus === "failed" ? "lg:grid-cols-5" : "lg:grid-cols-4"
+              )}
+            >
               {/* Priority */}
               <div className="space-y-1.5">
                 <Label className="text-[13px] text-[#0b1c30]">
@@ -542,7 +590,28 @@ export default function AddTestCasePage({
                   render={({ field }) => (
                     <Select
                       value={field.value || ""}
-                      onValueChange={field.onChange}
+                      onValueChange={(val) => {
+                        field.onChange(val);
+                        const curId = watch("testId") || "";
+                        if (val === "failed") {
+                          if (curId.startsWith("TC-")) {
+                            setValue("testId", curId.replace(/^TC-/, "BUG-"), {
+                              shouldValidate: true,
+                            });
+                          }
+                          setValue(
+                            "severity",
+                            watch("severity") || "medium",
+                            { shouldValidate: true }
+                          );
+                        } else {
+                          if (curId.startsWith("BUG-")) {
+                            setValue("testId", curId.replace(/^BUG-/, "TC-"), {
+                              shouldValidate: true,
+                            });
+                          }
+                        }
+                      }}
                     >
                       <SelectTrigger
                         className={cn(
@@ -575,6 +644,68 @@ export default function AddTestCasePage({
                   </span>
                 )}
               </div>
+
+              {/* Severity (Displayed ONLY when Failed) */}
+              {currentStatus === "failed" && (
+                <div className="space-y-1.5">
+                  <Label className="text-[13px] text-red-600 font-bold flex items-center gap-1">
+                    <span>⚠️</span>
+                    <span>
+                      {isRTL ? "درجة الخطورة *" : "Severity *"}
+                    </span>
+                  </Label>
+                  <Controller
+                    name="severity"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        value={field.value || "medium"}
+                        onValueChange={field.onChange}
+                      >
+                        <SelectTrigger
+                          className={cn(
+                            "rounded-xl text-[13px] bg-red-50/50 border-red-300 text-red-900 focus-visible:border-red-500",
+                            errors.severity && "border-red-500"
+                          )}
+                        >
+                          <SelectValue
+                            placeholder={
+                              isRTL ? "اختر درجة الخطورة" : "Severity"
+                            }
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="critical">
+                            <span className="text-red-700 font-bold">
+                              {isRTL ? "حرجة جداً (Critical)" : "Critical"}
+                            </span>
+                          </SelectItem>
+                          <SelectItem value="high">
+                            <span className="text-rose-600 font-semibold">
+                              {isRTL ? "عالية (High)" : "High"}
+                            </span>
+                          </SelectItem>
+                          <SelectItem value="medium">
+                            <span className="text-amber-600 font-medium">
+                              {isRTL ? "متوسطة (Medium)" : "Medium"}
+                            </span>
+                          </SelectItem>
+                          <SelectItem value="low">
+                            <span className="text-blue-600">
+                              {isRTL ? "منخفضة (Low)" : "Low"}
+                            </span>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  {errors.severity && (
+                    <span className="text-xs text-red-500 font-medium block mt-1">
+                      {errors.severity.message}
+                    </span>
+                  )}
+                </div>
+              )}
 
               {/* Tester Name */}
               <div className="space-y-1.5">
