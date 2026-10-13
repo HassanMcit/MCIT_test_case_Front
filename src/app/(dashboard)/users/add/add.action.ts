@@ -2,7 +2,7 @@
 
 import { getUserToken } from "@/app/myUtil";
 import { AddNewUserResponse, AddUserType } from "./adduser.interface";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 
 export async function addNewUser(data: AddUserType) {
   const token = await getUserToken();
@@ -20,8 +20,11 @@ export async function addNewUser(data: AddUserType) {
   if(result.error) {
     throw new Error(result.message)
   }
-  revalidatePath('/users')
-  revalidatePath('/assign-projects')
-  return true
-//   return result;
+  updateTag("users");
+  updateTag("dashboard");
+  updateTag("dashboard-stats");
+  revalidatePath("/users");
+  revalidatePath("/assign-projects");
+  revalidatePath("/dashboard");
+  return true;
 }

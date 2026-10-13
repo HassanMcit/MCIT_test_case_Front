@@ -1,7 +1,7 @@
-import * as z from "zod";
-import { changePasswordSchema } from "./changepassword.zod";
+import * as zod from "zod";
+import { getChangePasswordSchema } from "./changepassword.zod";
 
-export type ChangePasswordForm = z.infer<typeof changePasswordSchema>;
+export type ChangePasswordForm = zod.infer<ReturnType<typeof getChangePasswordSchema>>;
 
 export interface ChangePasswordResponse {
   message: string | string[];

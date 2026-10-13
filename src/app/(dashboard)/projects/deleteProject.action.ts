@@ -1,7 +1,7 @@
 "use server";
 
 import { getUserToken } from "@/app/myUtil";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 
 export async function deleteProject(id: number) {
   try {
@@ -15,6 +15,7 @@ export async function deleteProject(id: number) {
       headers: {
         Authorization: `Bearer ${token}`,
       },
+      cache: "force-cache",
     });
 
     const result = await response.json().catch(() => ({}));
@@ -22,15 +23,21 @@ export async function deleteProject(id: number) {
     if (!response.ok) {
       const errorMsg = Array.isArray(result?.message)
         ? result.message.join(", ")
-        : (result?.message || "فشل حذف المشروع");
+        : result?.message || "فشل حذف المشروع";
       return { success: false, message: errorMsg };
     }
 
+    updateTag("projects");
+    updateTag("dashboard-stats");
+    updateTag("dashboard");
+    updateTag("users");
+    updateTag("test-cases");
     revalidatePath("/projects");
     revalidatePath("/assign-projects");
     revalidatePath("/add");
     revalidatePath("/test-cases");
     revalidatePath("/dashboard");
+    revalidatePath("/users");
     revalidatePath("/", "layout");
 
     return { success: true, message: result?.message || "تم حذف المشروع بنجاح" };

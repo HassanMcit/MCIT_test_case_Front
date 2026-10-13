@@ -1,7 +1,7 @@
 "use server";
 
 import { getUserToken, getCurrentUserSession } from "@/app/myUtil";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import type { TestCaseItem, TestCaseListResponse, TestCaseQueryParams } from "./test-cases.interface";
 
 export async function getTestCases(params?: TestCaseQueryParams): Promise<TestCaseListResponse> {
@@ -41,7 +41,7 @@ export async function getTestCases(params?: TestCaseQueryParams): Promise<TestCa
         Authorization: `Bearer ${token}`,
       },
       cache: "force-cache",
-      next: { tags: ["test-cases"] },
+      next: { tags: ["test-cases", "dashboard"] },
     });
 
     if (!res.ok) {
@@ -82,6 +82,7 @@ export async function deleteTestCase(id: number): Promise<{ success: boolean; me
       headers: {
         Authorization: `Bearer ${token}`,
       },
+      cache: "force-cache",
     });
 
     const data = await res.json().catch(() => ({}));
@@ -90,9 +91,15 @@ export async function deleteTestCase(id: number): Promise<{ success: boolean; me
       throw new Error(data.message || "فشل حذف حالة الاختبار");
     }
 
+    updateTag("test-cases");
+    updateTag("dashboard-stats");
+    updateTag("dashboard");
+    updateTag("projects");
+    updateTag("users");
     revalidatePath("/test-cases");
     revalidatePath("/projects");
     revalidatePath("/dashboard");
+    revalidatePath("/users");
     revalidatePath("/", "layout");
 
     return {
@@ -140,6 +147,7 @@ export async function updateTestCase(
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
+      cache: "force-cache",
     });
 
     const responseData = await res.json().catch(() => ({}));
@@ -151,9 +159,15 @@ export async function updateTestCase(
       throw new Error(errorMsg);
     }
 
+    updateTag("test-cases");
+    updateTag("dashboard-stats");
+    updateTag("dashboard");
+    updateTag("projects");
+    updateTag("users");
     revalidatePath("/test-cases");
     revalidatePath("/projects");
     revalidatePath("/dashboard");
+    revalidatePath("/users");
     revalidatePath("/", "layout");
 
     return {

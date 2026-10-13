@@ -190,6 +190,14 @@ error_password_regex: {
   cp_submitting: { en: "Updating...", ar: "جاري التحديث..." },
   cp_success: { en: "Password changed successfully", ar: "تم تغيير كلمة المرور بنجاح" },
   cp_back: { en: "Back to Dashboard", ar: "العودة للوحة المؤشرات" },
+  cp_error_mismatch: {
+    en: "Passwords do not match",
+    ar: "كلمة المرور الجديدة وتأكيدها غير متطابقين",
+  },
+  cp_error_same: {
+    en: "New password must be different from current password",
+    ar: "كلمة المرور الجديدة يجب أن تكون مختلفة عن الحالية",
+  },
 
   // Forgot Password
   login_forgot_password: { en: "Forgot Password?", ar: "نسيت كلمة المرور؟" },

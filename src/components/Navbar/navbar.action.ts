@@ -2,7 +2,7 @@
 
 import { getUserToken } from "@/app/myUtil"
 import { ChangeProfileResponseType, UserDataResponse } from "./changeProfile.interface";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 
 export async function changeProfileImage(data: FormData) {
     const token = await getUserToken();
@@ -11,11 +11,15 @@ export async function changeProfileImage(data: FormData) {
         headers: {
             Authorization: `Bearer ${token}`
         },
-        body: data
+        body: data,
+        cache: "force-cache"
     })
 
     const resData: ChangeProfileResponseType = await response.json();
 
+    updateTag("user-me");
+    updateTag("users");
+    updateTag("dashboard");
     revalidatePath("/", "layout");
     return { message: resData.message, photo: resData.photo };
 }

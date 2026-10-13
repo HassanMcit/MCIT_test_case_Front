@@ -13,13 +13,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/context/language-context";
 import toast from "react-hot-toast";
-import { changePasswordSchema } from "./changepassword.zod";
+import { getChangePasswordSchema } from "./changepassword.zod";
 import { ChangePasswordForm } from "./changepassword.interface";
 import { handleUserChangePassword } from "./changepassword.action";
 
 export default function ChangePasswordPage() {
   const router = useRouter();
-  const { lang, dir, t } = useLanguage();
+  const { dir, t } = useLanguage();
   const isRTL = dir === "rtl";
   const [showOld, setShowOld] = useState(false);
   const [showNew, setShowNew] = useState(false);
@@ -32,38 +32,14 @@ export default function ChangePasswordPage() {
     formState: { errors },
     reset,
   } = useForm<ChangePasswordForm>({
-    resolver: zodResolver(changePasswordSchema),
-    mode: "onTouched",
+    defaultValues: {
+      oldPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+    mode: "all",
+    resolver: zodResolver(getChangePasswordSchema(t)),
   });
-
-  const errorTranslations: Record<string, Record<string, string>> = {
-    cp_error_current_min: {
-      en: "Current password must be at least 6 characters",
-      ar: "كلمة المرور الحالية يجب أن تكون 6 أحرف على الأقل",
-    },
-    cp_error_new_min: {
-      en: "New password must be at least 6 characters",
-      ar: "كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل",
-    },
-    cp_error_confirm_min: {
-      en: "Confirmation must be at least 6 characters",
-      ar: "تأكيد كلمة المرور يجب أن يكون 6 أحرف على الأقل",
-    },
-    cp_error_mismatch: {
-      en: "Passwords do not match",
-      ar: "كلمة المرور الجديدة وتأكيدها غير متطابقين",
-    },
-    cp_error_same: {
-      en: "New password must be different from current password",
-      ar: "كلمة المرور الجديدة يجب أن تكون مختلفة عن الحالية",
-    },
-  };
-
-  const translateError = (msg: string | undefined) => {
-    if (!msg) return "";
-    const entry = errorTranslations[msg];
-    return entry ? entry[lang] : msg;
-  };
 
   async function onSubmit(data: ChangePasswordForm) {
     setIsSubmitting(true);
@@ -151,13 +127,16 @@ export default function ChangePasswordPage() {
                     id="oldPassword"
                     type={showOld ? "text" : "password"}
                     {...register("oldPassword")}
+                    dir={isRTL ? "rtl" : "ltr"}
+                    autoComplete="off"
                     placeholder={t("cp_current_password_placeholder")}
                     className={cn(
-                      "h-12 text-sm rounded-xl transition-all",
-                      isRTL ? "pr-11 pl-11 text-right" : "pl-11 pr-11 text-left",
+                      "h-12 text-sm text-slate-800 rounded-xl transition-all",
+                      isRTL ? "pr-11 pl-11 text-right placeholder:text-right" : "pl-11 pr-11 text-left placeholder:text-left",
                       errors.oldPassword
-                        ? "border-red-400 focus-visible:border-red-400"
-                        : "border-slate-200 focus-visible:border-[#00A2D2] focus-visible:ring-2 focus-visible:ring-[#00A2D2]/25"
+                        ? "border-[#F00] focus-visible:border-[#F00] focus-visible:ring-[#F00]/15"
+                        : "border-[#E2E8F0] focus-visible:border-[#00A2D2] focus-visible:ring-2 focus-visible:ring-[#00A2D2]/25",
+                      "placeholder:text-slate-400"
                     )}
                   />
                   <span
@@ -180,8 +159,8 @@ export default function ChangePasswordPage() {
                   </button>
                 </div>
                 {errors.oldPassword && (
-                  <span className={cn("text-xs text-red-500 block", isRTL ? "text-right" : "text-left")}>
-                    {translateError(errors.oldPassword.message)}
+                  <span className={cn("text-xs text-red-500 block mt-1", isRTL ? "text-right" : "text-left")}>
+                    {errors.oldPassword?.message}
                   </span>
                 )}
               </div>
@@ -202,13 +181,16 @@ export default function ChangePasswordPage() {
                     id="newPassword"
                     type={showNew ? "text" : "password"}
                     {...register("newPassword")}
+                    dir={isRTL ? "rtl" : "ltr"}
+                    autoComplete="off"
                     placeholder={t("cp_new_password_placeholder")}
                     className={cn(
-                      "h-12 text-sm rounded-xl transition-all",
-                      isRTL ? "pr-11 pl-11 text-right" : "pl-11 pr-11 text-left",
+                      "h-12 text-sm text-slate-800 rounded-xl transition-all",
+                      isRTL ? "pr-11 pl-11 text-right placeholder:text-right" : "pl-11 pr-11 text-left placeholder:text-left",
                       errors.newPassword
-                        ? "border-red-400 focus-visible:border-red-400"
-                        : "border-slate-200 focus-visible:border-[#00A2D2] focus-visible:ring-2 focus-visible:ring-[#00A2D2]/25"
+                        ? "border-[#F00] focus-visible:border-[#F00] focus-visible:ring-[#F00]/15"
+                        : "border-[#E2E8F0] focus-visible:border-[#00A2D2] focus-visible:ring-2 focus-visible:ring-[#00A2D2]/25",
+                      "placeholder:text-slate-400"
                     )}
                   />
                   <span
@@ -231,8 +213,8 @@ export default function ChangePasswordPage() {
                   </button>
                 </div>
                 {errors.newPassword && (
-                  <span className={cn("text-xs text-red-500 block", isRTL ? "text-right" : "text-left")}>
-                    {translateError(errors.newPassword.message)}
+                  <span className={cn("text-xs text-red-500 block mt-1", isRTL ? "text-right" : "text-left")}>
+                    {errors.newPassword?.message}
                   </span>
                 )}
               </div>
@@ -253,13 +235,16 @@ export default function ChangePasswordPage() {
                     id="confirmPassword"
                     type={showConfirm ? "text" : "password"}
                     {...register("confirmPassword")}
+                    dir={isRTL ? "rtl" : "ltr"}
+                    autoComplete="off"
                     placeholder={t("cp_confirm_password_placeholder")}
                     className={cn(
-                      "h-12 text-sm rounded-xl transition-all",
-                      isRTL ? "pr-11 pl-11 text-right" : "pl-11 pr-11 text-left",
+                      "h-12 text-sm text-slate-800 rounded-xl transition-all",
+                      isRTL ? "pr-11 pl-11 text-right placeholder:text-right" : "pl-11 pr-11 text-left placeholder:text-left",
                       errors.confirmPassword
-                        ? "border-red-400 focus-visible:border-red-400"
-                        : "border-slate-200 focus-visible:border-[#00A2D2] focus-visible:ring-2 focus-visible:ring-[#00A2D2]/25"
+                        ? "border-[#F00] focus-visible:border-[#F00] focus-visible:ring-[#F00]/15"
+                        : "border-[#E2E8F0] focus-visible:border-[#00A2D2] focus-visible:ring-2 focus-visible:ring-[#00A2D2]/25",
+                      "placeholder:text-slate-400"
                     )}
                   />
                   <span
@@ -282,8 +267,8 @@ export default function ChangePasswordPage() {
                   </button>
                 </div>
                 {errors.confirmPassword && (
-                  <span className={cn("text-xs text-red-500 block", isRTL ? "text-right" : "text-left")}>
-                    {translateError(errors.confirmPassword.message)}
+                  <span className={cn("text-xs text-red-500 block mt-1", isRTL ? "text-right" : "text-left")}>
+                    {errors.confirmPassword?.message}
                   </span>
                 )}
               </div>

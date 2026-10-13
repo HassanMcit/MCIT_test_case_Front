@@ -35,10 +35,15 @@ export async function deleteThisUser(id: number) {
     headers: {
       Authorization: `Bearer ${await getUserToken()}`,
     },
+    cache: "force-cache",
   });
 
   updateTag("users");
+  updateTag("projects");
+  updateTag("dashboard");
+  updateTag("dashboard-stats");
   revalidatePath("/users");
   revalidatePath("/assign-projects");
+  revalidatePath("/dashboard");
   return true;
 }

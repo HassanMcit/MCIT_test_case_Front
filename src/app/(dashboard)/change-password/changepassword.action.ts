@@ -1,6 +1,7 @@
 "use server";
 
 import { getUserToken } from "@/app/myUtil";
+import { revalidatePath, updateTag } from "next/cache";
 import {
   ChangePasswordActionResult,
   ChangePasswordForm,
@@ -32,6 +33,7 @@ export async function handleUserChangePassword(
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(data),
+      cache: "force-cache",
     });
 
     let result: any = null;
@@ -42,6 +44,9 @@ export async function handleUserChangePassword(
     }
 
     if (res.ok) {
+      updateTag("user-me");
+      revalidatePath("/change-password");
+      revalidatePath("/dashboard");
       return {
         success: true,
         status: 200,
