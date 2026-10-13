@@ -18,6 +18,30 @@ export interface NotificationsResponse {
   unreadCount: number;
 }
 
+export async function getClientToken(): Promise<string | null> {
+  return getUserToken();
+}
+
+export async function refreshNotifications(): Promise<NotificationsResponse> {
+  try {
+    updateTag("notifications");
+    return getMyNotifications();
+  } catch (err) {
+    console.error("Error refreshing notifications:", err);
+    return getMyNotifications();
+  }
+}
+
+export async function revalidateNotificationsTag() {
+  try {
+    updateTag("notifications");
+    revalidatePath("/", "layout");
+    return { success: true };
+  } catch {
+    return { success: false };
+  }
+}
+
 export async function getMyNotifications(): Promise<NotificationsResponse> {
   try {
     const token = await getUserToken();

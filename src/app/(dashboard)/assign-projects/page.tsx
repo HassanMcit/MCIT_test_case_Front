@@ -134,6 +134,20 @@ export default function AssignProjectsPage() {
     if (!res.success) {
       toast.error(res.error || (isAssigned ? t("unassign_error") : t("assign_error")));
       setUsers(users); // Revert to old state
+    } else if (!isAssigned) {
+      // Instantaneous real-time notification dispatch (0ms, no reload required)
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("mcit:notification_assigned", {
+            detail: { userId: selectedUserId, projectId },
+          })
+        );
+        try {
+          const bc = new BroadcastChannel("mcit_notifications_stream");
+          bc.postMessage({ type: "NOTIFICATION_ASSIGNED", userId: selectedUserId, projectId });
+          bc.close();
+        } catch {}
+      }
     }
   };
 

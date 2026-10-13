@@ -22,6 +22,8 @@ import { signOut, useSession } from "next-auth/react";
 import { changeProfileImage, getUserData } from "./navbar.action";
 import {
   getMyNotifications,
+  refreshNotifications,
+  getClientToken,
   markNotificationAsRead,
   markAllNotificationsAsRead,
   type AppNotification,
@@ -55,20 +57,110 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
     return data?.user?.image || "/avatar.png";
   });
 
-  // Fetch notifications on mount and periodically
-  const fetchNotifications = async () => {
+  // Fetch notifications on mount and periodically (0ms real-time sync with force-cache)
+  const fetchNotifications = async (forceRefresh = false) => {
     try {
-      const res = await getMyNotifications();
-      setNotifications(res.notifications);
-      setUnreadCount(res.unreadCount);
-    } catch {}
+      const res = forceRefresh ? await refreshNotifications() : await getMyNotifications();
+      if (res && Array.isArray(res.notifications)) {
+        setNotifications(res.notifications);
+        setUnreadCount(res.unreadCount);
+      }
+    } catch (err) {
+      console.error("Failed to fetch notifications:", err);
+    }
   };
 
   useEffect(() => {
+    // Initial fetch
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 15000);
-    return () => clearInterval(interval);
-  }, []);
+
+    // 1. Listen for local window event dispatched immediately upon assignment (0ms)
+    const handleLocalAssignment = () => {
+      fetchNotifications(true);
+    };
+    window.addEventListener("mcit:notification_assigned", handleLocalAssignment);
+
+    // 2. Listen for cross-tab BroadcastChannel notifications
+    let bc: BroadcastChannel | null = null;
+    try {
+      if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+        bc = new BroadcastChannel("mcit_notifications_stream");
+        bc.onmessage = (event) => {
+          if (event?.data?.type === "NOTIFICATION_ASSIGNED") {
+            fetchNotifications(true);
+          }
+        };
+      }
+    } catch {}
+
+    // 3. Connect to real-time Server-Sent Events (SSE) stream from backend
+    let eventSource: EventSource | null = null;
+    let isCancelled = false;
+
+    getClientToken().then((token) => {
+      if (isCancelled || !token) return;
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin;
+        const sseUrl = `${baseUrl}/api/users/notifications/stream?token=${encodeURIComponent(token)}`;
+        eventSource = new EventSource(sseUrl);
+
+        eventSource.onmessage = (e) => {
+          try {
+            const parsed = JSON.parse(e.data);
+            if (parsed?.type === "NOTIFICATION") {
+              fetchNotifications(true);
+              toast(
+                () => (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-[#0b1c30]">
+                      {parsed?.payload?.title || (isRTL ? "إشعار إسناد جديد 🔔" : "New notification 🔔")}
+                    </span>
+                  </div>
+                ),
+                { duration: 5000, position: isRTL ? "bottom-left" : "bottom-right" }
+              );
+            }
+          } catch {}
+        };
+
+        eventSource.onerror = () => {
+          // Silent fallback to polling if SSE drops
+        };
+      } catch (err) {
+        console.warn("SSE stream setup skipped:", err);
+      }
+    });
+
+    // 4. Refetch on tab focus or visibility change
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        fetchNotifications(true);
+      }
+    };
+    window.addEventListener("focus", handleVisibility);
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    // 5. Fallback periodic polling every 5s
+    const interval = setInterval(() => fetchNotifications(false), 5000);
+
+    return () => {
+      isCancelled = true;
+      clearInterval(interval);
+      window.removeEventListener("mcit:notification_assigned", handleLocalAssignment);
+      window.removeEventListener("focus", handleVisibility);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      if (bc) {
+        try {
+          bc.close();
+        } catch {}
+      }
+      if (eventSource) {
+        try {
+          eventSource.close();
+        } catch {}
+      }
+    };
+  }, [isRTL]);
 
   // Close dropdowns on click outside
   useEffect(() => {
@@ -181,7 +273,7 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
             type="button"
             onClick={() => {
               setShowNotifications(!showNotifications);
-              fetchNotifications();
+              fetchNotifications(true);
             }}
             className="relative flex items-center justify-center w-9 h-9 rounded-lg hover:bg-[#eff4ff] transition-colors cursor-pointer text-[#3d484f]"
             aria-label="Notifications"
@@ -256,6 +348,11 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
                       onClick={async () => {
                         await markNotificationAsRead(n.id);
                         setUnreadCount((c) => Math.max(0, c - 1));
+                        setNotifications((prev) =>
+                          prev.map((item) =>
+                            item.id === n.id ? { ...item, read: true } : item
+                          )
+                        );
                         setShowNotifications(false);
                         router.push("/projects");
                       }}
