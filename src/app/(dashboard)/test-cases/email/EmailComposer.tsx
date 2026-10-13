@@ -311,25 +311,25 @@ export function generateBugHtmlTemplate(
   const modulePage = tc.pageName ? `${tc.module} / ${tc.pageName}` : tc.module;
   const reporterName = tc.tester?.name || "Tester Name";
   const dateFormatted = formatReportDate(tc.executedAt, lang);
-  const preConditions = tc.preConditions || (isAr ? "لا توجد شروط مسبقة" : "None");
-  const scenario = tc.scenario || (isAr ? "سيناريو الاختبار" : "Test Scenario");
-  const expectedResult = tc.expectedResult || (isAr ? "النتيجة المتوقعة" : "Expected Result");
-  const actualResult = tc.actualResult || (isAr ? "فشل الاختبار، حدث خطأ غير متوقع" : "Test failed with unexpected error");
+  const preConditions = (tc.preConditions || (isAr ? "لا توجد شروط مسبقة" : "None")).replace(/\r?\n/g, "<br/>");
+  const scenario = (tc.scenario || (isAr ? "سيناريو الاختبار" : "Test Scenario")).replace(/\r?\n/g, "<br/>");
+  const expectedResult = (tc.expectedResult || (isAr ? "النتيجة المتوقعة" : "Expected Result")).replace(/\r?\n/g, "<br/>");
+  const actualResult = (tc.actualResult || (isAr ? "فشل الاختبار، حدث خطأ غير متوقع" : "Test failed with unexpected error")).replace(/\r?\n/g, "<br/>");
 
   const stepsHtml =
     Array.isArray(tc.steps) && tc.steps.length > 0
       ? tc.steps
           .map(
             (s) =>
-              `<li style="margin-bottom: 3px; font-size: 11pt; color: #000000; line-height: 1.5;">${s}</li>`
+              `<li style="margin-bottom: 3px; font-size: 11pt; color: #000000; line-height: 1.6;">${s}</li>`
           )
           .join("")
       : isAr
-      ? `<li style="margin-bottom: 3px; font-size: 11pt; color: #000000; line-height: 1.5;">تنفيذ خطوات السيناريو</li>`
-      : `<li style="margin-bottom: 3px; font-size: 11pt; color: #000000; line-height: 1.5;">Execute scenario steps</li>`;
+      ? `<li style="margin-bottom: 3px; font-size: 11pt; color: #000000; line-height: 1.6;">تنفيذ خطوات السيناريو</li>`
+      : `<li style="margin-bottom: 3px; font-size: 11pt; color: #000000; line-height: 1.6;">Execute scenario steps</li>`;
 
   if (isAr) {
-    return `<div dir="rtl" style="font-family: 'Segoe UI', Tahoma, Arial, sans-serif; font-size: 11pt; line-height: 1.5; color: #000000; text-align: right;">
+    return `<div dir="rtl" style="font-family: 'Almarai', 'Segoe UI', Tahoma, Arial, sans-serif; font-size: 11pt; line-height: 1.6; color: #000000; text-align: right;">
   <p style="margin: 0 0 10px 0; font-size: 11pt; color: #000000;">فريق العمل المحترم،</p>
   <p style="margin: 0 0 16px 0; font-size: 11pt; color: #000000;">
     يرجى مراجعة الخلل البرمجي ${pInfo.adjAr} التالي والمسجل أثناء تنفيذ الاختبارات الأخيرة لمشروع <b>${projectName}</b>.
@@ -373,7 +373,7 @@ export function generateBugHtmlTemplate(
   </p>
 </div>`;
   } else {
-    return `<div style="font-family: Calibri, Aptos, Arial, sans-serif; font-size: 11pt; line-height: 1.5; color: #000000; text-align: left;">
+    return `<div style="font-family: 'Almarai', 'Segoe UI', Calibri, Aptos, Arial, sans-serif; font-size: 11pt; line-height: 1.6; color: #000000; text-align: left;">
   <p style="margin: 0 0 10px 0; font-size: 11pt; color: #000000;">Dear Team,</p>
   <p style="margin: 0 0 16px 0; font-size: 11pt; color: #000000;">
     Please review the following ${pInfo.adjEn}-priority defect logged during the recent test execution for the <b>${projectName}</b> project.
@@ -548,11 +548,53 @@ function plainTextToHtml(text: string, isAr: boolean): string {
   if (inUl) htmlLines.push("</ul>");
   if (inOl) htmlLines.push("</ol>");
 
-  const font = isAr ? "'Segoe UI', Tahoma, Arial, sans-serif" : "Calibri, Aptos, Arial, sans-serif";
+  const font = isAr
+    ? "'Almarai', 'Segoe UI', Tahoma, Arial, sans-serif"
+    : "'Almarai', 'Segoe UI', Calibri, Aptos, Arial, sans-serif";
   const dir = isAr ? "rtl" : "ltr";
   const align = isAr ? "right" : "left";
 
   return `<div dir="${dir}" style="font-family: ${font}; font-size: 11pt; line-height: 1.5; color: #000000; text-align: ${align};">\n${htmlLines.join("\n")}\n</div>`;
+}
+
+/**
+ * Wraps inner HTML into a complete RFC-compliant email document
+ * with embedded Google Fonts (Almarai) and Outlook MSO fallbacks
+ */
+export function wrapFullEmailHtml(innerHtml: string, isAr: boolean): string {
+  const lang = isAr ? "ar" : "en";
+  const dir = isAr ? "rtl" : "ltr";
+  const align = isAr ? "right" : "left";
+
+  return `<!DOCTYPE html>
+<html lang="${lang}" dir="${dir}">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700;800&display=swap" rel="stylesheet">
+  <style type="text/css">
+    @import url('https://fonts.googleapis.com/css2?family=Almarai:wght@400;700;800&display=swap');
+    * {
+      font-family: 'Almarai', 'Segoe UI', Tahoma, Arial, sans-serif !important;
+    }
+    body, table, td, p, div, span, li, b, strong, i, a {
+      font-family: 'Almarai', 'Segoe UI', Tahoma, Arial, sans-serif !important;
+    }
+  </style>
+  <!--[if mso]>
+  <style type="text/css">
+    body, table, td, p, div, span, li, b, strong, i, a {
+      font-family: 'Segoe UI', Tahoma, Arial, sans-serif !important;
+    }
+  </style>
+  <![endif]-->
+</head>
+<body dir="${dir}" style="margin: 0; padding: 0; font-family: 'Almarai', 'Segoe UI', Tahoma, Arial, sans-serif; font-size: 11pt; line-height: 1.6; color: #000000; text-align: ${align}; background-color: #ffffff;">
+${innerHtml}
+</body>
+</html>`;
 }
 
 /**
@@ -916,8 +958,16 @@ export default function EmailComposer({
   // Form Fields - multiple recipient lists
   const [toEmails, setToEmails] = useState<string[]>([]);
   const [ccEmails, setCcEmails] = useState<string[]>([]);
-  const to = toEmails.join("; ");
-  const cc = ccEmails.join("; ");
+  const to =
+    toEmails
+      .map((e) => e.trim().replace(/[,;]+$/, ""))
+      .filter(Boolean)
+      .join("; ") + (toEmails.length > 0 ? "; " : "");
+  const cc =
+    ccEmails
+      .map((e) => e.trim().replace(/[,;]+$/, ""))
+      .filter(Boolean)
+      .join("; ") + (ccEmails.length > 0 ? "; " : "");
   const [subject, setSubject] = useState(
     selectedCase ? generateSubject(selectedCase, emailLang) : ""
   );
@@ -986,8 +1036,9 @@ export default function EmailComposer({
   const handleCopyContent = async () => {
     if (!content.trim()) return;
     try {
+      const fullHtml = wrapFullEmailHtml(htmlContent, emailLang === "ar");
       if (typeof window !== "undefined" && window.ClipboardItem) {
-        const blobHtml = new Blob([htmlContent], { type: "text/html" });
+        const blobHtml = new Blob([fullHtml], { type: "text/html" });
         const blobText = new Blob([content], { type: "text/plain" });
         await navigator.clipboard.write([
           new ClipboardItem({
@@ -1023,6 +1074,7 @@ export default function EmailComposer({
       return;
     }
 
+    const fullHtml = wrapFullEmailHtml(htmlContent, emailLang === "ar");
     const boundary = `----=_Part_${Date.now()}`;
     const emlContent = [
       `To: ${to.trim()}`,
@@ -1042,7 +1094,7 @@ export default function EmailComposer({
       `Content-Type: text/html; charset=utf-8`,
       `Content-Transfer-Encoding: 8bit`,
       ``,
-      htmlContent,
+      fullHtml,
       ``,
       `--${boundary}--`,
     ]
@@ -1093,8 +1145,15 @@ export default function EmailComposer({
 
     setIsLaunching(true);
 
+    const fullHtml = wrapFullEmailHtml(htmlContent, emailLang === "ar");
+
+    // 1. Auto-copy rich HTML to clipboard so the user always has full Almarai font & bold formatting
     try {
-      // 1. Direct Outlook (classic) launch via local COM backend
+      await handleCopyContent();
+    } catch {}
+
+    try {
+      // 2. Direct Outlook (classic) launch via local COM backend
       const res = await fetch("/api/open-outlook-classic", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1103,7 +1162,7 @@ export default function EmailComposer({
           cc: cc.trim(),
           subject: subject.trim(),
           content,
-          htmlContent,
+          htmlContent: fullHtml,
         }),
       });
 
@@ -1112,7 +1171,7 @@ export default function EmailComposer({
       if (data?.success) {
         toast.success(
           isRTL
-            ? "تم فتح Outlook (classic) وتجهيز الرسالة بالصيغة المنسقة بنجاح!"
+            ? "تم فتح Outlook (classic) وتجهيز الرسالة بالخط والخط العريض بنجاح!"
             : "Outlook (classic) launched with formatted HTML message!",
           {
             icon: "📧",
@@ -1126,10 +1185,10 @@ export default function EmailComposer({
       console.warn("Direct Outlook COM launch unavailable, falling back to mailto:", err);
     }
 
-    // 2. Fallback: mailto protocol
+    // 3. Fallback: mailto protocol (strictly formatted with semicolons, NO commas)
     const queryParts: string[] = [];
-    if (ccEmails.length > 0) {
-      queryParts.push(`cc=${encodeURIComponent(ccEmails.join(","))}`);
+    if (cc.trim()) {
+      queryParts.push(`cc=${encodeURIComponent(cc.trim())}`);
     }
     if (subject.trim()) {
       queryParts.push(`subject=${encodeURIComponent(subject.trim())}`);
@@ -1140,12 +1199,17 @@ export default function EmailComposer({
     }
 
     const queryString = queryParts.length > 0 ? `?${queryParts.join("&")}` : "";
-    const mailtoUrl = `mailto:${encodeURIComponent(toEmails.join(","))}${queryString}`;
+    const mailtoUrl = `mailto:${encodeURIComponent(to.trim())}${queryString}`;
 
-    toast.success(t("email_opening_outlook_toast"), {
-      icon: "📧",
-      duration: 3500,
-    });
+    toast.success(
+      isRTL
+        ? "تم فتح Outlook (تم نسخ التنسيق والخط للحافظة - يمكنك لصقه بـ Ctrl+V)"
+        : "Opening Outlook (Rich format copied to clipboard - press Ctrl+V to paste)",
+      {
+        icon: "📧",
+        duration: 4500,
+      }
+    );
 
     window.location.href = mailtoUrl;
     setIsLaunching(false);

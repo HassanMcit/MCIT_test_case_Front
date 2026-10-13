@@ -26,18 +26,36 @@ $ErrorActionPreference = 'Stop'
 try {
   $o = New-Object -ComObject Outlook.Application
   $m = $o.CreateItem(0)
-  $m.To = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('${toB64}'))
-  $m.CC = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('${ccB64}'))
-  $m.Subject = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('${subjectB64}'))
+
+  $toRaw = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('${toB64}'))
+  $ccRaw = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('${ccB64}'))
+  $subjectRaw = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('${subjectB64}'))
   $htmlRaw = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('${htmlB64}'))
+  $bodyRaw = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('${bodyB64}'))
+
+  if ($toRaw) {
+    $toNorm = ($toRaw -split '[,;]+' | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' }) -join '; '
+    if ($toNorm) { $toNorm = $toNorm + '; ' }
+    $m.To = $toNorm
+  }
+  if ($ccRaw) {
+    $ccNorm = ($ccRaw -split '[,;]+' | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' }) -join '; '
+    if ($ccNorm) { $ccNorm = $ccNorm + '; ' }
+    $m.CC = $ccNorm
+  }
+  $m.Subject = $subjectRaw
   if ($htmlRaw -and $htmlRaw.Trim() -ne '') {
     $m.HTMLBody = $htmlRaw
   } else {
-    $m.Body = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('${bodyB64}'))
+    $m.Body = $bodyRaw
   }
+  try {
+    $null = $m.Recipients.ResolveAll()
+  } catch {}
   $m.Display($false)
   exit 0
 } catch {
+  Write-Error $_.Exception.Message
   exit 1
 }
 `;
