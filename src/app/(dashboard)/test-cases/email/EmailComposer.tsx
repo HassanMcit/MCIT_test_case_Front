@@ -1194,16 +1194,10 @@ export default function EmailComposer({
         return;
       }
     } catch (err) {
-      console.warn("Direct Outlook COM launch unavailable, falling back to eml & mailto:", err);
+      console.warn("Direct Outlook COM launch unavailable, falling back to mailto:", err);
     }
 
-    // 3. Fallback: Automatically download the full HTML .eml file
-    // Clicking the downloaded .eml opens Outlook immediately in 100% full rich HTML with BOLD & system fonts!
-    try {
-      handleDownloadEml();
-    } catch {}
-
-    // 4. Also trigger mailto protocol with clean single-line spacing (strictly single \n, NO duplicate breaks)
+    // 3. Fallback: mailto protocol (strictly single \n, NO duplicate breaks, NO file downloads)
     const queryParts: string[] = [];
     if (cc.trim()) {
       queryParts.push(`cc=${encodeURIComponent(cc.trim())}`);
@@ -1221,11 +1215,11 @@ export default function EmailComposer({
 
     toast.success(
       isRTL
-        ? "تم تحميل ملف التقرير المنسق (HTML) وفتح Outlook! اضغط على الملف المنسق لفتحه بالـ BOLD وخط النظام 100%."
-        : "Downloaded HTML report file (.eml) & opening Outlook! Click the file for 100% bold & system fonts.",
+        ? "جاري فتح برنامج Outlook..."
+        : "Opening Outlook...",
       {
         icon: "📧",
-        duration: 6000,
+        duration: 3500,
       }
     );
 
@@ -1668,30 +1662,21 @@ export default function EmailComposer({
                     </Button>
                   </div>
 
-                  {/* Guidance Box for Full HTML & BOLD in Outlook */}
-                  <div className="mt-4 p-4 rounded-xl bg-[#eff4ff] border border-[#bfe9ff] text-xs text-[#0b1c30] space-y-2">
+                  {/* Guidance Box */}
+                  <div className="mt-4 p-3.5 rounded-xl bg-[#eff4ff] border border-[#bfe9ff] text-xs text-[#0b1c30] space-y-1.5">
                     <div className="flex items-center gap-2 font-bold text-[#006685]">
                       <Sparkles className="w-4 h-4 text-[#00aee0] shrink-0" />
                       <span>
                         {isRTL
-                          ? "للحصول على نفس التنسيق والـ BOLD وخط النظام في Outlook بنسبة 100%:"
-                          : "To get 100% exact BOLD formatting and system font in Outlook:"}
+                          ? "ملاحظة لتنسيق البريد (BOLD وخط النظام):"
+                          : "Note for Email Formatting (BOLD & System Font):"}
                       </span>
                     </div>
-                    <ul className={`space-y-1.5 text-[11px] text-[#3d484f] ${isRTL ? "pr-5 list-disc" : "pl-5 list-disc"}`}>
-                      <li>
-                        <b>{isRTL ? "الطريقة الأسهل والمباشرة (ملف HTML):" : "Direct HTML File (Recommended):"}</b>{" "}
-                        {isRTL
-                          ? "اضغط «تحميل (.eml)» وافتحه — يفتح برنامج Outlook كمسودة جديدة كاملة التنسيق بالخط العريض (BOLD) وخط النظام وقوائم التنقيط فوراً."
-                          : "Click «Download (.eml)» and open it — Outlook opens an instant draft with 100% bold headings, system fonts, and bullet lists."}
-                      </li>
-                      <li>
-                        <b>{isRTL ? "إذا فتحت Outlook عبر الرابط المباشر:" : "If opened via direct Outlook link:"}</b>{" "}
-                        {isRTL
-                          ? "يفتح ويندوز الرسائل المباشرة كنص عادي. لتحويلها لنفس شكل النظام، حوّل الصيغة إلى HTML من شريط Outlook (Format Text ⬅ HTML) ثم اضغط (Ctrl + V) لأن التنسيق الغني تم نسخه لحافظتك تلقائياً."
-                          : "Windows opens direct links in Plain Text mode. To apply formatting, click Format Text -> HTML in Outlook ribbon, then press Ctrl + V."}
-                      </li>
-                    </ul>
+                    <p className="text-[11px] text-[#3d484f] leading-relaxed">
+                      {isRTL
+                        ? "يتم نسخ التنسيق الغني الكامل (HTML + BOLD + خط النظام) إلى حافظتك تلقائياً بمجرد فتح البريد، ويمكنك لصقه بـ (Ctrl + V) داخل نافذة Outlook في أي وقت."
+                        : "Rich format (HTML + BOLD + system fonts) is automatically copied to your clipboard when opening email. You can paste it with Ctrl + V anytime."}
+                    </p>
                   </div>
                 </CardContent>
               </Card>
