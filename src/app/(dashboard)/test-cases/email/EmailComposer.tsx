@@ -222,14 +222,22 @@ export function generateBugTextTemplate(
   const modulePage = tc.pageName ? `${tc.module} / ${tc.pageName}` : tc.module;
   const reporterName = tc.tester?.name || "Tester Name";
   const dateFormatted = formatReportDate(tc.executedAt, lang);
-  const preConditions = tc.preConditions || (isAr ? "لا توجد شروط مسبقة" : "None");
-  const scenario = tc.scenario || (isAr ? "سيناريو الاختبار" : "Test Scenario");
-  const expectedResult = tc.expectedResult || (isAr ? "النتيجة المتوقعة" : "Expected Result");
-  const actualResult = tc.actualResult || (isAr ? "فشل الاختبار، حدث خطأ غير متوقع" : "Test failed with unexpected error");
+  const preConditions = (tc.preConditions || (isAr ? "لا توجد شروط مسبقة" : "None"))
+    .replace(/(\r?\n)+/g, " - ")
+    .trim();
+  const scenario = (tc.scenario || (isAr ? "سيناريو الاختبار" : "Test Scenario"))
+    .replace(/(\r?\n)+/g, " - ")
+    .trim();
+  const expectedResult = (tc.expectedResult || (isAr ? "النتيجة المتوقعة" : "Expected Result"))
+    .replace(/(\r?\n)+/g, " - ")
+    .trim();
+  const actualResult = (tc.actualResult || (isAr ? "فشل الاختبار، حدث خطأ غير متوقع" : "Test failed with unexpected error"))
+    .replace(/(\r?\n)+/g, " - ")
+    .trim();
 
   const stepsList =
     Array.isArray(tc.steps) && tc.steps.length > 0
-      ? tc.steps.map((s, i) => `${i + 1}.\t${s}`).join("\r\n")
+      ? tc.steps.map((s, i) => `${i + 1}.\t${s.trim()}`).join("\n")
       : isAr
       ? "1.\tتنفيذ خطوات السيناريو"
       : "1.\tExecute scenario steps";
@@ -237,6 +245,7 @@ export function generateBugTextTemplate(
   if (isAr) {
     return [
       `فريق العمل المحترم،`,
+      ``,
       `يرجى مراجعة الخلل البرمجي ${pInfo.adjAr} التالي والمسجل أثناء تنفيذ الاختبارات الأخيرة لمشروع ${projectName}.`,
       ``,
       `معلومات تتبع الخلل`,
@@ -260,12 +269,14 @@ export function generateBugTextTemplate(
       `•\tالنتيجة الفعلية: ${actualResult}`,
       ``,
       `إشعار آلي تم إنشاؤه عبر نظام إدارة اختبارات الجودة MCIT.`,
+      ``,
       `مع أطيب التحيات،`,
       senderName,
-    ].join("\r\n");
+    ].join("\n");
   } else {
     return [
       `Dear Team,`,
+      ``,
       `Please review the following ${pInfo.adjEn}-priority defect logged during the recent test execution for the ${projectName} project.`,
       ``,
       `Bug Tracking Information`,
@@ -289,9 +300,10 @@ export function generateBugTextTemplate(
       `•\tActual Result: ${actualResult}`,
       ``,
       `Automated dispatch generated via MCIT QA Test Management System.`,
+      ``,
       `Best regards,`,
       senderName,
-    ].join("\r\n");
+    ].join("\n");
   }
 }
 
@@ -1182,10 +1194,16 @@ export default function EmailComposer({
         return;
       }
     } catch (err) {
-      console.warn("Direct Outlook COM launch unavailable, falling back to mailto:", err);
+      console.warn("Direct Outlook COM launch unavailable, falling back to eml & mailto:", err);
     }
 
-    // 3. Fallback: mailto protocol (strictly formatted with semicolons, NO commas)
+    // 3. Fallback: Automatically download the full HTML .eml file
+    // Clicking the downloaded .eml opens Outlook immediately in 100% full rich HTML with BOLD & system fonts!
+    try {
+      handleDownloadEml();
+    } catch {}
+
+    // 4. Also trigger mailto protocol with clean single-line spacing (strictly single \n, NO duplicate breaks)
     const queryParts: string[] = [];
     if (cc.trim()) {
       queryParts.push(`cc=${encodeURIComponent(cc.trim())}`);
@@ -1194,7 +1212,7 @@ export default function EmailComposer({
       queryParts.push(`subject=${encodeURIComponent(subject.trim())}`);
     }
     if (content.trim()) {
-      const bodyFormatted = content.replace(/\r\n/g, "\n").replace(/\n/g, "\r\n");
+      const bodyFormatted = content.replace(/\r\n/g, "\n");
       queryParts.push(`body=${encodeURIComponent(bodyFormatted)}`);
     }
 
@@ -1203,11 +1221,11 @@ export default function EmailComposer({
 
     toast.success(
       isRTL
-        ? "تم فتح Outlook (تم نسخ التنسيق والخط للحافظة - يمكنك لصقه بـ Ctrl+V)"
-        : "Opening Outlook (Rich format copied to clipboard - press Ctrl+V to paste)",
+        ? "تم تحميل ملف التقرير المنسق (HTML) وفتح Outlook! اضغط على الملف المنسق لفتحه بالـ BOLD وخط النظام 100%."
+        : "Downloaded HTML report file (.eml) & opening Outlook! Click the file for 100% bold & system fonts.",
       {
         icon: "📧",
-        duration: 4500,
+        duration: 6000,
       }
     );
 
@@ -1638,6 +1656,32 @@ export default function EmailComposer({
                       )}
                       <span>{t("email_copy_content_btn")}</span>
                     </Button>
+                  </div>
+
+                  {/* Guidance Box for Full HTML & BOLD in Outlook */}
+                  <div className="mt-4 p-4 rounded-xl bg-[#eff4ff] border border-[#bfe9ff] text-xs text-[#0b1c30] space-y-2">
+                    <div className="flex items-center gap-2 font-bold text-[#006685]">
+                      <Sparkles className="w-4 h-4 text-[#00aee0] shrink-0" />
+                      <span>
+                        {isRTL
+                          ? "للحصول على نفس التنسيق والـ BOLD وخط النظام في Outlook بنسبة 100%:"
+                          : "To get 100% exact BOLD formatting and system font in Outlook:"}
+                      </span>
+                    </div>
+                    <ul className={`space-y-1.5 text-[11px] text-[#3d484f] ${isRTL ? "pr-5 list-disc" : "pl-5 list-disc"}`}>
+                      <li>
+                        <b>{isRTL ? "الطريقة الأسهل والمباشرة (ملف HTML):" : "Direct HTML File (Recommended):"}</b>{" "}
+                        {isRTL
+                          ? "اضغط «تحميل (.eml)» وافتحه — يفتح برنامج Outlook كمسودة جديدة كاملة التنسيق بالخط العريض (BOLD) وخط النظام وقوائم التنقيط فوراً."
+                          : "Click «Download (.eml)» and open it — Outlook opens an instant draft with 100% bold headings, system fonts, and bullet lists."}
+                      </li>
+                      <li>
+                        <b>{isRTL ? "إذا فتحت Outlook عبر الرابط المباشر:" : "If opened via direct Outlook link:"}</b>{" "}
+                        {isRTL
+                          ? "يفتح ويندوز الرسائل المباشرة كنص عادي. لتحويلها لنفس شكل النظام، حوّل الصيغة إلى HTML من شريط Outlook (Format Text ⬅ HTML) ثم اضغط (Ctrl + V) لأن التنسيق الغني تم نسخه لحافظتك تلقائياً."
+                          : "Windows opens direct links in Plain Text mode. To apply formatting, click Format Text -> HTML in Outlook ribbon, then press Ctrl + V."}
+                      </li>
+                    </ul>
                   </div>
                 </CardContent>
               </Card>
