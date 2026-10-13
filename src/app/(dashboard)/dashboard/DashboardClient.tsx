@@ -34,6 +34,7 @@ import toast from "react-hot-toast";
 import type { DashboardDataPayload } from "./dashboard.interface";
 import type { TestCaseItem } from "../test-cases/test-cases.interface";
 import { revalidateDashboardAction } from "./dashboard.action";
+import { toLocalDateKey } from "@/lib/utils";
 
 interface DashboardClientProps {
   data: DashboardDataPayload;
@@ -209,10 +210,15 @@ export default function DashboardClient({ data }: DashboardClientProps) {
     }> = [];
 
     const now = new Date();
+    // Pre-compute each case's LOCAL day key once (not UTC)
+    const caseDayKeys = scopedTestCases.map((tc) => ({
+      tc,
+      key: toLocalDateKey(tc.executedAt || tc.createdAt),
+    }));
+
     for (let i = daysCount - 1; i >= 0; i--) {
-      const d = new Date(now);
-      d.setDate(now.getDate() - i);
-      const dateKey = d.toISOString().split("T")[0];
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+      const dateKey = toLocalDateKey(d) as string;
       const isToday = i === 0;
       const dayEn = isToday
         ? "Today"
@@ -221,11 +227,9 @@ export default function DashboardClient({ data }: DashboardClientProps) {
         ? "اليوم"
         : d.toLocaleDateString("ar-EG", { month: "short", day: "numeric" });
 
-      const dayCases = scopedTestCases.filter((tc) => {
-        const rawDate = tc.executedAt || tc.createdAt;
-        if (!rawDate) return false;
-        return rawDate.startsWith(dateKey);
-      });
+      const dayCases = caseDayKeys
+        .filter((entry) => entry.key === dateKey)
+        .map((entry) => entry.tc);
 
       const rawP = dayCases.filter((c) => c.status === "passed").length;
       const rawF = dayCases.filter((c) => c.status === "failed").length;

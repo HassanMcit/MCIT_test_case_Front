@@ -45,6 +45,7 @@ import type { TestCaseItem, TestCaseListResponse } from "./test-cases.interface"
 import type { ProjectApiItem } from "../projects/getProjects.action";
 import { deleteTestCase, updateTestCase } from "./test-cases.action";
 import toast from "react-hot-toast";
+import { toLocalDateKey } from "@/lib/utils";
 
 interface TestCasesTableProps {
   initialData: TestCaseListResponse;
@@ -114,16 +115,11 @@ export default function TestCasesTable({
   );
   const [selectedItem, setSelectedItem] = useState<TestCaseItem | null>(null);
 
-  // Extract distinct dates (sorted chronologically) for dropdowns
+  // Extract distinct dates (sorted chronologically) for dropdowns — LOCAL day, not UTC
   const uniqueDateStrings = Array.from(
     new Set(
       items
-        .map((tc) => {
-          const d = tc.executedAt || tc.createdAt;
-          if (!d) return null;
-          const parsed = new Date(d);
-          return isNaN(parsed.getTime()) ? null : parsed.toISOString().slice(0, 10);
-        })
+        .map((tc) => toLocalDateKey(tc.executedAt || tc.createdAt))
         .filter(Boolean) as string[]
     )
   ).sort();
@@ -179,7 +175,10 @@ export default function TestCasesTable({
       if (!tcDate) {
         return false;
       }
-      const tcDay = new Date(tcDate).toISOString().slice(0, 10);
+      const tcDay = toLocalDateKey(tcDate);
+      if (!tcDay) {
+        return false;
+      }
       if (fromDateFilter !== "all" && tcDay < fromDateFilter) {
         return false;
       }
