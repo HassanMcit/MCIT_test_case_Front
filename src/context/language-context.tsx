@@ -379,8 +379,8 @@ error_password_regex: {
     ar: "إرسال عبر Outlook (classic)",
   },
   email_open_web_btn: {
-    en: "MCIT Webmail (OWA)",
-    ar: "بريد الوزارة (MCIT OWA)",
+    en: "Outlook Web (MCIT)",
+    ar: "بريد الوزارة Outlook Web",
   },
   email_copy_content_btn: {
     en: "Copy Report Text",

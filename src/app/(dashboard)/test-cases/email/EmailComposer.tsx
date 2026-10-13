@@ -1233,31 +1233,41 @@ export default function EmailComposer({
     setIsLaunching(false);
   };
 
-  // Open in MCIT Outlook Web App (OWA)
+  // Open in MCIT Outlook Web App (OWA) based on https://mail.mcit.gov.eg/
   const handleOpenMcitOwa = async () => {
     if (!to.trim()) {
       toast.error(t("email_error_no_to"));
       return;
     }
 
+    const cleanTo = to.trim();
+    const cleanCc = cc.trim();
+    const cleanSubject = subject.trim();
+    const cleanBody = content.trim();
+
+    // Base URL: https://mail.mcit.gov.eg/ (Exchange OWA)
     const params = new URLSearchParams();
     params.set("path", "/mail/action/compose");
-    params.set("to", to.trim());
-    if (cc.trim()) params.set("cc", cc.trim());
-    if (subject.trim()) params.set("subject", subject.trim());
-    if (content.trim()) params.set("body", content.trim());
+    params.set("to", cleanTo);
+    if (cleanCc) params.set("cc", cleanCc);
+    if (cleanSubject) params.set("subject", cleanSubject);
+    if (cleanBody) params.set("body", cleanBody);
 
     const mcitOwaUrl = `https://mail.mcit.gov.eg/owa/?${params.toString()}`;
 
-    // Also copy rich report content to clipboard for maximum reliability
+    // Also copy rich HTML report content to clipboard for 1-click rich paste in OWA
     await handleCopyContent();
 
     window.open(mcitOwaUrl, "_blank", "noopener,noreferrer");
 
     toast.success(
       isRTL
-        ? "جاري فتح بريد الوزارة MCIT OWA (تم نسخ التقرير المنسق للحافظة)"
-        : "Opening MCIT OWA (formatted report copied to clipboard)"
+        ? "جاري فتح بريد الوزارة (mail.mcit.gov.eg) - تم نسخ التقرير المنسق للحافظة (يمكنك لصقه بـ Ctrl+V)"
+        : "Opening MCIT Web Mail (mail.mcit.gov.eg) - Rich report copied to clipboard (press Ctrl+V to paste)",
+      {
+        icon: "🌐",
+        duration: 4500,
+      }
     );
   };
 
@@ -1636,7 +1646,7 @@ export default function EmailComposer({
                       variant="outline"
                       onClick={handleOpenMcitOwa}
                       className="h-12 rounded-xl text-xs font-semibold border-slate-200 hover:bg-[#eff4ff] text-[#006685] transition-all cursor-pointer gap-1.5 px-3.5"
-                      title="https://mail.mcit.gov.eg/owa/#path=/mail"
+                      title="https://mail.mcit.gov.eg/"
                     >
                       <ExternalLink className="w-4 h-4" />
                       <span>{t("email_open_web_btn")}</span>
