@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -24,7 +24,12 @@ import {
   Edit3,
   Globe,
   AlertTriangle,
+  X,
+  Plus,
+  Sparkles,
+  Users,
 } from "lucide-react";
+import { getUserData } from "@/components/Navbar/navbar.action";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -550,6 +555,325 @@ function plainTextToHtml(text: string, isAr: boolean): string {
   return `<div dir="${dir}" style="font-family: ${font}; font-size: 11pt; line-height: 1.5; color: #000000; text-align: ${align};">\n${htmlLines.join("\n")}\n</div>`;
 }
 
+/**
+ * Suggested MCIT Team Emails list for defect reports
+ */
+export const MCIT_TEAM_EMAILS: string[] = [
+  "sat-sr@mcit.gov.eg",
+  "aaezzat@mcit.gov.eg",
+  "asgomaa@mcit.gov.eg",
+  "m.rokaya@mcit.gov.eg",
+  "mrefaei@mcit.gov.eg",
+  "knoreldin@mcit.gov.eg",
+  "hemabdelwahed@mcit.gov.eg",
+  "aelshapani@mcit.gov.eg",
+  "h.ali@mcit.gov.eg",
+];
+
+interface EmailRecipientInputProps {
+  id: string;
+  label: string;
+  placeholder?: string;
+  optionalLabel?: string;
+  required?: boolean;
+  icon: React.ReactNode;
+  selectedEmails: string[];
+  onChange: (emails: string[]) => void;
+  suggestions: string[];
+  currentUserEmail?: string;
+  isRTL: boolean;
+  t: (key: any) => string;
+}
+
+/**
+ * Multi-recipient email input with chip badges, autocomplete dropdown,
+ * and quick-pick suggestion pills excluding the current logged-in user.
+ */
+function EmailRecipientInput({
+  id,
+  label,
+  placeholder,
+  optionalLabel,
+  required,
+  icon,
+  selectedEmails,
+  onChange,
+  suggestions,
+  currentUserEmail,
+  isRTL,
+  t,
+}: EmailRecipientInputProps) {
+  const [inputValue, setInputValue] = useState("");
+  const [showDropdown, setShowDropdown] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Filter out the logged-in user's email completely (case-insensitive)
+  const normalizedUserEmail = currentUserEmail?.trim().toLowerCase() || "";
+  const filteredSuggestions = suggestions.filter(
+    (email) => !normalizedUserEmail || email.trim().toLowerCase() !== normalizedUserEmail
+  );
+
+  // Suggestions matching the current search input that are NOT already selected
+  const matchingSuggestions = filteredSuggestions.filter((email) => {
+    const isAlreadySelected = selectedEmails.some(
+      (sel) => sel.trim().toLowerCase() === email.trim().toLowerCase()
+    );
+    if (isAlreadySelected) return false;
+    if (!inputValue.trim()) return true;
+    return email.toLowerCase().includes(inputValue.trim().toLowerCase());
+  });
+
+  // Pills for unselected suggestions
+  const unselectedPills = filteredSuggestions.filter(
+    (email) => !selectedEmails.some((sel) => sel.trim().toLowerCase() === email.trim().toLowerCase())
+  );
+
+  const addEmail = (raw: string) => {
+    const email = raw.trim().replace(/[,;]+$/, "");
+    if (!email) return;
+    const exists = selectedEmails.some((sel) => sel.toLowerCase() === email.toLowerCase());
+    if (!exists) {
+      onChange([...selectedEmails, email]);
+    }
+    setInputValue("");
+  };
+
+  const removeEmail = (emailToRemove: string) => {
+    onChange(selectedEmails.filter((e) => e.toLowerCase() !== emailToRemove.toLowerCase()));
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === "," || e.key === ";" || e.key === "Tab") {
+      if (inputValue.trim()) {
+        e.preventDefault();
+        addEmail(inputValue);
+        setShowDropdown(false);
+      }
+    } else if (e.key === "Backspace" && !inputValue && selectedEmails.length > 0) {
+      removeEmail(selectedEmails[selectedEmails.length - 1]);
+    } else if (e.key === "Escape") {
+      setShowDropdown(false);
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const pasteData = e.clipboardData.getData("text");
+    if (pasteData && (pasteData.includes(",") || pasteData.includes(";") || pasteData.includes("\n") || pasteData.includes(" "))) {
+      e.preventDefault();
+      const parts = pasteData
+        .split(/[,;\s\n]+/)
+        .map((p) => p.trim())
+        .filter(Boolean);
+      const newSelected = [...selectedEmails];
+      parts.forEach((part) => {
+        if (!newSelected.some((sel) => sel.toLowerCase() === part.toLowerCase())) {
+          newSelected.push(part);
+        }
+      });
+      onChange(newSelected);
+      setInputValue("");
+    }
+  };
+
+  // Close dropdown on click outside & commit any typed text
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        if (inputValue.trim()) {
+          addEmail(inputValue);
+        }
+        setShowDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [inputValue, selectedEmails]);
+
+  return (
+    <div className="space-y-1.5" ref={containerRef}>
+      <Label
+        htmlFor={id}
+        className="text-xs font-bold text-[#3d484f] flex items-center justify-between"
+      >
+        <span className="flex items-center gap-1.5">
+          <span>{label}</span>
+          {required && <span className="text-red-500">*</span>}
+          {optionalLabel && (
+            <span className="text-[11px] text-slate-400 font-normal">
+              ({optionalLabel})
+            </span>
+          )}
+        </span>
+        {selectedEmails.length > 0 && (
+          <span className="text-[11px] text-[#006685] font-semibold">
+            {selectedEmails.length} {isRTL ? "مستلم" : "recipient(s)"}
+          </span>
+        )}
+      </Label>
+
+      {/* Input Box with Chips */}
+      <div className="relative">
+        <div
+          onClick={() => inputRef.current?.focus()}
+          className={`min-h-[46px] p-1.5 rounded-xl border border-slate-200 bg-white hover:border-slate-300 focus-within:border-[#00A2D2] focus-within:ring-2 focus-within:ring-[#00A2D2]/25 transition-all flex flex-wrap items-center gap-1.5 cursor-text ${
+            isRTL ? "pr-9 pl-2" : "pl-9 pr-2"
+          }`}
+        >
+          {/* Static leading icon */}
+          <span
+            className={`absolute top-3 pointer-events-none text-slate-400 ${
+              isRTL ? "right-3" : "left-3"
+            }`}
+          >
+            {icon}
+          </span>
+
+          {/* Selected Chips */}
+          {selectedEmails.map((email) => (
+            <span
+              key={email}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#eff4ff] text-[#006685] border border-[#bfe9ff] text-xs font-semibold shadow-2xs group animate-in fade-in zoom-in-95 duration-100"
+            >
+              <Mail className="w-3 h-3 text-[#00aee0] shrink-0" />
+              <span className="font-mono text-[11px]">{email}</span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeEmail(email);
+                }}
+                className="w-4 h-4 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-[#ba1a1a] transition-colors cursor-pointer shrink-0"
+                title={isRTL ? "إزالة" : "Remove"}
+              >
+                <X className="w-2.5 h-2.5" />
+              </button>
+            </span>
+          ))}
+
+          {/* Inline Text Input */}
+          <input
+            ref={inputRef}
+            id={id}
+            type="text"
+            value={inputValue}
+            onChange={(e) => {
+              setInputValue(e.target.value);
+              setShowDropdown(true);
+            }}
+            onFocus={() => setShowDropdown(true)}
+            onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
+            placeholder={
+              selectedEmails.length === 0
+                ? placeholder || (isRTL ? "اكتب بريداً أو اختر من المقترحات..." : "Type email or choose from suggestions...")
+                : (isRTL ? "أضف بريداً آخر..." : "Add another email...")
+            }
+            className="flex-1 min-w-[170px] h-8 bg-transparent text-xs text-[#0b1c30] placeholder:text-slate-400 focus:outline-hidden px-1 font-mono"
+          />
+
+          {/* Add button if text typed */}
+          {inputValue.trim() && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                addEmail(inputValue);
+                setShowDropdown(false);
+              }}
+              className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-[#006685] hover:bg-[#00aee0] text-white shadow-2xs transition-colors cursor-pointer shrink-0"
+            >
+              {isRTL ? "إضافة" : "Add"}
+            </button>
+          )}
+        </div>
+
+        {/* Autocomplete Dropdown */}
+        {showDropdown && (matchingSuggestions.length > 0 || (inputValue.trim() && !matchingSuggestions.includes(inputValue.trim()))) && (
+          <div
+            className={`absolute top-full mt-1.5 w-full max-h-60 overflow-y-auto bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100 ${
+              isRTL ? "right-0 text-right" : "left-0 text-left"
+            }`}
+          >
+            <div className="px-3 py-1.5 text-[11px] font-bold text-slate-400 border-b border-slate-100 flex items-center justify-between">
+              <span>{isRTL ? "مقترحات البريد الإلكتروني المتاحة (MCIT):" : "Available MCIT Email Suggestions:"}</span>
+              <span className="text-[10px] font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">
+                {matchingSuggestions.length}
+              </span>
+            </div>
+
+            {/* If user typed custom email that isn't already a suggestion */}
+            {inputValue.trim() && !filteredSuggestions.some(s => s.toLowerCase() === inputValue.trim().toLowerCase()) && (
+              <button
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  addEmail(inputValue);
+                  setShowDropdown(false);
+                }}
+                className="w-full flex items-center justify-between px-3.5 py-2 text-xs hover:bg-[#eff4ff] hover:text-[#006685] transition-colors cursor-pointer bg-slate-50/50 border-b border-slate-100 text-[#006685]"
+              >
+                <div className="flex items-center gap-2 truncate">
+                  <Plus className="w-3.5 h-3.5 text-[#00aee0] shrink-0" />
+                  <span className="font-semibold">
+                    {isRTL ? `إضافة البريد: "${inputValue.trim()}"` : `Add custom: "${inputValue.trim()}"`}
+                  </span>
+                </div>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#bfe9ff] text-[#006685] font-bold">
+                  Enter
+                </span>
+              </button>
+            )}
+
+            {matchingSuggestions.map((sugEmail) => (
+              <button
+                key={sugEmail}
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  addEmail(sugEmail);
+                  setShowDropdown(false);
+                }}
+                className="w-full flex items-center justify-between px-3.5 py-2 text-xs hover:bg-[#eff4ff] hover:text-[#006685] transition-colors cursor-pointer text-[#3d484f] group"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-md bg-[#e5eeff] text-[#006685] group-hover:bg-[#00aee0] group-hover:text-white flex items-center justify-center text-[10px] font-bold font-mono transition-colors">
+                    @
+                  </div>
+                  <span className="font-mono text-[11px] font-medium">{sugEmail}</span>
+                </div>
+                <Plus className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#006685] transition-colors" />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Quick Suggestion Pills */}
+      {unselectedPills.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5 pt-1">
+          <span className="text-[11px] text-slate-500 font-bold flex items-center gap-1 shrink-0">
+            <Sparkles className="w-3 h-3 text-amber-500" />
+            <span>{isRTL ? "مقترحات سريعة:" : "Quick suggestions:"}</span>
+          </span>
+          {unselectedPills.map((sugEmail) => (
+            <button
+              key={sugEmail}
+              type="button"
+              onClick={() => addEmail(sugEmail)}
+              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-medium bg-white hover:bg-[#eff4ff] text-[#3d484f] hover:text-[#006685] border border-slate-200 hover:border-[#00aee0] shadow-2xs transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+              title={isRTL ? `إضافة ${sugEmail}` : `Add ${sugEmail}`}
+            >
+              <Plus className="w-3 h-3 text-[#006685]" />
+              <span>{sugEmail}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function EmailComposer({
   initialTestCase,
   failedCases,
@@ -560,6 +884,23 @@ export default function EmailComposer({
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
   const { data: session } = useSession();
   const senderName = session?.user?.name || "Tester Name";
+
+  // Current logged in user email to filter out from suggestion list
+  const [currentUserEmail, setCurrentUserEmail] = useState<string>(
+    () => session?.user?.email || ""
+  );
+
+  useEffect(() => {
+    if (session?.user?.email) {
+      setCurrentUserEmail(session.user.email);
+    } else {
+      getUserData()
+        .then((u) => {
+          if (u?.email) setCurrentUserEmail(u.email);
+        })
+        .catch(() => {});
+    }
+  }, [session?.user?.email]);
 
   // Selected failed test case
   const [selectedCase, setSelectedCase] = useState<TestCaseItem | null>(
@@ -572,9 +913,11 @@ export default function EmailComposer({
   // View Mode: "preview" (Rich formatted card) or "edit" (Plain Textarea)
   const [viewMode, setViewMode] = useState<"preview" | "edit">("preview");
 
-  // Form Fields
-  const [to, setTo] = useState("");
-  const [cc, setCc] = useState("");
+  // Form Fields - multiple recipient lists
+  const [toEmails, setToEmails] = useState<string[]>([]);
+  const [ccEmails, setCcEmails] = useState<string[]>([]);
+  const to = toEmails.join("; ");
+  const cc = ccEmails.join("; ");
   const [subject, setSubject] = useState(
     selectedCase ? generateSubject(selectedCase, emailLang) : ""
   );
@@ -785,8 +1128,8 @@ export default function EmailComposer({
 
     // 2. Fallback: mailto protocol
     const queryParts: string[] = [];
-    if (cc.trim()) {
-      queryParts.push(`cc=${encodeURIComponent(cc.trim())}`);
+    if (ccEmails.length > 0) {
+      queryParts.push(`cc=${encodeURIComponent(ccEmails.join(","))}`);
     }
     if (subject.trim()) {
       queryParts.push(`subject=${encodeURIComponent(subject.trim())}`);
@@ -797,7 +1140,7 @@ export default function EmailComposer({
     }
 
     const queryString = queryParts.length > 0 ? `?${queryParts.join("&")}` : "";
-    const mailtoUrl = `mailto:${encodeURIComponent(to.trim())}${queryString}`;
+    const mailtoUrl = `mailto:${encodeURIComponent(toEmails.join(","))}${queryString}`;
 
     toast.success(t("email_opening_outlook_toast"), {
       icon: "📧",
@@ -1022,68 +1365,35 @@ export default function EmailComposer({
                     </Select>
                   </div>
 
-                  {/* To (Recipient) */}
-                  <div className="space-y-1.5">
-                    <Label
-                      htmlFor="email-to"
-                      className="text-xs font-bold text-[#3d484f] flex items-center gap-1.5"
-                    >
-                      <span>{t("email_to_label")}</span>
-                      <span className="text-red-500">*</span>
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        id="email-to"
-                        type="email"
-                        value={to}
-                        onChange={(e) => setTo(e.target.value)}
-                        placeholder={t("email_to_placeholder")}
-                        className={`h-11 rounded-xl text-xs border-slate-200 focus-visible:border-[#00A2D2] focus-visible:ring-2 focus-visible:ring-[#00A2D2]/25 ${
-                          isRTL ? "pr-10" : "pl-10"
-                        }`}
-                        required
-                      />
-                      <span
-                        className={`absolute inset-y-0 flex items-center pointer-events-none text-slate-400 ${
-                          isRTL ? "right-3.5" : "left-3.5"
-                        }`}
-                      >
-                        <Mail className="w-4 h-4" />
-                      </span>
-                    </div>
-                  </div>
+                  {/* To (Recipient) with Multi-select & Suggestions */}
+                  <EmailRecipientInput
+                    id="email-to"
+                    label={t("email_to_label")}
+                    placeholder={t("email_to_placeholder")}
+                    required
+                    icon={<Mail className="w-4 h-4" />}
+                    selectedEmails={toEmails}
+                    onChange={setToEmails}
+                    suggestions={MCIT_TEAM_EMAILS}
+                    currentUserEmail={currentUserEmail}
+                    isRTL={isRTL}
+                    t={t}
+                  />
 
-                  {/* CC (Carbon Copy) */}
-                  <div className="space-y-1.5">
-                    <Label
-                      htmlFor="email-cc"
-                      className="text-xs font-bold text-[#3d484f] flex items-center gap-1.5"
-                    >
-                      <span>{t("email_cc_label")}</span>
-                      <span className="text-[11px] text-slate-400 font-normal">
-                        ({isRTL ? "اختياري" : "Optional"})
-                      </span>
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        id="email-cc"
-                        type="text"
-                        value={cc}
-                        onChange={(e) => setCc(e.target.value)}
-                        placeholder={t("email_cc_placeholder")}
-                        className={`h-11 rounded-xl text-xs border-slate-200 focus-visible:border-[#00A2D2] focus-visible:ring-2 focus-visible:ring-[#00A2D2]/25 ${
-                          isRTL ? "pr-10" : "pl-10"
-                        }`}
-                      />
-                      <span
-                        className={`absolute inset-y-0 flex items-center pointer-events-none text-slate-400 ${
-                          isRTL ? "right-3.5" : "left-3.5"
-                        }`}
-                      >
-                        <User className="w-4 h-4" />
-                      </span>
-                    </div>
-                  </div>
+                  {/* CC (Carbon Copy) with Multi-select & Suggestions */}
+                  <EmailRecipientInput
+                    id="email-cc"
+                    label={t("email_cc_label")}
+                    placeholder={t("email_cc_placeholder")}
+                    optionalLabel={isRTL ? "اختياري" : "Optional"}
+                    icon={<Users className="w-4 h-4" />}
+                    selectedEmails={ccEmails}
+                    onChange={setCcEmails}
+                    suggestions={MCIT_TEAM_EMAILS}
+                    currentUserEmail={currentUserEmail}
+                    isRTL={isRTL}
+                    t={t}
+                  />
 
                   {/* Subject */}
                   <div className="space-y-1.5">

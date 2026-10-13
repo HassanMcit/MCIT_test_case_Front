@@ -339,16 +339,24 @@ error_password_regex: {
     ar: "إلى (المستلم - To)",
   },
   email_to_placeholder: {
-    en: "developer@example.com",
-    ar: "developer@example.com",
+    en: "Type email or choose from suggestions...",
+    ar: "اكتب بريداً أو اختر من المقترحات...",
   },
   email_cc_label: {
     en: "CC (Carbon Copy)",
     ar: "نسخة إلى (CC)",
   },
   email_cc_placeholder: {
-    en: "team-lead@example.com, qa@example.com",
-    ar: "team-lead@example.com, qa@example.com",
+    en: "Type email or choose from suggestions...",
+    ar: "اكتب بريداً أو اختر من المقترحات...",
+  },
+  email_quick_suggestions: {
+    en: "Suggestions:",
+    ar: "مقترحات سريعة:",
+  },
+  email_add_btn: {
+    en: "Add",
+    ar: "إضافة",
   },
   email_subject_label: {
     en: "Subject",
