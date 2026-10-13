@@ -704,7 +704,7 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
                 {isRTL ? "متوسط نسبة النجاح" : "Avg. Pass Rate"}
               </span>
               <span className="text-2xl font-black text-[#00A2D2] mt-1">
-                %{avgSuccessRate}
+                {isRTL ? `%${avgSuccessRate}` : `${avgSuccessRate}%`}
               </span>
               <span className="text-[11px] text-[#6d797f] font-medium mt-0.5">
                 {isRTL
@@ -745,7 +745,19 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
               onValueChange={(val) => setEnvFilter(val || "all")}
             >
               <SelectTrigger className="h-10 w-40 text-xs bg-slate-50/60 border-slate-200 rounded-lg">
-                <SelectValue placeholder={isRTL ? "البيئة" : "Environment"} />
+                <SelectValue placeholder={isRTL ? "البيئة" : "Environment"}>
+                  {envFilter === "all"
+                    ? isRTL
+                      ? "جميع البيئات"
+                      : "All Envs"
+                    : envFilter === "production"
+                    ? isRTL
+                      ? "إنتاج (Production)"
+                      : "Production"
+                    : isRTL
+                    ? "اختبار (Staging)"
+                    : "Staging"}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">
@@ -766,7 +778,19 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
               onValueChange={(val) => setStatusFilter(val || "all")}
             >
               <SelectTrigger className="h-10 w-36 text-xs bg-slate-50/60 border-slate-200 rounded-lg">
-                <SelectValue placeholder={isRTL ? "الحالة" : "Status"} />
+                <SelectValue placeholder={isRTL ? "الحالة" : "Status"}>
+                  {statusFilter === "all"
+                    ? isRTL
+                      ? "جميع الحالات"
+                      : "All Status"
+                    : statusFilter === "active"
+                    ? isRTL
+                      ? "نشط (Active)"
+                      : "Active"
+                    : isRTL
+                    ? "مؤرشف (Archived)"
+                    : "Archived"}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">
@@ -833,21 +857,24 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
                 onClick={() => router.push(`/test-cases?projectId=${p.id}`)}
                 className="border border-slate-200/80 shadow-xs hover:shadow-lg transition-all duration-200 rounded-2xl overflow-hidden flex flex-col justify-between group hover:border-[#00A2D2]/60 bg-white cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
               >
-                <div>
+                <div className="min-w-0 w-full">
                   {/* Card Header Top */}
-                  <CardHeader className="p-5 pb-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-3">
+                  <CardHeader className="p-5 pb-3 flex flex-col min-w-0 w-full">
+                    <div className="flex items-start justify-between gap-2.5 w-full min-w-0">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
                         <div
                           className={`w-11 h-11 rounded-xl ${p.bg} flex items-center justify-center shrink-0 shadow-xs ring-1 ring-slate-200/50`}
                         >
                           <IconComponent className={`w-5 h-5 ${p.color}`} />
                         </div>
-                        <div className="flex flex-col min-w-0">
-                          <CardTitle className="text-base font-bold text-[#0b1c30] truncate group-hover:text-[#00A2D2] transition-colors">
+                        <div className="flex flex-col min-w-0 flex-1">
+                          <CardTitle
+                            title={isRTL ? p.name : p.nameEn}
+                            className="text-[15px] font-bold text-[#0b1c30] truncate group-hover:text-[#00A2D2] transition-colors leading-snug"
+                          >
                             {isRTL ? p.name : p.nameEn}
                           </CardTitle>
-                          <span className="text-[11px] text-[#6d797f] truncate">
+                          <span className="text-[11px] text-[#6d797f] truncate mt-0.5">
                             {p.leadTester}
                           </span>
                         </div>
@@ -855,7 +882,7 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
 
                       <Badge
                         variant="outline"
-                        className={`text-[10px] font-bold px-2 py-0.5 shrink-0 ${
+                        className={`text-[11px] font-bold px-2.5 py-0.5 shrink-0 whitespace-nowrap rounded-full ${
                           isProd
                             ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                             : "bg-amber-50 text-amber-700 border-amber-200"
@@ -871,7 +898,7 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
                       </Badge>
                     </div>
 
-                    <CardDescription className="text-xs text-[#3d484f] line-clamp-2 mt-3 leading-relaxed">
+                    <CardDescription className="text-xs text-[#3d484f] line-clamp-2 mt-3 leading-relaxed w-full min-w-0">
                       {isRTL ? p.desc : p.descEn}
                     </CardDescription>
                   </CardHeader>
@@ -921,7 +948,7 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
                                 : "text-rose-600"
                           }`}
                         >
-                          %{p.successRate}
+                          {isRTL ? `%${p.successRate}` : `${p.successRate}%`}
                         </span>
                       </div>
                       <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
