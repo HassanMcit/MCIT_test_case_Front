@@ -57,6 +57,7 @@ export async function assignProjectToUser(userId: number, projectId: number) {
     updateTag("dashboard-stats");
     updateTag("dashboard");
     updateTag("test-cases");
+    updateTag("notifications");
     revalidatePath("/projects");
     revalidatePath("/assign-projects");
     revalidatePath("/add");

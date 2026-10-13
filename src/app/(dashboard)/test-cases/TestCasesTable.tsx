@@ -52,6 +52,46 @@ interface TestCasesTableProps {
   initialProjectId?: number;
 }
 
+/**
+ * Formats date and time for audit / action tracking:
+ * e.g., 13 أكتوبر 2026 - 12:38 م / October 13, 2026 - 12:38 PM
+ */
+export function formatActionTimestamp(
+  dateStr?: string | null,
+  lang: "ar" | "en" = "ar"
+): string {
+  if (!dateStr) return "-";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return "-";
+
+  let hours = d.getHours();
+  const minutes = d.getMinutes().toString().padStart(2, "0");
+
+  if (lang === "ar") {
+    const monthsAr = [
+      "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
+      "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر",
+    ];
+    const month = monthsAr[d.getMonth()];
+    const day = d.getDate();
+    const year = d.getFullYear();
+    const ampm = hours >= 12 ? "م" : "ص";
+    hours = hours % 12 || 12;
+    return `${day} ${month} ${year} - ${hours}:${minutes} ${ampm}`;
+  } else {
+    const monthsEn = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December",
+    ];
+    const month = monthsEn[d.getMonth()];
+    const day = d.getDate();
+    const year = d.getFullYear();
+    const ampm = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12 || 12;
+    return `${month} ${day}, ${year} - ${hours}:${minutes} ${ampm}`;
+  }
+}
+
 export default function TestCasesTable({
   initialData,
   allProjects,
@@ -67,10 +107,26 @@ export default function TestCasesTable({
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
+  const [fromDateFilter, setFromDateFilter] = useState("all");
+  const [toDateFilter, setToDateFilter] = useState("all");
   const [projectFilter, setProjectFilter] = useState<string>(
     initialProjectId ? String(initialProjectId) : "all"
   );
   const [selectedItem, setSelectedItem] = useState<TestCaseItem | null>(null);
+
+  // Extract distinct dates (sorted chronologically) for dropdowns
+  const uniqueDateStrings = Array.from(
+    new Set(
+      items
+        .map((tc) => {
+          const d = tc.executedAt || tc.createdAt;
+          if (!d) return null;
+          const parsed = new Date(d);
+          return isNaN(parsed.getTime()) ? null : parsed.toISOString().slice(0, 10);
+        })
+        .filter(Boolean) as string[]
+    )
+  ).sort();
 
   // Deletion State (In-app modal, NO native browser alert/confirm)
   const [itemToDelete, setItemToDelete] = useState<TestCaseItem | null>(null);
@@ -115,6 +171,21 @@ export default function TestCasesTable({
     // Priority filter
     if (priorityFilter !== "all" && tc.priority !== priorityFilter) {
       return false;
+    }
+
+    // Date range filter (from date to to date)
+    if (fromDateFilter !== "all" || toDateFilter !== "all") {
+      const tcDate = tc.executedAt || tc.createdAt;
+      if (!tcDate) {
+        return false;
+      }
+      const tcDay = new Date(tcDate).toISOString().slice(0, 10);
+      if (fromDateFilter !== "all" && tcDay < fromDateFilter) {
+        return false;
+      }
+      if (toDateFilter !== "all" && tcDay > toDateFilter) {
+        return false;
+      }
     }
 
     // Search filter
@@ -283,12 +354,16 @@ export default function TestCasesTable({
     search.trim() !== "" ||
     projectFilter !== "all" ||
     statusFilter !== "all" ||
-    priorityFilter !== "all";
+    priorityFilter !== "all" ||
+    fromDateFilter !== "all" ||
+    toDateFilter !== "all";
 
   const handleResetFilters = () => {
     setSearch("");
     setStatusFilter("all");
     setPriorityFilter("all");
+    setFromDateFilter("all");
+    setToDateFilter("all");
     handleProjectFilterChange("all");
   };
 
@@ -563,8 +638,8 @@ export default function TestCasesTable({
             )}
           </div>
 
-          {/* Row 2: Four-Column Filters Bar */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1 border-t border-slate-100">
+          {/* Row 2: Responsive Multi-Column Filters Bar with Date Range Dropdowns */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 pt-1 border-t border-slate-100">
             {/* Project Filter */}
             <Select
               value={projectFilter}
@@ -663,6 +738,64 @@ export default function TestCasesTable({
               </SelectContent>
             </Select>
 
+            {/* From Date Filter Dropdown */}
+            <Select
+              value={fromDateFilter}
+              onValueChange={(val) => setFromDateFilter(val || "all")}
+            >
+              <SelectTrigger className="h-10 w-full text-xs font-semibold bg-[#f8f9ff] border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
+                <div className="flex items-center gap-2 truncate">
+                  <Calendar className="w-3.5 h-3.5 text-[#006685] shrink-0" />
+                  <SelectValue>
+                    {fromDateFilter === "all"
+                      ? (isRTL ? "من تاريخ: الكل" : "From: All Dates")
+                      : (isRTL
+                          ? `من: ${formatActionTimestamp(fromDateFilter, lang).split(" - ")[0]}`
+                          : `From: ${fromDateFilter}`)}
+                  </SelectValue>
+                </div>
+              </SelectTrigger>
+              <SelectContent className="rounded-xl max-h-60">
+                <SelectItem value="all">
+                  {isRTL ? "من تاريخ: البداية (الكل)" : "From: Beginning (All)"}
+                </SelectItem>
+                {uniqueDateStrings.map((day) => (
+                  <SelectItem key={day} value={day}>
+                    {formatActionTimestamp(day, lang).split(" - ")[0]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* To Date Filter Dropdown */}
+            <Select
+              value={toDateFilter}
+              onValueChange={(val) => setToDateFilter(val || "all")}
+            >
+              <SelectTrigger className="h-10 w-full text-xs font-semibold bg-[#f8f9ff] border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
+                <div className="flex items-center gap-2 truncate">
+                  <Calendar className="w-3.5 h-3.5 text-[#006685] shrink-0" />
+                  <SelectValue>
+                    {toDateFilter === "all"
+                      ? (isRTL ? "إلى تاريخ: الكل" : "To: All Dates")
+                      : (isRTL
+                          ? `إلى: ${formatActionTimestamp(toDateFilter, lang).split(" - ")[0]}`
+                          : `To: ${toDateFilter}`)}
+                  </SelectValue>
+                </div>
+              </SelectTrigger>
+              <SelectContent className="rounded-xl max-h-60">
+                <SelectItem value="all">
+                  {isRTL ? "إلى تاريخ: النهاية (الكل)" : "To: End (All)"}
+                </SelectItem>
+                {uniqueDateStrings.map((day) => (
+                  <SelectItem key={day} value={day}>
+                    {formatActionTimestamp(day, lang).split(" - ")[0]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             {/* Reset Filters / Results Summary */}
             {hasActiveFilters ? (
               <Button
@@ -672,12 +805,12 @@ export default function TestCasesTable({
                 className="h-10 w-full text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50/60 hover:bg-rose-100 border-rose-200 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                <span>{isRTL ? "إعادة ضبط الفلاتر" : "Reset Filters"}</span>
+                <span>{isRTL ? "إعادة ضبط" : "Reset"}</span>
               </Button>
             ) : (
-              <div className="h-10 w-full px-3.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs text-slate-500">
+              <div className="h-10 w-full px-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs text-slate-500">
                 <span className="font-medium text-slate-600">
-                  {isRTL ? "النتائج المطابقة:" : "Matched results:"}
+                  {isRTL ? "المطابق:" : "Matched:"}
                 </span>
                 <span className="font-bold text-[#006685]">
                   {filtered.length} {isRTL ? "حالة" : "cases"}
@@ -703,7 +836,7 @@ export default function TestCasesTable({
                       "النتيجة المتوقعة",
                       "الأولوية",
                       "الحالة",
-                      "المختبر",
+                      isAdmin ? "منفذ الإجراء والتوقيت" : "المختبر",
                       "تاريخ التنفيذ",
                       "الإجراءات",
                     ]
@@ -715,7 +848,7 @@ export default function TestCasesTable({
                       "Expected Result",
                       "Priority",
                       "Status",
-                      "Tester",
+                      isAdmin ? "Action Performed & Time" : "Tester",
                       "Executed At",
                       "Actions",
                     ]
@@ -860,9 +993,24 @@ export default function TestCasesTable({
                         </Badge>
                       </td>
 
-                      {/* Tester */}
-                      <td className="px-4 text-[13px] text-[#0b1c30] whitespace-nowrap">
-                        {row.tester?.name || "-"}
+                      {/* Tester / Action Performed */}
+                      <td className="px-4 whitespace-nowrap">
+                        {isAdmin ? (
+                          <div className="flex flex-col">
+                            <span className="font-bold text-[13px] text-[#0b1c30] flex items-center gap-1.5">
+                              <User className="w-3.5 h-3.5 text-[#006685]" />
+                              <span>{row.tester?.name || (isRTL ? "مستخدم النظام" : "System User")}</span>
+                            </span>
+                            <span className="text-[11px] text-[#6d797f] font-mono mt-0.5 flex items-center gap-1">
+                              <Clock className="w-3 h-3 text-slate-400" />
+                              <span>{formatActionTimestamp(row.executedAt || row.createdAt, lang)}</span>
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-[13px] text-[#0b1c30]">
+                            {row.tester?.name || "-"}
+                          </span>
+                        )}
                       </td>
 
                       {/* Execution Date */}
@@ -1238,6 +1386,30 @@ export default function TestCasesTable({
                 </Badge>
               </div>
             </div>
+
+            {/* Admin-only Action Audit Section */}
+            {isAdmin && (
+              <div className="p-3.5 bg-blue-50/70 border border-blue-200/80 rounded-xl flex items-center justify-between text-xs">
+                <div className="space-y-0.5">
+                  <span className="text-[11px] font-bold text-[#006685] block">
+                    {isRTL ? "منفذ الإجراء (Action Performed By):" : "Action Performed By:"}
+                  </span>
+                  <span className="font-bold text-[#0b1c30] text-sm flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5 text-[#006685]" />
+                    {selectedItem.tester?.name || (isRTL ? "مستخدم النظام" : "System User")}
+                  </span>
+                </div>
+                <div className="text-left rtl:text-right space-y-0.5">
+                  <span className="text-[11px] font-bold text-slate-600 block">
+                    {isRTL ? "توقيت العملية (Action Timestamp):" : "Action Timestamp:"}
+                  </span>
+                  <span className="font-mono text-slate-700 text-xs flex items-center gap-1">
+                    <Clock className="w-3 h-3 text-slate-400" />
+                    {formatActionTimestamp(selectedItem.executedAt || selectedItem.createdAt, lang)}
+                  </span>
+                </div>
+              </div>
+            )}
 
             {/* Defect Modal Footer */}
             <div className="pt-2 flex items-center justify-between gap-3 border-t border-slate-100">

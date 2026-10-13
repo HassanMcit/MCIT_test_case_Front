@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import {
   Mail,
   Send,
@@ -60,6 +61,9 @@ export function getBugDisplayId(tc: TestCaseItem): string {
 /**
  * Resolves localized priority details and emojis
  */
+/**
+ * Resolves localized priority details and emojis
+ */
 export function getPriorityInfo(priority?: string) {
   const p = (priority || "high").toLowerCase();
   switch (p) {
@@ -98,6 +102,44 @@ export function getPriorityInfo(priority?: string) {
         labelAr: "منخفضة",
         adjEn: "low",
         adjAr: "منخفض الأولوية",
+        badgeEmoji: "🟢",
+      };
+  }
+}
+
+/**
+ * Resolves localized severity details and emojis
+ */
+export function getSeverityInfo(severity?: string) {
+  const s = (severity || "high").toLowerCase();
+  switch (s) {
+    case "critical":
+      return {
+        key: "critical",
+        labelEn: "Critical",
+        labelAr: "حرجة جداً",
+        badgeEmoji: "🔴",
+      };
+    case "high":
+      return {
+        key: "high",
+        labelEn: "High",
+        labelAr: "عالية",
+        badgeEmoji: "🔴",
+      };
+    case "medium":
+      return {
+        key: "medium",
+        labelEn: "Medium",
+        labelAr: "متوسطة",
+        badgeEmoji: "🟡",
+      };
+    case "low":
+    default:
+      return {
+        key: "low",
+        labelEn: "Low",
+        labelAr: "منخفضة",
         badgeEmoji: "🟢",
       };
   }
@@ -157,12 +199,20 @@ export function generateSubject(tc: TestCaseItem, lang: "ar" | "en"): string {
 }
 
 /**
- * Generates plain-text body matching exact template
+ * Generates plain-text body matching exact template:
+ * - Test Step: instead of Steps to Reproduce
+ * - Includes Severity
+ * - Best regards signed by senderName (the user currently logged in and sending)
  */
-export function generateBugTextTemplate(tc: TestCaseItem, lang: "ar" | "en"): string {
+export function generateBugTextTemplate(
+  tc: TestCaseItem,
+  lang: "ar" | "en",
+  senderName: string = "Tester Name"
+): string {
   const isAr = lang === "ar";
   const bugId = getBugDisplayId(tc);
   const pInfo = getPriorityInfo(tc.priority);
+  const sInfo = getSeverityInfo(tc.severity || tc.priority);
   const projectName = tc.project?.name || tc.module || (isAr ? "مشروع الاختبار" : "Test Project");
   const modulePage = tc.pageName ? `${tc.module} / ${tc.pageName}` : tc.module;
   const reporterName = tc.tester?.name || "Tester Name";
@@ -189,6 +239,7 @@ export function generateBugTextTemplate(tc: TestCaseItem, lang: "ar" | "en"): st
       `•\tالمشروع: ${projectName}`,
       `•\tالوحدة / الصفحة: ${modulePage}`,
       `•\tدرجة الأولوية: ${pInfo.labelAr} ${pInfo.badgeEmoji}`,
+      `•\tدرجة الخطورة: ${sInfo.labelAr} ${sInfo.badgeEmoji}`,
       `•\tالحالة: فشل ❌`,
       `•\tتم الفحص بواسطة: ${reporterName}`,
       `•\tتاريخ الإبلاغ: ${dateFormatted}`,
@@ -198,14 +249,14 @@ export function generateBugTextTemplate(tc: TestCaseItem, lang: "ar" | "en"): st
       `•\tسيناريو الاختبار: ${scenario}`,
       ``,
       `التنفيذ والنتائج`,
-      `خطوات إعادة الإنتاج:`,
+      `Test Step:`,
       stepsList,
       `•\tالنتيجة المتوقعة: ${expectedResult}`,
       `•\tالنتيجة الفعلية: ${actualResult}`,
       ``,
       `إشعار آلي تم إنشاؤه عبر نظام إدارة اختبارات الجودة MCIT.`,
       `مع أطيب التحيات،`,
-      reporterName,
+      senderName,
     ].join("\r\n");
   } else {
     return [
@@ -217,6 +268,7 @@ export function generateBugTextTemplate(tc: TestCaseItem, lang: "ar" | "en"): st
       `•\tProject: ${projectName}`,
       `•\tModule / Page: ${modulePage}`,
       `•\tPriority: ${pInfo.labelEn} ${pInfo.badgeEmoji}`,
+      `•\tSeverity: ${sInfo.labelEn} ${sInfo.badgeEmoji}`,
       `•\tStatus: Failed ❌`,
       `•\tReported By: ${reporterName}`,
       `•\tDate Reported: ${dateFormatted}`,
@@ -226,14 +278,14 @@ export function generateBugTextTemplate(tc: TestCaseItem, lang: "ar" | "en"): st
       `•\tTest Scenario: ${scenario}`,
       ``,
       `Execution & Results`,
-      `Steps to Reproduce:`,
+      `Test Step:`,
       stepsList,
       `•\tExpected Result: ${expectedResult}`,
       `•\tActual Result: ${actualResult}`,
       ``,
       `Automated dispatch generated via MCIT QA Test Management System.`,
       `Best regards,`,
-      reporterName,
+      senderName,
     ].join("\r\n");
   }
 }
@@ -241,10 +293,15 @@ export function generateBugTextTemplate(tc: TestCaseItem, lang: "ar" | "en"): st
 /**
  * Generates rich HTML template matching screenshot typography and bold styling
  */
-export function generateBugHtmlTemplate(tc: TestCaseItem, lang: "ar" | "en"): string {
+export function generateBugHtmlTemplate(
+  tc: TestCaseItem,
+  lang: "ar" | "en",
+  senderName: string = "Tester Name"
+): string {
   const isAr = lang === "ar";
   const bugId = getBugDisplayId(tc);
   const pInfo = getPriorityInfo(tc.priority);
+  const sInfo = getSeverityInfo(tc.severity || tc.priority);
   const projectName = tc.project?.name || tc.module || (isAr ? "مشروع الاختبار" : "Test Project");
   const modulePage = tc.pageName ? `${tc.module} / ${tc.pageName}` : tc.module;
   const reporterName = tc.tester?.name || "Tester Name";
@@ -279,6 +336,7 @@ export function generateBugHtmlTemplate(tc: TestCaseItem, lang: "ar" | "en"): st
     <li style="margin-bottom: 3px; font-size: 11pt; color: #000000;"><b>المشروع:</b> ${projectName}</li>
     <li style="margin-bottom: 3px; font-size: 11pt; color: #000000;"><b>الوحدة / الصفحة:</b> ${modulePage}</li>
     <li style="margin-bottom: 3px; font-size: 11pt; color: #000000;"><b>درجة الأولوية:</b> ${pInfo.labelAr} ${pInfo.badgeEmoji}</li>
+    <li style="margin-bottom: 3px; font-size: 11pt; color: #000000;"><b>درجة الخطورة:</b> ${sInfo.labelAr} ${sInfo.badgeEmoji}</li>
     <li style="margin-bottom: 3px; font-size: 11pt; color: #000000;"><b>الحالة:</b> فشل ❌</li>
     <li style="margin-bottom: 3px; font-size: 11pt; color: #000000;"><b>تم الفحص بواسطة:</b> ${reporterName}</li>
     <li style="margin-bottom: 3px; font-size: 11pt; color: #000000;"><b>تاريخ الإبلاغ:</b> ${dateFormatted}</li>
@@ -291,7 +349,7 @@ export function generateBugHtmlTemplate(tc: TestCaseItem, lang: "ar" | "en"): st
   </ul>
 
   <p style="margin: 16px 0 6px 0; font-size: 11pt; font-weight: bold; color: #000000;"><b>التنفيذ والنتائج</b></p>
-  <p style="margin: 8px 0 4px 0; font-size: 11pt; font-weight: bold; color: #000000;"><b>خطوات إعادة الإنتاج:</b></p>
+  <p style="margin: 8px 0 4px 0; font-size: 11pt; font-weight: bold; color: #000000;"><b>Test Step:</b></p>
   <ol style="margin: 4px 0 8px 0; padding-right: 28px; padding-left: 0;">
     ${stepsHtml}
   </ol>
@@ -306,7 +364,7 @@ export function generateBugHtmlTemplate(tc: TestCaseItem, lang: "ar" | "en"): st
 
   <p style="margin: 12px 0 0 0; font-size: 11pt; color: #000000; line-height: 1.4;">
     مع أطيب التحيات،<br/>
-    <b>${reporterName}</b>
+    <b>${senderName}</b>
   </p>
 </div>`;
   } else {
@@ -322,6 +380,7 @@ export function generateBugHtmlTemplate(tc: TestCaseItem, lang: "ar" | "en"): st
     <li style="margin-bottom: 3px; font-size: 11pt; color: #000000;"><b>Project:</b> ${projectName}</li>
     <li style="margin-bottom: 3px; font-size: 11pt; color: #000000;"><b>Module / Page:</b> ${modulePage}</li>
     <li style="margin-bottom: 3px; font-size: 11pt; color: #000000;"><b>Priority:</b> ${pInfo.labelEn} ${pInfo.badgeEmoji}</li>
+    <li style="margin-bottom: 3px; font-size: 11pt; color: #000000;"><b>Severity:</b> ${sInfo.labelEn} ${sInfo.badgeEmoji}</li>
     <li style="margin-bottom: 3px; font-size: 11pt; color: #000000;"><b>Status:</b> Failed ❌</li>
     <li style="margin-bottom: 3px; font-size: 11pt; color: #000000;"><b>Reported By:</b> ${reporterName}</li>
     <li style="margin-bottom: 3px; font-size: 11pt; color: #000000;"><b>Date Reported:</b> ${dateFormatted}</li>
@@ -334,7 +393,7 @@ export function generateBugHtmlTemplate(tc: TestCaseItem, lang: "ar" | "en"): st
   </ul>
 
   <p style="margin: 16px 0 6px 0; font-size: 11pt; font-weight: bold; color: #000000;"><b>Execution & Results</b></p>
-  <p style="margin: 8px 0 4px 0; font-size: 11pt; font-weight: bold; color: #000000;"><b>Steps to Reproduce:</b></p>
+  <p style="margin: 8px 0 4px 0; font-size: 11pt; font-weight: bold; color: #000000;"><b>Test Step:</b></p>
   <ol style="margin: 4px 0 8px 0; padding-left: 28px;">
     ${stepsHtml}
   </ol>
@@ -349,7 +408,7 @@ export function generateBugHtmlTemplate(tc: TestCaseItem, lang: "ar" | "en"): st
 
   <p style="margin: 12px 0 0 0; font-size: 11pt; color: #000000; line-height: 1.4;">
     Best regards,<br/>
-    <b>${reporterName}</b>
+    <b>${senderName}</b>
   </p>
 </div>`;
   }
@@ -451,8 +510,13 @@ function plainTextToHtml(text: string, isAr: boolean): string {
       continue;
     }
 
-    if (trimmed === "Steps to Reproduce:" || trimmed === "خطوات إعادة الإنتاج:") {
-      htmlLines.push(`<p style="margin: 8px 0 4px 0; font-size: 11pt; font-weight: bold; color: #000000;"><b>${trimmed}</b></p>`);
+    if (
+      trimmed === "Steps to Reproduce:" ||
+      trimmed === "خطوات إعادة الإنتاج:" ||
+      trimmed === "Test Step:" ||
+      trimmed === "Test Step"
+    ) {
+      htmlLines.push(`<p style="margin: 8px 0 4px 0; font-size: 11pt; font-weight: bold; color: #000000;"><b>Test Step:</b></p>`);
       continue;
     }
 
@@ -494,6 +558,8 @@ export default function EmailComposer({
   const { lang, dir, t } = useLanguage();
   const isRTL = dir === "rtl";
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
+  const { data: session } = useSession();
+  const senderName = session?.user?.name || "Tester Name";
 
   // Selected failed test case
   const [selectedCase, setSelectedCase] = useState<TestCaseItem | null>(
@@ -513,19 +579,22 @@ export default function EmailComposer({
     selectedCase ? generateSubject(selectedCase, emailLang) : ""
   );
   const [content, setContent] = useState(
-    selectedCase ? generateBugTextTemplate(selectedCase, emailLang) : ""
+    selectedCase ? generateBugTextTemplate(selectedCase, emailLang, senderName) : ""
   );
   const [htmlContent, setHtmlContent] = useState(
-    selectedCase ? generateBugHtmlTemplate(selectedCase, emailLang) : ""
+    selectedCase ? generateBugHtmlTemplate(selectedCase, emailLang, senderName) : ""
   );
 
   const [copied, setCopied] = useState(false);
   const [isLaunching, setIsLaunching] = useState(false);
 
-  // Keep email language aligned if global language changes and user hasn't explicitly set it
+  // Sync templates if session user loads late and user hasn't edited
   useEffect(() => {
-    // If language changes, sync defaults
-  }, [lang]);
+    if (session?.user?.name && selectedCase) {
+      setContent(generateBugTextTemplate(selectedCase, emailLang, session.user.name));
+      setHtmlContent(generateBugHtmlTemplate(selectedCase, emailLang, session.user.name));
+    }
+  }, [session?.user?.name]);
 
   // When changing selected test case, regenerate default subject and content
   const handleSelectCase = (caseId: string | null) => {
@@ -534,8 +603,8 @@ export default function EmailComposer({
     if (found) {
       setSelectedCase(found);
       setSubject(generateSubject(found, emailLang));
-      setContent(generateBugTextTemplate(found, emailLang));
-      setHtmlContent(generateBugHtmlTemplate(found, emailLang));
+      setContent(generateBugTextTemplate(found, emailLang, senderName));
+      setHtmlContent(generateBugHtmlTemplate(found, emailLang, senderName));
       router.replace(`/test-cases/email?id=${found.id}`);
     }
   };
@@ -545,8 +614,8 @@ export default function EmailComposer({
     setEmailLang(newLang);
     if (selectedCase) {
       setSubject(generateSubject(selectedCase, newLang));
-      setContent(generateBugTextTemplate(selectedCase, newLang));
-      setHtmlContent(generateBugHtmlTemplate(selectedCase, newLang));
+      setContent(generateBugTextTemplate(selectedCase, newLang, senderName));
+      setHtmlContent(generateBugHtmlTemplate(selectedCase, newLang, senderName));
     }
   };
 
@@ -560,8 +629,8 @@ export default function EmailComposer({
   const handleResetTemplate = () => {
     if (selectedCase) {
       setSubject(generateSubject(selectedCase, emailLang));
-      setContent(generateBugTextTemplate(selectedCase, emailLang));
-      setHtmlContent(generateBugHtmlTemplate(selectedCase, emailLang));
+      setContent(generateBugTextTemplate(selectedCase, emailLang, senderName));
+      setHtmlContent(generateBugHtmlTemplate(selectedCase, emailLang, senderName));
       toast.success(
         isRTL
           ? "تمت استعادة قالب التقرير الافتراضي بنجاح"

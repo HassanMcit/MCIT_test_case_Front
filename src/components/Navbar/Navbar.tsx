@@ -12,10 +12,20 @@ import {
   KeyRound,
   LogOut,
   Menu,
+  FolderKanban,
+  CheckCheck,
+  ExternalLink,
+  Layers,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signOut, useSession } from "next-auth/react";
 import { changeProfileImage, getUserData } from "./navbar.action";
+import {
+  getMyNotifications,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+  type AppNotification,
+} from "./notifications.action";
 import toast from "react-hot-toast";
 import { getUserToken } from "@/app/myUtil";
 
@@ -31,16 +41,36 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputFileRef = useRef<HTMLInputElement>(null);
+
+  // Notifications State
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+  const notificationsRef = useRef<HTMLDivElement>(null);
   
   const [uploadImage, setUploadImage] = useState<string | null>(null);
   const { data, update } = useSession();
 
   const [imgSrc, setImgSrc] = useState<string>(() => {
-    
     return data?.user?.image || "/avatar.png";
   });
 
-  // Close dropdown on click outside
+  // Fetch notifications on mount and periodically
+  const fetchNotifications = async () => {
+    try {
+      const res = await getMyNotifications();
+      setNotifications(res.notifications);
+      setUnreadCount(res.unreadCount);
+    } catch {}
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 15000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Close dropdowns on click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -48,6 +78,12 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
         !dropdownRef.current.contains(event.target as Node)
       ) {
         setShowDropdown(false);
+      }
+      if (
+        notificationsRef.current &&
+        !notificationsRef.current.contains(event.target as Node)
+      ) {
+        setShowNotifications(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -139,12 +175,147 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
           </button>
         </div>
 
-        {/* Notifications Bell */}
-        <div className="relative flex items-center justify-center w-9 h-9 rounded-lg hover:bg-[#eff4ff] transition-colors cursor-pointer text-[#3d484f]">
-          <Bell className="w-5 h-5" />
-          <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#ba1a1a] text-white text-[10px] flex items-center justify-center font-bold">
-            3
-          </span>
+        {/* Notifications Bell with Interactive Menu */}
+        <div className="relative" ref={notificationsRef}>
+          <button
+            type="button"
+            onClick={() => {
+              setShowNotifications(!showNotifications);
+              fetchNotifications();
+            }}
+            className="relative flex items-center justify-center w-9 h-9 rounded-lg hover:bg-[#eff4ff] transition-colors cursor-pointer text-[#3d484f]"
+            aria-label="Notifications"
+            title={isRTL ? "الإشعارات" : "Notifications"}
+          >
+            <Bell className="w-5 h-5" />
+            {unreadCount > 0 && (
+              <span className="absolute top-1 right-1 min-w-4 h-4 px-1 rounded-full bg-[#ba1a1a] text-white text-[10px] flex items-center justify-center font-bold animate-pulse shadow-xs">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </button>
+
+          {/* Notifications Dropdown */}
+          {showNotifications && (
+            <div
+              className={`absolute top-full mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 animate-in fade-in zoom-in-95 duration-150 ${
+                isRTL ? "left-0" : "right-0"
+              }`}
+            >
+              {/* Notifications Header */}
+              <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-sm text-[#0b1c30]">
+                    {isRTL ? "الإشعارات" : "Notifications"}
+                  </span>
+                  {unreadCount > 0 && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700">
+                      {unreadCount} {isRTL ? "جديد" : "new"}
+                    </span>
+                  )}
+                </div>
+
+                {unreadCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await markAllNotificationsAsRead();
+                      setUnreadCount(0);
+                      setNotifications((prev) =>
+                        prev.map((n) => ({ ...n, read: true }))
+                      );
+                      toast.success(
+                        isRTL
+                          ? "تم تحديد جميع الإشعارات كمقروءة"
+                          : "Marked all as read"
+                      );
+                    }}
+                    className="text-[11px] font-bold text-[#006685] hover:text-[#00aee0] flex items-center gap-1 cursor-pointer transition-colors"
+                  >
+                    <CheckCheck className="w-3.5 h-3.5" />
+                    <span>{isRTL ? "تحديد الكل كمقروء" : "Mark all read"}</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Notifications List */}
+              <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
+                {notifications.length === 0 ? (
+                  <div className="py-8 px-4 text-center text-slate-400 text-xs flex flex-col items-center gap-2">
+                    <Bell className="w-8 h-8 text-slate-300" />
+                    <span>
+                      {isRTL
+                        ? "لا توجد إشعارات حتى الآن"
+                        : "No notifications yet"}
+                    </span>
+                  </div>
+                ) : (
+                  notifications.map((n) => (
+                    <div
+                      key={n.id}
+                      onClick={async () => {
+                        await markNotificationAsRead(n.id);
+                        setUnreadCount((c) => Math.max(0, c - 1));
+                        setShowNotifications(false);
+                        router.push("/projects");
+                      }}
+                      className={`p-3.5 flex items-start gap-3 hover:bg-[#eff4ff] transition-colors cursor-pointer group ${
+                        !n.read ? "bg-[#f8f9ff]" : "bg-white"
+                      }`}
+                    >
+                      <div className="w-8 h-8 rounded-xl bg-[#bfe9ff]/60 text-[#006685] flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+                        <FolderKanban className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1">
+                          <h4 className="text-xs font-bold text-[#0b1c30] truncate">
+                            {n.title}
+                          </h4>
+                          {!n.read && (
+                            <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
+                          )}
+                        </div>
+                        <p className="text-[11px] text-[#565e74] line-clamp-2 mt-0.5 leading-relaxed">
+                          {n.message}
+                        </p>
+                        <span className="text-[10px] text-[#6d797f] font-mono mt-1 block">
+                          {new Date(n.createdAt).toLocaleDateString(
+                            isRTL ? "ar-EG" : "en-US",
+                            {
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            }
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Footer: Direct Link to Projects Management */}
+              <div className="p-2 border-t border-slate-100 bg-slate-50/60 text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowNotifications(false);
+                    router.push("/projects");
+                  }}
+                  className="w-full py-1.5 px-3 rounded-xl text-xs font-bold text-[#006685] hover:bg-white hover:shadow-2xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <FolderKanban className="w-3.5 h-3.5" />
+                  <span>
+                    {isRTL
+                      ? "الانتقال إلى إدارة المشاريع (Projects Management)"
+                      : "Go to Projects Management"}
+                  </span>
+                  <ExternalLink className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* User Profile with Dropdown */}
