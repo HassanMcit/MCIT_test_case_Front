@@ -41,6 +41,8 @@ import {
   FileSpreadsheet,
   Play,
   Sparkles,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
@@ -49,8 +51,13 @@ import type {
   QualityPageData,
   QualityAppCategory,
   CreateQualityAppDto,
+  QualityAppStatus,
 } from "./quality.interface";
-import { registerQualityApplication } from "./quality.action";
+import {
+  registerQualityApplication,
+  updateQualityApplication,
+  deleteQualityApplication,
+} from "./quality.action";
 
 interface QualityClientProps {
   initialData: QualityPageData;
@@ -97,7 +104,13 @@ export default function QualityClient({
   );
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
-  const [isPending, startTransition] = useTransition();
+
+  // ── Edit Application State ─────────────────────────────────────────
+  const [editingApp, setEditingApp] = useState<QualityApplication | null>(null);
+  const [editFormData, setEditFormData] = useState<Partial<QualityApplication>>({});
+  const [editFunctionsText, setEditFunctionsText] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Form state for register app
   const [formData, setFormData] = useState<CreateQualityAppDto>({
@@ -155,6 +168,76 @@ export default function QualityClient({
     };
   }, [apps]);
 
+  // Open Edit Modal
+  const handleOpenEdit = (app: QualityApplication) => {
+    setEditingApp(app);
+    setEditFormData({
+      name: app.name,
+      nameAr: app.nameAr || "",
+      category: app.category,
+      url: app.url,
+      environment: app.environment,
+      version: app.version,
+      status: app.status,
+      passRate: app.passRate,
+      suitesCount: app.suitesCount,
+      bugsCount: app.bugsCount,
+    });
+    setEditFunctionsText((app.defaultFunctions || []).join("\n"));
+  };
+
+  // Submit Edit Form
+  const handleUpdateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingApp) return;
+
+    const functions = editFunctionsText
+      .split("\n")
+      .map((f) => f.trim())
+      .filter(Boolean);
+
+    setIsUpdating(true);
+    try {
+      const res = await updateQualityApplication(editingApp.id, {
+        ...editFormData,
+        defaultFunctions: functions,
+      });
+
+      if (res.success && res.application) {
+        toast.success(isRTL ? "تم تحديث بيانات التطبيق بنجاح ✅" : "Application updated successfully ✅");
+        setApps((prev) =>
+          prev.map((a) => (a.id === editingApp.id ? { ...a, ...res.application, defaultFunctions: functions } : a))
+        );
+        setEditingApp(null);
+      }
+    } catch (err: any) {
+      toast.error(err?.message || (isRTL ? "فشل تحديث التطبيق" : "Update failed"));
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  // Delete App
+  const handleDeleteApp = async (id: number) => {
+    if (!window.confirm(isRTL ? "هل أنت متأكد من حذف هذا التطبيق من المنظومة؟" : "Are you sure you want to delete this app?")) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const res = await deleteQualityApplication(id);
+      if (res.success) {
+        toast.success(isRTL ? "تم حذف التطبيق بنجاح" : "Application deleted");
+        setApps((prev) => prev.filter((a) => a.id !== id));
+        setEditingApp(null);
+      }
+    } catch (err: any) {
+      toast.error(err?.message || (isRTL ? "فشل حذف التطبيق" : "Failed to delete"));
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   // Handle register submission
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -200,8 +283,8 @@ export default function QualityClient({
   const ArrowIcon = isRTL ? ArrowLeft : ArrowRight;
 
   return (
-    <div className="min-h-screen bg-[#f8f9ff] py-8 px-4 sm:px-6 lg:px-8" dir={dir}>
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-[#f8f9ff] py-8 px-4 sm:px-6 lg:px-8 overflow-x-hidden max-w-full" dir={dir}>
+      <div className="max-w-7xl mx-auto space-y-6 w-full overflow-x-hidden">
         {/* ── Top Header Section (Matching Image 1) ────────────────────── */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="space-y-1.5">
@@ -221,14 +304,21 @@ export default function QualityClient({
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
             <button
               type="button"
-              onClick={() => toast.success(isRTL ? "جاري تشغيل دورة الفحص الآلية..." : "Running automated suites...", { icon: "⚡" })}
+              onClick={() =>
+                toast.success(
+                  isRTL
+                    ? "بدء تشغيل دورة فحص الانحدار الآلية (Regression Suite) لجميع الأنظمة..."
+                    : "Executing Full Regression Suites across all 16 applications...",
+                  { icon: "⚡", duration: 4000 }
+                )
+              }
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-[#006685] bg-white border border-[#bcc8d0]/60 hover:bg-[#eff4ff] shadow-2xs transition-all cursor-pointer"
             >
               <Play className="w-4 h-4 text-[#00A2D2]" />
-              <span>{isRTL ? "تشغيل الفحص الكامل" : "Run Full Regression"}</span>
+              <span>{isRTL ? "تشغيل الفحص الشامل" : "Run Full Regression"}</span>
             </button>
 
             {isAdmin && (
@@ -245,7 +335,7 @@ export default function QualityClient({
         </div>
 
         {/* ── 4 Top Metrics Cards (Matching Image 1) ───────────────────── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
           {/* Card 1: Total Apps */}
           <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.04)] relative overflow-hidden group hover:border-[#00aee0]/40 transition-all">
             <div className="flex items-center justify-between">
@@ -331,10 +421,10 @@ export default function QualityClient({
           </div>
         </div>
 
-        {/* ── Search & Filter Tabs Row (Matching Image 1) ──────────────── */}
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 pt-2">
+        {/* ── Search & Filter Tabs Row (Zero Horizontal Overflow) ──────── */}
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 pt-2 w-full min-w-0">
           {/* Search Input */}
-          <div className="relative flex-1 max-w-md">
+          <div className="relative flex-1 max-w-md shrink-0">
             <Search className="w-4 h-4 absolute top-1/2 -translate-y-1/2 text-slate-400 inset-inline-start-3.5 pointer-events-none" />
             <input
               type="text"
@@ -355,7 +445,7 @@ export default function QualityClient({
           </div>
 
           {/* Category Filter Pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full min-w-0 scrollbar-none">
             {categories.map((cat) => {
               const isSelected = selectedCategory === cat.key;
               return (
@@ -364,7 +454,7 @@ export default function QualityClient({
                   type="button"
                   onClick={() => setSelectedCategory(cat.key)}
                   className={cn(
-                    "px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer",
+                    "px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer shrink-0",
                     isSelected
                       ? "bg-[#006685] text-white shadow-xs"
                       : "bg-white text-[#565e74] hover:bg-[#eff4ff] border border-slate-200/80"
@@ -377,8 +467,8 @@ export default function QualityClient({
           </div>
         </div>
 
-        {/* ── 16 Application Cards Grid (Matching Image 1) ─────────────── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* ── 16 Application Cards Grid (Fixed Badge Cutoff & Edit Support) ── */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4.5 w-full">
           {filteredApps.map((app) => {
             const AppIcon = getAppIcon(app.name);
 
@@ -387,32 +477,27 @@ export default function QualityClient({
               Healthy: {
                 dot: "bg-emerald-500",
                 badge: "bg-emerald-50 text-emerald-700 border-emerald-200",
-                labelAr: "سليم ومستقر",
-                labelEn: "Healthy",
+                label: "Healthy",
               },
               Operational: {
                 dot: "bg-sky-500",
                 badge: "bg-sky-50 text-sky-700 border-sky-200",
-                labelAr: "يعمل بكفاءة",
-                labelEn: "Operational",
+                label: "Operational",
               },
               Warning: {
                 dot: "bg-amber-500",
                 badge: "bg-amber-50 text-amber-700 border-amber-200",
-                labelAr: "تحذير / انتباه",
-                labelEn: "Warning",
+                label: "Warning",
               },
               Attention: {
                 dot: "bg-red-500",
                 badge: "bg-red-50 text-red-700 border-red-200",
-                labelAr: "تنبيه / حرج",
-                labelEn: "Attention",
+                label: "Attention",
               },
             }[app.status] || {
               dot: "bg-emerald-500",
               badge: "bg-emerald-50 text-emerald-700 border-emerald-200",
-              labelAr: "سليم",
-              labelEn: "Healthy",
+              label: "Healthy",
             };
 
             // Progress bar color based on passRate
@@ -427,33 +512,40 @@ export default function QualityClient({
               <div
                 key={app.id}
                 onClick={() => router.push(`/quality/${app.id}`)}
-                className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_24px_-4px_rgba(0,102,133,0.12)] hover:border-[#00aee0] hover:-translate-y-0.5 transition-all duration-200 cursor-pointer flex flex-col justify-between group"
+                className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_24px_-4px_rgba(0,102,133,0.12)] hover:border-[#00aee0] hover:-translate-y-0.5 transition-all duration-200 cursor-pointer flex flex-col justify-between group overflow-hidden"
               >
-                <div>
-                  {/* Card Header: Icon, Name & Status Badge */}
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-[#eff4ff] text-[#006685] flex items-center justify-center shrink-0 group-hover:bg-[#00aee0] group-hover:text-white transition-colors">
-                        <AppIcon className="w-5 h-5" />
+                <div className="w-full">
+                  {/* Card Header: Icon, Name & Status Badge (Un-cut / No Overflow) */}
+                  <div className="flex items-center justify-between gap-2 min-w-0 w-full">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <div className="w-9 h-9 rounded-xl bg-[#eff4ff] text-[#006685] flex items-center justify-center shrink-0 group-hover:bg-[#00aee0] group-hover:text-white transition-colors">
+                        <AppIcon className="w-4.5 h-4.5" />
                       </div>
-                      <div className="min-w-0">
-                        <h3 className="text-sm font-black text-[#0b1c30] truncate group-hover:text-[#006685] transition-colors">
+                      <div className="min-w-0 flex-1">
+                        <h3
+                          className="text-sm font-black text-[#0b1c30] truncate group-hover:text-[#006685] transition-colors"
+                          title={app.name}
+                        >
                           {app.name}
                         </h3>
-                        <p className="text-[11px] text-[#6d797f] truncate">
+                        <p
+                          className="text-[11px] text-[#6d797f] truncate"
+                          title={app.nameAr || app.category}
+                        >
                           {app.nameAr || app.category}
                         </p>
                       </div>
                     </div>
 
+                    {/* Status Badge with whitespace-nowrap & shrink-0 (Guaranteed visible) */}
                     <span
                       className={cn(
-                        "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold border shrink-0",
+                        "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border shrink-0 whitespace-nowrap",
                         statusConfig.badge
                       )}
                     >
-                      <span className={cn("w-1.5 h-1.5 rounded-full", statusConfig.dot)} />
-                      <span>{isRTL ? statusConfig.labelAr : statusConfig.labelEn}</span>
+                      <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", statusConfig.dot)} />
+                      <span>{statusConfig.label}</span>
                     </span>
                   </div>
 
@@ -489,7 +581,7 @@ export default function QualityClient({
                   </div>
                 </div>
 
-                {/* Card Footer: Environment & Action Link */}
+                {/* Card Footer: Environment & Action Link + EDIT BUTTON */}
                 <div className="mt-4 pt-3 border-t border-slate-100 space-y-2">
                   <div className="flex items-center justify-between text-[11px] text-[#6d797f]">
                     <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-[10px]">
@@ -504,18 +596,35 @@ export default function QualityClient({
                       <ArrowIcon className="w-3.5 h-3.5 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform" />
                     </span>
 
-                    {app.url && (
-                      <a
-                        href={app.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="text-slate-400 hover:text-[#00A2D2] p-1 transition-colors"
-                        title={app.url}
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
-                    )}
+                    {/* Action Buttons: Edit (Admin) & External Link */}
+                    <div className="flex items-center gap-1">
+                      {isAdmin && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenEdit(app);
+                          }}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-[#006685] hover:bg-[#eff4ff] transition-colors cursor-pointer"
+                          title={isRTL ? "تعديل بيانات التطبيق" : "Edit Application"}
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+
+                      {app.url && (
+                        <a
+                          href={app.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-slate-400 hover:text-[#00A2D2] p-1.5 transition-colors"
+                          title={app.url}
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -575,7 +684,14 @@ export default function QualityClient({
 
             <button
               type="button"
-              onClick={() => toast.success(isRTL ? "جاري تنفيذ كافة سيناريوهات الانحدار الآلية..." : "Executing regression suites...", { icon: "🚀" })}
+              onClick={() =>
+                toast.success(
+                  isRTL
+                    ? "تنفيذ دورة الانحدار الشاملة (Execute All Regression) لجميع التطبيقات..."
+                    : "Batch executing regression suites across all platforms...",
+                  { icon: "🚀", duration: 4000 }
+                )
+              }
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#006685] hover:bg-[#00516a] transition-colors shadow-2xs cursor-pointer"
             >
               <Play className="w-4 h-4" />
@@ -584,6 +700,214 @@ export default function QualityClient({
           </div>
         </div>
       </div>
+
+      {/* ── Edit Application Modal (Admin Only) ───────────────────────── */}
+      {editingApp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-[#eff4ff] text-[#006685] flex items-center justify-center">
+                  <Pencil className="w-4 h-4 text-[#00A2D2]" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-[#0b1c30]">
+                    {isRTL ? "تعديل بيانات التطبيق" : "Edit Application Details"}
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    {editingApp.name} ({editingApp.environment})
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setEditingApp(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateSubmit} className="space-y-3.5 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="font-bold text-[#0b1c30] block">
+                    {isRTL ? "اسم التطبيق بالإنجليزية *" : "Application Name (EN) *"}
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editFormData.name || ""}
+                    onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                    className="w-full h-10 px-3 rounded-xl border border-slate-200 focus:border-[#00A2D2] focus:outline-hidden"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-[#0b1c30] block">
+                    {isRTL ? "اسم التطبيق بالعربية" : "Application Name (AR)"}
+                  </label>
+                  <input
+                    type="text"
+                    value={editFormData.nameAr || ""}
+                    onChange={(e) => setEditFormData({ ...editFormData, nameAr: e.target.value })}
+                    className="w-full h-10 px-3 rounded-xl border border-slate-200 focus:border-[#00A2D2] focus:outline-hidden"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-[#0b1c30] block">
+                  {isRTL ? "رابط التطبيق (URL) *" : "Application URL *"}
+                </label>
+                <input
+                  type="url"
+                  required
+                  value={editFormData.url || ""}
+                  onChange={(e) => setEditFormData({ ...editFormData, url: e.target.value })}
+                  className="w-full h-10 px-3 rounded-xl border border-slate-200 focus:border-[#00A2D2] focus:outline-hidden font-mono"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <label className="font-bold text-[#0b1c30] block">
+                    {isRTL ? "التصنيف" : "Category"}
+                  </label>
+                  <select
+                    value={editFormData.category || "Government Services"}
+                    onChange={(e) => setEditFormData({ ...editFormData, category: e.target.value })}
+                    className="w-full h-10 px-3 rounded-xl border border-slate-200 focus:border-[#00A2D2] focus:outline-hidden bg-white"
+                  >
+                    <option value="Government Services">Government Services</option>
+                    <option value="Internal Operations">Internal Operations</option>
+                    <option value="HR & Admin">HR & Admin</option>
+                    <option value="Infrastructure">Infrastructure</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-[#0b1c30] block">
+                    {isRTL ? "البيئة" : "Environment"}
+                  </label>
+                  <select
+                    value={editFormData.environment || "Production"}
+                    onChange={(e) => setEditFormData({ ...editFormData, environment: e.target.value })}
+                    className="w-full h-10 px-3 rounded-xl border border-slate-200 focus:border-[#00A2D2] focus:outline-hidden bg-white"
+                  >
+                    <option value="Production">Production</option>
+                    <option value="Staging">Staging</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-[#0b1c30] block">
+                    {isRTL ? "الحالة (Status)" : "Status"}
+                  </label>
+                  <select
+                    value={editFormData.status || "Healthy"}
+                    onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value as QualityAppStatus })}
+                    className="w-full h-10 px-3 rounded-xl border border-slate-200 focus:border-[#00A2D2] focus:outline-hidden bg-white"
+                  >
+                    <option value="Healthy">Healthy</option>
+                    <option value="Operational">Operational</option>
+                    <option value="Warning">Warning</option>
+                    <option value="Attention">Attention</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <label className="font-bold text-[#0b1c30] block">
+                    {isRTL ? "الإصدار" : "Version"}
+                  </label>
+                  <input
+                    type="text"
+                    value={editFormData.version || ""}
+                    onChange={(e) => setEditFormData({ ...editFormData, version: e.target.value })}
+                    className="w-full h-10 px-3 rounded-xl border border-slate-200 focus:border-[#00A2D2] focus:outline-hidden"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-[#0b1c30] block">
+                    {isRTL ? "حزم الاختبارات (Suites)" : "Suites Count"}
+                  </label>
+                  <input
+                    type="number"
+                    value={editFormData.suitesCount || 0}
+                    onChange={(e) => setEditFormData({ ...editFormData, suitesCount: parseInt(e.target.value, 10) || 0 })}
+                    className="w-full h-10 px-3 rounded-xl border border-slate-200 focus:border-[#00A2D2] focus:outline-hidden"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-[#0b1c30] block">
+                    {isRTL ? "الأعطال (Bugs)" : "Bugs Count"}
+                  </label>
+                  <input
+                    type="number"
+                    value={editFormData.bugsCount || 0}
+                    onChange={(e) => setEditFormData({ ...editFormData, bugsCount: parseInt(e.target.value, 10) || 0 })}
+                    className="w-full h-10 px-3 rounded-xl border border-slate-200 focus:border-[#00A2D2] focus:outline-hidden"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-[#0b1c30] block">
+                  {isRTL ? "الوظائف الرئيسية للفحص (سطر لكل وظيفة)" : "Key Functions to verify (one per line)"}
+                </label>
+                <textarea
+                  rows={4}
+                  value={editFunctionsText}
+                  onChange={(e) => setEditFunctionsText(e.target.value)}
+                  className="w-full p-3 rounded-xl border border-slate-200 focus:border-[#00A2D2] focus:outline-hidden"
+                />
+              </div>
+
+              <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={() => handleDeleteApp(editingApp.id)}
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold text-red-600 hover:bg-red-50 border border-red-200 transition-colors cursor-pointer flex items-center gap-1.5"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>{isRTL ? "حذف التطبيق" : "Delete"}</span>
+                </button>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditingApp(null)}
+                    className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                  >
+                    {isRTL ? "إلغاء" : "Cancel"}
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={isUpdating}
+                    className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-[#00A2D2] hover:bg-[#008eb8] transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-70"
+                  >
+                    {isUpdating ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>{isRTL ? "جاري الحفظ..." : "Saving..."}</span>
+                      </>
+                    ) : (
+                      <span>{isRTL ? "حفظ التعديلات" : "Save Changes"}</span>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* ── Register New Application Modal (Admin Only) ──────────────── */}
       {isRegisterOpen && (

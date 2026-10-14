@@ -342,3 +342,112 @@ export async function registerQualityApplication(dto: CreateQualityAppDto) {
     message: "تم تسجيل التطبيق بنجاح",
   };
 }
+
+/**
+ * Update an existing Quality Application (Admin only).
+ */
+export async function updateQualityApplication(
+  id: number,
+  data: Partial<QualityApplication>
+) {
+  const sessionUser = await getCurrentUserSession();
+  if (sessionUser?.role !== "admin") {
+    throw new Error("عفواً، تعديل التطبيقات متاح فقط لمديري النظام (Admin)");
+  }
+
+  const updates: string[] = [];
+  const values: any[] = [];
+  let pidx = 1;
+
+  if (data.name !== undefined) {
+    updates.push(`name = $${pidx++}`);
+    values.push(data.name.trim());
+  }
+  if (data.nameAr !== undefined) {
+    updates.push(`"nameAr" = $${pidx++}`);
+    values.push(data.nameAr.trim());
+  }
+  if (data.category !== undefined) {
+    updates.push(`category = $${pidx++}`);
+    values.push(data.category);
+  }
+  if (data.url !== undefined) {
+    updates.push(`url = $${pidx++}`);
+    values.push(data.url.trim());
+  }
+  if (data.environment !== undefined) {
+    updates.push(`environment = $${pidx++}`);
+    values.push(data.environment);
+  }
+  if (data.version !== undefined) {
+    updates.push(`version = $${pidx++}`);
+    values.push(data.version);
+  }
+  if (data.status !== undefined) {
+    updates.push(`status = $${pidx++}`);
+    values.push(data.status);
+  }
+  if (data.passRate !== undefined) {
+    updates.push(`"passRate" = $${pidx++}`);
+    values.push(parseFloat(String(data.passRate)) || 0);
+  }
+  if (data.suitesCount !== undefined) {
+    updates.push(`"suitesCount" = $${pidx++}`);
+    values.push(parseInt(String(data.suitesCount), 10) || 0);
+  }
+  if (data.bugsCount !== undefined) {
+    updates.push(`"bugsCount" = $${pidx++}`);
+    values.push(parseInt(String(data.bugsCount), 10) || 0);
+  }
+  if (data.defaultFunctions !== undefined) {
+    updates.push(`"defaultFunctions" = $${pidx++}`);
+    values.push(JSON.stringify(data.defaultFunctions));
+  }
+
+  if (updates.length === 0) {
+    return { success: false, message: "لم يتم تعديل أي حقول" };
+  }
+
+  updates.push(`"updatedAt" = CURRENT_TIMESTAMP`);
+  values.push(id);
+
+  const query = `
+    UPDATE quality_applications
+    SET ${updates.join(", ")}
+    WHERE id = $${pidx}
+    RETURNING *
+  `;
+
+  const res = await pool.query(query, values);
+
+  updateTag("quality-apps");
+  updateTag(`quality-app-${id}`);
+  revalidatePath("/quality");
+  revalidatePath(`/quality/${id}`);
+
+  return {
+    success: true,
+    application: res.rows[0],
+    message: "تم تحديث بيانات التطبيق بنجاح",
+  };
+}
+
+/**
+ * Delete a Quality Application (Admin only).
+ */
+export async function deleteQualityApplication(id: number) {
+  const sessionUser = await getCurrentUserSession();
+  if (sessionUser?.role !== "admin") {
+    throw new Error("عفواً، حذف التطبيقات متاح فقط لمديري النظام (Admin)");
+  }
+
+  await pool.query("DELETE FROM quality_applications WHERE id = $1", [id]);
+
+  updateTag("quality-apps");
+  revalidatePath("/quality");
+
+  return {
+    success: true,
+    message: "تم حذف التطبيق بنجاح",
+  };
+}
