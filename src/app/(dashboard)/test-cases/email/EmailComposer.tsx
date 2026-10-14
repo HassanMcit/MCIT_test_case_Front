@@ -1229,38 +1229,20 @@ export default function EmailComposer({
 
   // Open in MCIT Outlook Web App (OWA) based on https://mail.mcit.gov.eg/
   const handleOpenMcitOwa = async () => {
-    if (!to.trim()) {
-      toast.error(t("email_error_no_to"));
-      return;
-    }
-
-    const cleanTo = to.trim();
-    const cleanCc = cc.trim();
-    const cleanSubject = subject.trim();
-    const cleanBody = content.trim();
-
-    // Base URL: https://mail.mcit.gov.eg/ (Exchange OWA)
-    const params = new URLSearchParams();
-    params.set("path", "/mail/action/compose");
-    params.set("to", cleanTo);
-    if (cleanCc) params.set("cc", cleanCc);
-    if (cleanSubject) params.set("subject", cleanSubject);
-    if (cleanBody) params.set("body", cleanBody);
-
-    const mcitOwaUrl = `https://mail.mcit.gov.eg/owa/?${params.toString()}`;
-
     // Also copy rich HTML report content to clipboard for 1-click rich paste in OWA
     await handleCopyContent();
 
+    // Use clean MCIT web mail URL directly (avoids Exchange Server On-Premises ADFS/IIS errorFE.aspx on deep links)
+    const mcitOwaUrl = "https://mail.mcit.gov.eg/";
     window.open(mcitOwaUrl, "_blank", "noopener,noreferrer");
 
     toast.success(
       isRTL
-        ? "جاري فتح بريد الوزارة (mail.mcit.gov.eg) - تم نسخ التقرير المنسق للحافظة (يمكنك لصقه بـ Ctrl+V)"
+        ? "جاري فتح بريد الوزارة (mail.mcit.gov.eg) - تم نسخ التقرير المنسق للحافظة (يمكنك لصقه بـ Ctrl+V في رسالة جديدة)"
         : "Opening MCIT Web Mail (mail.mcit.gov.eg) - Rich report copied to clipboard (press Ctrl+V to paste)",
       {
         icon: "🌐",
-        duration: 4500,
+        duration: 5000,
       }
     );
   };
