@@ -78,6 +78,11 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       label: t("projects_management"),
       icon: FolderGit2,
     },
+    {
+      href: "/quality",
+      label: t("quality_assurance"),
+      icon: ShieldCheck,
+    },
   ];
 
   

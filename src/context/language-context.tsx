@@ -21,6 +21,7 @@ const translations: Record<string, Record<Language, string>> = {
   add_test_case: { en: "Add Test Case", ar: "إضافة حالة اختبار" },
   all_test_cases: { en: "All Test Cases", ar: "جميع حالات الاختبار" },
   projects_management: { en: "Projects Management", ar: "إدارة المشاريع" },
+  quality_assurance: { en: "Quality Portfolios", ar: "مراقبة الجودة والأنظمة" },
   reset_codes: { en: "Reset Codes", ar: "أكواد الاستعادة" },
   add_new_user: { en: "Add New User", ar: "إضافة مستخدم جديد" },
   assign_projects: { en: "Assign Projects", ar: "إسناد المشاريع للمختبرين" },
