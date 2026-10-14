@@ -280,6 +280,134 @@ export default function QualityClient({
     }
   };
 
+  // ── Exact QA Applications Excel / CSV Exporter ─────────────────────
+  const generateExportData = () => {
+    const aoa: (string | number)[][] = [
+      ["QA Report  For Applications", "", "", "", "", ""],
+      [
+        "Application Name",
+        "URL",
+        "Up & Running",
+        "total functions tests",
+        "issues",
+        "functions Performance & Stability",
+      ],
+      ["", "", "pass/ fail", "", "bugs number", "%"],
+    ];
+
+    const templateApps = [
+      { key: "appraisal", name: "Appraisal", url: "https://xcta-appraisal.mcit.gov.eg", tests: 50, issues: 5, stability: 0.9 },
+      { key: "visitors", name: "Visitors", url: "https/mcitvisitors.mcit.gov.eg" },
+      { key: "meeting", name: "Meeting Management", url: "https://meetingmanagement.mcit.gov.eg" },
+      { key: "taskati", name: "taskati", url: "https//taskati.mcit.gov.eg" },
+      { key: "business card", name: "Business Card For IR", url: "https://BusinessCard-IR.mcit.gov.eg" },
+      { key: "takaful", name: "takaful", url: "https://takaful-core.mcit.gov.eg/" },
+      { key: "dtu announcement", name: "dtu announcement", url: "https://dtuannouncement.mcit.gov.eg/" },
+      { key: "citizens services", name: "citizens services", url: "https//citizensservices.mcit.gov.eg" },
+      { key: "scounsil", name: "scounsil", url: "scouncil2026-2030.mcit.gov.eg" },
+      { key: "user profile", name: "User Profile", url: "https/userprofile.mcit.gov.eg" },
+      { key: "vaccine", name: "Vaccine", url: "https/mcitvaccine.mcit.gov.eg" },
+      { key: "survey", name: "Survey", url: "https/survey.mcit.gov.eg" },
+      { key: "github", name: "Github", url: "https://git.mcit.gov.eg" },
+      { key: "reporting", name: "reporting", url: "https//powerbi.mcit.gov.eg" },
+      { key: "transportaion", name: "Transportaion ", url: "" },
+      { key: "hr", name: "HR", url: "https//hr.mcit.gov.eg" },
+      { key: "inventory", name: "", url: "+ Inventory amac", isSpecialInventory: true },
+      { key: "arabdox", name: "Arabdox", url: "http://10.210.52.21:8080/Explorer/Repository/Repository.asp" },
+    ];
+
+    templateApps.forEach((t) => {
+      const match = apps.find((a) => {
+        const lower = a.name.toLowerCase();
+        if (t.key === "inventory") return lower.includes("inventory") || lower.includes("amac");
+        return lower.includes(t.key);
+      });
+
+      const appName = t.isSpecialInventory ? "" : (match?.name || t.name);
+      const appUrl = t.isSpecialInventory ? t.url : (match?.url || t.url);
+
+      let upAndRunning = "";
+      let totalTests: string | number = t.tests !== undefined ? t.tests : "";
+      let bugs: string | number = t.issues !== undefined ? t.issues : "";
+      let stability: string | number = t.stability !== undefined ? t.stability : "";
+
+      // If user has conducted real assessments or customized the app, reflect live values
+      if (match && t.tests === undefined && match.lastCheck && match.lastCheck !== "Recently") {
+        upAndRunning = match.status === "Healthy" || match.status === "Operational" ? "pass" : "fail";
+        totalTests = match.suitesCount || "";
+        bugs = match.bugsCount || 0;
+        stability = match.passRate ? parseFloat((match.passRate / 100).toFixed(2)) : "";
+      }
+
+      aoa.push([appName, appUrl, upAndRunning, totalTests, bugs, stability]);
+    });
+
+    return aoa;
+  };
+
+  const handleExportExcel = async () => {
+    try {
+      const XLSX = await import("xlsx");
+      const aoa = generateExportData();
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+      ws["!cols"] = [
+        { wch: 26 },
+        { wch: 48 },
+        { wch: 16 },
+        { wch: 24 },
+        { wch: 14 },
+        { wch: 34 },
+      ];
+
+      XLSX.utils.book_append_sheet(wb, ws, "QA Report");
+      XLSX.writeFile(wb, "QA_Report_For_Applications.xlsx");
+      toast.success(
+        isRTL ? "تم تصدير ملف الإكسل (XLSX) بنجاح" : "Excel file exported successfully",
+        { icon: "📊" }
+      );
+    } catch (err) {
+      console.error(err);
+      toast.error(isRTL ? "فشل تصدير ملف الإكسل" : "Failed to export Excel file");
+    }
+  };
+
+  const handleExportCSV = () => {
+    try {
+      const aoa = generateExportData();
+      const csvRows = aoa.map((row) =>
+        row
+          .map((cell) => {
+            const val = String(cell ?? "");
+            if (val.includes(",") || val.includes('"') || val.includes("\n")) {
+              return `"${val.replace(/"/g, '""')}"`;
+            }
+            return val;
+          })
+          .join(",")
+      );
+
+      // Add UTF-8 BOM so Excel opens Arabic and symbols correctly
+      const csvContent = "\uFEFF" + csvRows.join("\r\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "QA_Report_For_Applications.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success(isRTL ? "تم تصدير ملف CSV بنجاح" : "CSV file exported successfully", {
+        icon: "📄",
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error(isRTL ? "فشل تصدير ملف CSV" : "Failed to export CSV file");
+    }
+  };
+
   const ArrowIcon = isRTL ? ArrowLeft : ArrowRight;
 
   return (
@@ -666,20 +794,20 @@ export default function QualityClient({
           <div className="flex items-center gap-2.5 flex-wrap">
             <button
               type="button"
-              onClick={() => toast.success(isRTL ? "تم تجهيز مصفوفة إكسل للتحميل" : "Excel matrix ready", { icon: "📊" })}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-colors cursor-pointer"
+              onClick={handleExportExcel}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-[#006685] hover:bg-[#00516a] shadow-xs transition-all cursor-pointer"
             >
-              <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-              <span>{isRTL ? "تصدير مصفوفة إكسل" : "Export Excel Matrix"}</span>
+              <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+              <span>{isRTL ? "تصدير مصفوفة إكسل (.xlsx)" : "Export Excel (.xlsx)"}</span>
             </button>
 
             <button
               type="button"
-              onClick={() => toast.success(isRTL ? "جاري إنشاء ملف تقرير الجودة PDF..." : "Generating QA PDF...", { icon: "📄" })}
+              onClick={handleExportCSV}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-colors cursor-pointer"
             >
-              <Download className="w-4 h-4 text-sky-600" />
-              <span>{isRTL ? "إنشاء تقرير PDF" : "Generate QA PDF"}</span>
+              <Download className="w-4 h-4 text-[#00A2D2]" />
+              <span>{isRTL ? "تصدير ملف CSV" : "Export CSV"}</span>
             </button>
 
             <button
