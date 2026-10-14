@@ -657,7 +657,7 @@ export default function QualityClient({
               </h4>
               <p className="text-xs text-slate-500">
                 {isRTL
-                  ? "تصدير تقارير الجودة المعتمدة لمنصة التحول الرقمي بجمهورية مصر العربية"
+                  ? "تصدير تقارير الجودة المعتمدة لمنصة التحول الرقمي بوزارة الاتصالات وتكنولوجيا المعلومات"
                   : "Batch triggers & compliance exports for Egypt Digital Platform audit"}
               </p>
             </div>
