@@ -1778,7 +1778,8 @@ export default function TestCasesTable({
                 <label className="text-xs font-bold text-[#0b1c30]">
                   {isRTL ? "الشروط المسبقة" : "Pre-conditions"}
                 </label>
-                <Input
+                <Textarea
+                  rows={2}
                   value={editFormData.preConditions || ""}
                   onChange={(e) =>
                     setEditFormData((prev) => ({
@@ -1786,7 +1787,7 @@ export default function TestCasesTable({
                       preConditions: e.target.value,
                     }))
                   }
-                  className="h-10 text-[13px] bg-[#f8f9ff] border-slate-200 rounded-xl"
+                  className="text-[13px] bg-[#f8f9ff] border-slate-200 rounded-xl"
                 />
               </div>
 

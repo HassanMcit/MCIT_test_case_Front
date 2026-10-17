@@ -392,7 +392,8 @@ export default function AddTestCasePage({
               <Label className="text-[13px] text-[#0b1c30]">
                 {isRTL ? "الشروط المسبقة" : "Pre-conditions"}{" "}
               </Label>
-              <Input
+              <Textarea
+                rows={2}
                 {...register("preConditions")}
                 placeholder={
                   isRTL
