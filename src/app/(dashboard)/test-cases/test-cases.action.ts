@@ -116,7 +116,8 @@ export async function updateTestCase(
   data: Partial<TestCaseItem>
 ): Promise<{ success: boolean; message: string; data?: TestCaseItem }> {
   try {
-    const token = await getUserToken();
+    const sessionUser = await getCurrentUserSession();
+    const token = sessionUser?.token || (await getUserToken());
     if (!token) {
       throw new Error("يرجى تسجيل الدخول أولاً");
     }
@@ -139,6 +140,9 @@ export async function updateTestCase(
     if (data.severity !== undefined) payload.severity = data.severity;
     if (data.notes !== undefined) payload.notes = data.notes;
     if (data.projectId !== undefined) payload.projectId = data.projectId;
+    if (sessionUser?.id) {
+      payload.updatedById = Number(sessionUser.id);
+    }
 
     const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/test-cases/${id}`, {
       method: "PATCH",

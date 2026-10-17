@@ -28,10 +28,12 @@ export interface TestCaseItem {
   executedAt: string | null;
   testerId: number | null;
   userId: number | null;
+  updatedById?: number | null;
   projectId: number | null;
   createdAt: string;
   updatedAt: string;
   tester: TestCaseTester | null;
+  updatedBy?: TestCaseTester | null;
   project: TestCaseProject | null;
 }
 

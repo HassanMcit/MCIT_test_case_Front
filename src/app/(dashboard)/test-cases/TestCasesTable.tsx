@@ -415,6 +415,15 @@ export default function TestCasesTable({
     setEditSteps(Array.isArray(row.steps) && row.steps.length > 0 ? [...row.steps] : [""]);
   };
 
+  // Helper to check if a test case has been updated after creation
+  const isCaseUpdated = (tc: TestCaseItem): boolean => {
+    if (tc.updatedBy || tc.updatedById) return true;
+    if (!tc.updatedAt || !tc.createdAt) return false;
+    const createdMs = new Date(tc.createdAt).getTime();
+    const updatedMs = new Date(tc.updatedAt).getTime();
+    return !isNaN(createdMs) && !isNaN(updatedMs) && Math.abs(updatedMs - createdMs) > 2000;
+  };
+
   // Handle Edit Submit
   const handleUpdateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -428,14 +437,36 @@ export default function TestCasesTable({
     };
     const targetId = editingItem.id;
 
+    const nowIso = new Date().toISOString();
+    const currentUpdater = session?.user
+      ? {
+          id: Number((session.user as any).id || 0),
+          userId: Number((session.user as any).id || 0),
+          name: session.user.name || (isRTL ? "مستخدم النظام" : "System User"),
+          email: session.user.email || "",
+        }
+      : null;
+
     const updatePromise = updateTestCase(targetId, payload).then((res) => {
       if (!res.success) {
         throw new Error(res.message);
       }
       setItems((prev) =>
-        prev.map((it) =>
-          it.id === targetId ? { ...it, ...res.data, ...payload } : it
-        )
+        prev.map((it) => {
+          if (it.id !== targetId) return it;
+          const updatedRecord: TestCaseItem = {
+            ...it,
+            ...res.data,
+            ...payload,
+            updatedAt: res.data?.updatedAt || nowIso,
+            updatedById: res.data?.updatedById || currentUpdater?.id || it.updatedById || null,
+            updatedBy: res.data?.updatedBy || currentUpdater || it.updatedBy || it.tester,
+          };
+          if (selectedItem?.id === targetId) {
+            setSelectedItem(updatedRecord);
+          }
+          return updatedRecord;
+        })
       );
       setEditingItem(null);
       return res;
@@ -992,24 +1023,33 @@ export default function TestCasesTable({
                         </Badge>
                       </td>
 
-                      {/* Tester / Action Performed */}
-                      <td className="px-4 whitespace-nowrap">
-                        {isAdmin ? (
-                          <div className="flex flex-col">
-                            <span className="font-bold text-[13px] text-[#0b1c30] flex items-center gap-1.5">
-                              <User className="w-3.5 h-3.5 text-[#006685]" />
-                              <span>{row.tester?.name || (isRTL ? "مستخدم النظام" : "System User")}</span>
-                            </span>
-                            <span className="text-[11px] text-[#6d797f] font-mono mt-0.5 flex items-center gap-1">
-                              <Clock className="w-3 h-3 text-slate-400" />
-                              <span>{formatActionTimestamp(row.executedAt || row.createdAt, lang)}</span>
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-[13px] text-[#0b1c30]">
-                            {row.tester?.name || "-"}
+                      {/* Tester / Action Performed & Last Update */}
+                      <td className="px-4 py-2.5 whitespace-nowrap">
+                        <div className="flex flex-col">
+                          <span className="font-bold text-[13px] text-[#0b1c30] flex items-center gap-1.5">
+                            <User className="w-3.5 h-3.5 text-[#006685] shrink-0" />
+                            <span>{row.tester?.name || (isRTL ? "مستخدم النظام" : "System User")}</span>
                           </span>
-                        )}
+                          <span className="text-[11px] text-[#6d797f] font-mono mt-0.5 flex items-center gap-1">
+                            <Clock className="w-3 h-3 text-slate-400 shrink-0" />
+                            <span>{formatActionTimestamp(row.executedAt || row.createdAt, lang)}</span>
+                          </span>
+                          {isCaseUpdated(row) && (
+                            <div className="mt-1.5 px-2 py-1 rounded-lg bg-amber-50/90 border border-amber-200/80 flex flex-col gap-0.5">
+                              <span className="text-[11px] font-bold text-amber-800 flex items-center gap-1">
+                                <Pencil className="w-2.5 h-2.5 text-amber-600 shrink-0" />
+                                <span>
+                                  {isRTL ? "آخر تعديل: " : "Updated by: "}
+                                  {row.updatedBy?.name || row.tester?.name || (isRTL ? "مستخدم النظام" : "System User")}
+                                </span>
+                              </span>
+                              <span className="text-[10px] text-amber-700 font-mono flex items-center gap-1">
+                                <Clock className="w-2.5 h-2.5 text-amber-500 shrink-0" />
+                                <span>{formatActionTimestamp(row.updatedAt, lang)}</span>
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </td>
 
                       {/* Execution Date */}
@@ -1386,12 +1426,12 @@ export default function TestCasesTable({
               </div>
             </div>
 
-            {/* Admin-only Action Audit Section */}
-            {isAdmin && (
+            {/* Action & Last Update Audit Section */}
+            <div className="space-y-2">
               <div className="p-3.5 bg-blue-50/70 border border-blue-200/80 rounded-xl flex items-center justify-between text-xs">
                 <div className="space-y-0.5">
                   <span className="text-[11px] font-bold text-[#006685] block">
-                    {isRTL ? "منفذ الإجراء (Action Performed By):" : "Action Performed By:"}
+                    {isRTL ? "منفذ الإجراء (Created / Executed By):" : "Created / Executed By:"}
                   </span>
                   <span className="font-bold text-[#0b1c30] text-sm flex items-center gap-1.5">
                     <User className="w-3.5 h-3.5 text-[#006685]" />
@@ -1400,7 +1440,7 @@ export default function TestCasesTable({
                 </div>
                 <div className="text-left rtl:text-right space-y-0.5">
                   <span className="text-[11px] font-bold text-slate-600 block">
-                    {isRTL ? "توقيت العملية (Action Timestamp):" : "Action Timestamp:"}
+                    {isRTL ? "توقيت الإضافة / التنفيذ:" : "Created / Executed At:"}
                   </span>
                   <span className="font-mono text-slate-700 text-xs flex items-center gap-1">
                     <Clock className="w-3 h-3 text-slate-400" />
@@ -1408,7 +1448,30 @@ export default function TestCasesTable({
                   </span>
                 </div>
               </div>
-            )}
+
+              {isCaseUpdated(selectedItem) && (
+                <div className="p-3.5 bg-amber-50/80 border border-amber-200 rounded-xl flex items-center justify-between text-xs">
+                  <div className="space-y-0.5">
+                    <span className="text-[11px] font-bold text-amber-800 block">
+                      {isRTL ? "آخر تعديل بواسطة (Last Updated By):" : "Last Updated By:"}
+                    </span>
+                    <span className="font-bold text-[#0b1c30] text-sm flex items-center gap-1.5">
+                      <Pencil className="w-3.5 h-3.5 text-amber-600" />
+                      {selectedItem.updatedBy?.name || selectedItem.tester?.name || (isRTL ? "مستخدم النظام" : "System User")}
+                    </span>
+                  </div>
+                  <div className="text-left rtl:text-right space-y-0.5">
+                    <span className="text-[11px] font-bold text-amber-800 block">
+                      {isRTL ? "توقيت آخر تعديل (Updated At):" : "Last Updated At:"}
+                    </span>
+                    <span className="font-mono text-amber-900 text-xs flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-amber-600" />
+                      {formatActionTimestamp(selectedItem.updatedAt, lang)}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Defect Modal Footer */}
             <div className="pt-2 flex items-center justify-between gap-3 border-t border-slate-100">
@@ -1472,6 +1535,25 @@ export default function TestCasesTable({
                 <X className="w-5 h-5" />
               </button>
             </div>
+
+            {/* Last Update Info Banner inside Edit Modal */}
+            {isCaseUpdated(editingItem) && (
+              <div className="p-3 bg-amber-50/80 border border-amber-200/80 rounded-xl flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div className="flex items-center gap-2 text-amber-900">
+                  <Pencil className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  <span className="font-semibold">
+                    {isRTL ? "آخر تعديل بواسطة:" : "Last updated by:"}
+                  </span>
+                  <span className="font-bold">
+                    {editingItem.updatedBy?.name || editingItem.tester?.name || (isRTL ? "مستخدم النظام" : "System User")}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 font-mono text-amber-800">
+                  <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  <span>{formatActionTimestamp(editingItem.updatedAt, lang)}</span>
+                </div>
+              </div>
+            )}
 
             {/* Edit Form */}
             <form onSubmit={handleUpdateSubmit} className="space-y-4">
