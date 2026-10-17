@@ -742,7 +742,19 @@ export default function QualityClient({
 
                       {app.url && (
                         <a
-                          href={app.url}
+                          href={
+                            app.url.startsWith("https//")
+                              ? `https://${app.url.slice(7)}`
+                              : app.url.startsWith("https/")
+                              ? `https://${app.url.slice(6)}`
+                              : app.url.startsWith("http//")
+                              ? `http://${app.url.slice(6)}`
+                              : app.url.startsWith("http/")
+                              ? `http://${app.url.slice(5)}`
+                              : /^https?:\/\//i.test(app.url)
+                              ? app.url
+                              : `https://${app.url}`
+                          }
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}

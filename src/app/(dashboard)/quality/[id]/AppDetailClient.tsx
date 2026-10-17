@@ -469,7 +469,21 @@ export default function AppDetailClient({
               </button>
 
               <a
-                href={app.url}
+                href={
+                  !app.url
+                    ? "#"
+                    : app.url.startsWith("https//")
+                    ? `https://${app.url.slice(7)}`
+                    : app.url.startsWith("https/")
+                    ? `https://${app.url.slice(6)}`
+                    : app.url.startsWith("http//")
+                    ? `http://${app.url.slice(6)}`
+                    : app.url.startsWith("http/")
+                    ? `http://${app.url.slice(5)}`
+                    : /^https?:\/\//i.test(app.url)
+                    ? app.url
+                    : `https://${app.url}`
+                }
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold text-white bg-[#00A2D2] hover:bg-[#008eb8] transition-colors cursor-pointer shadow-xs"

@@ -16,6 +16,7 @@ export interface AppNotification {
 export interface NotificationsResponse {
   notifications: AppNotification[];
   unreadCount: number;
+  unauthorized?: boolean;
 }
 
 export async function getClientToken(): Promise<string | null> {
@@ -45,7 +46,7 @@ export async function revalidateNotificationsTag() {
 export async function getMyNotifications(): Promise<NotificationsResponse> {
   try {
     const token = await getUserToken();
-    if (!token) return { notifications: [], unreadCount: 0 };
+    if (!token) return { notifications: [], unreadCount: 0, unauthorized: true };
 
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_BASE_URL}/api/users/notifications`,
@@ -58,6 +59,10 @@ export async function getMyNotifications(): Promise<NotificationsResponse> {
         next: { tags: ["notifications"] },
       }
     );
+
+    if (res.status === 401) {
+      return { notifications: [], unreadCount: 0, unauthorized: true };
+    }
 
     if (!res.ok) {
       return { notifications: [], unreadCount: 0 };

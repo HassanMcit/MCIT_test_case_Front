@@ -28,6 +28,23 @@ function readFullCookie(cookieStore: any, baseName: string): string | null {
   return assembled || null;
 }
 
+function isBackendJwtExpired(rawJwt?: string | null): boolean {
+  if (!rawJwt || typeof rawJwt !== "string") return true;
+  try {
+    const parts = rawJwt.split(".");
+    if (parts.length !== 3) return true;
+    const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8"));
+    if (payload.exp && typeof payload.exp === "number") {
+      if (Date.now() >= payload.exp * 1000) {
+        return true;
+      }
+    }
+    return false;
+  } catch {
+    return true;
+  }
+}
+
 /**
  * Safely decodes session token trying all candidate cookie names and matching salts.
  */
@@ -52,6 +69,23 @@ async function getDecodedToken() {
         });
 
         if (decoded) {
+          const credentialToken =
+            (decoded.credentialToken as string) ||
+            (decoded.access_token as string) ||
+            (decoded.token as string) ||
+            null;
+
+          if (!credentialToken || isBackendJwtExpired(credentialToken)) {
+            return null;
+          }
+
+          const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+          if (decoded.loginAt && typeof decoded.loginAt === "number") {
+            if (Date.now() - decoded.loginAt > sevenDaysMs) {
+              return null;
+            }
+          }
+
           return decoded;
         }
       } catch {

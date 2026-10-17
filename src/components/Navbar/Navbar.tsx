@@ -51,16 +51,43 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
   const notificationsRef = useRef<HTMLDivElement>(null);
   
   const [uploadImage, setUploadImage] = useState<string | null>(null);
-  const { data, update } = useSession();
+  const { data, status, update } = useSession();
+  const isLoggingOutRef = useRef(false);
 
   const [imgSrc, setImgSrc] = useState<string>(() => {
     return data?.user?.image || "/avatar.png";
   });
 
+  const handleExpiredTokenRedirect = async () => {
+    if (isLoggingOutRef.current) return;
+    isLoggingOutRef.current = true;
+    try {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("user");
+      }
+      await signOut({ redirect: false });
+    } catch {}
+    router.replace("/login");
+    if (typeof window !== "undefined") {
+      window.location.href = "/login";
+    }
+  };
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      handleExpiredTokenRedirect();
+    }
+  }, [status]);
+
   // Fetch notifications on mount and periodically (0ms real-time sync with force-cache)
   const fetchNotifications = async (forceRefresh = false) => {
     try {
       const res = forceRefresh ? await refreshNotifications() : await getMyNotifications();
+      if (res?.unauthorized) {
+        handleExpiredTokenRedirect();
+        return;
+      }
       if (res && Array.isArray(res.notifications)) {
         setNotifications(res.notifications);
         setUnreadCount(res.unreadCount);
@@ -93,20 +120,53 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
       }
     } catch {}
 
-    // 3. Connect to real-time Server-Sent Events (SSE) stream from backend
+    // 3. Connect to real-time Server-Sent Events (SSE) via same-origin proxy (no CORS issues)
+    //    and schedule exact timer for JWT expiration
     let eventSource: EventSource | null = null;
+    let expiryTimer: ReturnType<typeof setTimeout> | null = null;
     let isCancelled = false;
 
     getClientToken().then((token) => {
-      if (isCancelled || !token) return;
+      if (isCancelled) return;
+      if (!token) {
+        handleExpiredTokenRedirect();
+        return;
+      }
+
+      // Decode JWT exp claim to schedule automatic redirect the moment token expires
       try {
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin;
-        const sseUrl = `${baseUrl}/api/users/notifications/stream?token=${encodeURIComponent(token)}`;
+        const parts = token.split(".");
+        if (parts.length === 3) {
+          const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+          const payload = JSON.parse(atob(base64));
+          if (payload.exp && typeof payload.exp === "number") {
+            const msRemaining = payload.exp * 1000 - Date.now();
+            if (msRemaining <= 0) {
+              handleExpiredTokenRedirect();
+              return;
+            }
+            // Max safe 32-bit timeout is ~24.8 days (2147483647 ms)
+            expiryTimer = setTimeout(
+              () => {
+                handleExpiredTokenRedirect();
+              },
+              Math.min(msRemaining, 2147483647)
+            );
+          }
+        }
+      } catch {}
+
+      try {
+        const sseUrl = `/api/users/notifications/stream?token=${encodeURIComponent(token)}`;
         eventSource = new EventSource(sseUrl);
 
         eventSource.onmessage = (e) => {
           try {
             const parsed = JSON.parse(e.data);
+            if (parsed?.type === "UNAUTHORIZED") {
+              handleExpiredTokenRedirect();
+              return;
+            }
             if (parsed?.type === "NOTIFICATION") {
               fetchNotifications(true);
               toast(
@@ -146,6 +206,7 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
     return () => {
       isCancelled = true;
       clearInterval(interval);
+      if (expiryTimer) clearTimeout(expiryTimer);
       window.removeEventListener("mcit:notification_assigned", handleLocalAssignment);
       window.removeEventListener("focus", handleVisibility);
       document.removeEventListener("visibilitychange", handleVisibility);
