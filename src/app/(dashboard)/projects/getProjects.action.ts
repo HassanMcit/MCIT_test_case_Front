@@ -57,7 +57,9 @@ export async function getProjects(params?: {
 
     // Partition cache URL by role and userId so Next.js force-cache doesn't leak between users
     if (sessionUser?.id) {
-      query.set("cacheUser", `${sessionUser.role}_${sessionUser.id}`);
+      query.set("cacheUser", `${sessionUser.role}_${sessionUser.id}_20261018`);
+    } else {
+      query.set("cv", "20261018");
     }
 
     const qs = query.toString() ? `?${query.toString()}` : "";

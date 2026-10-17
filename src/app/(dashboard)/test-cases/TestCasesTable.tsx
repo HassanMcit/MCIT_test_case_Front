@@ -201,8 +201,8 @@ export default function TestCasesTable({
 
     return true;
   }).sort((a, b) => {
-    const idA = a.testId || "";
-    const idB = b.testId || "";
+    const idA = (a.testId || "").replace(/^(TC|BUG)-/i, "");
+    const idB = (b.testId || "").replace(/^(TC|BUG)-/i, "");
     return (
       idA.localeCompare(idB, undefined, { numeric: true, sensitivity: "base" }) ||
       a.id - b.id

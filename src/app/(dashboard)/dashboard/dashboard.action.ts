@@ -50,8 +50,8 @@ export async function getDashboardFullData(): Promise<DashboardDataPayload> {
 
   const isAdmin = sessionUser?.role === "admin";
   const cacheParam = sessionUser?.id
-    ? `cacheUser=${sessionUser.role}_${sessionUser.id}`
-    : "";
+    ? `cacheUser=${sessionUser.role}_${sessionUser.id}_20261018`
+    : "cv=20261018";
 
   // Fetch Projects, Test Cases, Stats, Chart, Severity, and Users (if Admin) in parallel
   const [projects, testCasesRes, rawUsers, statsRes, chartRes, severityRes] =
