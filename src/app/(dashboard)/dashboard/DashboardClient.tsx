@@ -1615,7 +1615,12 @@ export default function DashboardClient({ data }: DashboardClientProps) {
 
         {/* Data Table */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse" dir={dir}>
+          <table
+            className={`w-full border-collapse ${
+              isRTL ? "text-right" : "text-left"
+            }`}
+            dir={dir}
+          >
             <thead>
               <tr className="bg-[#eff4ff]/80 text-[#565e74] text-[11px] uppercase tracking-wider font-bold border-b border-slate-100">
                 <th className="py-3 px-4">{t("col_id")}</th>

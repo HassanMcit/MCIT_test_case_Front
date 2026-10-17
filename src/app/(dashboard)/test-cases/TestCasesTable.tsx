@@ -201,6 +201,16 @@ export default function TestCasesTable({
 
     return true;
   }).sort((a, b) => {
+    const projA = a.projectId ?? 0;
+    const projB = b.projectId ?? 0;
+    if (projA !== projB) {
+      return projB - projA;
+    }
+    const modA = (a.module || "").toLowerCase();
+    const modB = (b.module || "").toLowerCase();
+    if (modA !== modB) {
+      return modA.localeCompare(modB);
+    }
     const idA = (a.testId || "").replace(/^(TC|BUG)-/i, "");
     const idB = (b.testId || "").replace(/^(TC|BUG)-/i, "");
     return (
@@ -853,21 +863,23 @@ export default function TestCasesTable({
 
       {/* ── Main Data Table ───────────────────────────────────────── */}
       <Card className="shadow-xs border-slate-200/80 rounded-2xl overflow-hidden bg-white">
-        <div className="overflow-x-auto">
-          <table className="w-full text-right border-collapse">
+        <div className="w-full overflow-x-auto">
+          <table
+            dir={dir}
+            className={`w-full border-collapse ${isRTL ? "text-right" : "text-left"}`}
+          >
             <thead>
               <tr className="bg-[#f8f9ff] h-11 border-b border-[#e5eeff]">
                 {(isRTL
                   ? [
                       "معرف الحالة",
-                      "الوحدة / المشروع",
-                      "السيناريو",
+                      "المشروع / الصفحة",
+                      "سيناريو الاختبار",
                       "الخطوات",
                       "النتيجة المتوقعة",
                       "الأولوية",
                       "الحالة",
-                      isAdmin ? "منفذ الإجراء والتوقيت" : "المختبر",
-                      "تاريخ التنفيذ",
+                      "المختبر والتوقيت",
                       "الإجراءات",
                     ]
                   : [
@@ -878,15 +890,14 @@ export default function TestCasesTable({
                       "Expected Result",
                       "Priority",
                       "Status",
-                      isAdmin ? "Action Performed & Time" : "Tester",
-                      "Executed At",
+                      "Tester & Time",
                       "Actions",
                     ]
                 ).map((head, idx) => (
                   <th
                     key={head}
-                    className={`px-4 text-[11px] font-bold text-[#565e74] uppercase tracking-wider ${
-                      idx === 9 ? "text-center w-24" : isRTL ? "text-right" : "text-left"
+                    className={`px-3.5 py-3 text-[11px] font-bold text-[#565e74] uppercase tracking-wider whitespace-nowrap ${
+                      idx === 8 ? "text-center w-24" : isRTL ? "text-right" : "text-left"
                     }`}
                   >
                     {head}
@@ -897,7 +908,7 @@ export default function TestCasesTable({
             <tbody className="divide-y divide-[#e5eeff]">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="text-center py-12">
+                  <td colSpan={9} className="text-center py-12">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <div className="w-12 h-12 rounded-2xl bg-[#eff4ff] flex items-center justify-center text-[#006685]">
                         <Search className="w-6 h-6" />
@@ -938,70 +949,98 @@ export default function TestCasesTable({
                     badgeClass: "bg-slate-50 text-slate-700 border-slate-200",
                   };
 
-                  const stepsPreview = Array.isArray(row.steps)
-                    ? row.steps.filter(Boolean).slice(0, 2).join(" | ")
-                    : "";
+                  const validSteps = Array.isArray(row.steps)
+                    ? row.steps.filter(Boolean)
+                    : [];
+                  const stepsPreview = validSteps.slice(0, 2).join(" • ");
 
                   return (
                     <tr
                       key={row.id}
-                      className="hover:bg-[#f8f9ff]/70 transition-colors h-14"
+                      className="hover:bg-[#f8f9ff]/80 transition-colors align-middle"
                     >
-                      {/* ID */}
-                      <td className="px-4 font-mono font-bold text-xs whitespace-nowrap">
+                      {/* 1. Case ID */}
+                      <td className={`px-3.5 py-3 font-mono font-bold text-xs whitespace-nowrap ${isRTL ? "text-right" : "text-left"}`}>
                         {row.status === "failed" ? (
                           <button
+                            type="button"
                             onClick={() => setSelectedItem(row)}
-                            className="hover:underline cursor-pointer text-red-600 font-bold"
+                            className="inline-flex items-center px-2 py-1 rounded-lg bg-red-50 border border-red-200 hover:bg-red-100 cursor-pointer text-red-600 font-bold transition-colors"
                             title={isRTL ? "عرض تقرير الخلل (Defect Report)" : "View Defect Report"}
                           >
                             {row.testId.startsWith("TC-") ? row.testId.replace(/^TC-/, "BUG-") : row.testId}
                           </button>
                         ) : (
-                          <span className="text-[#006685] font-semibold">{row.testId}</span>
+                          <span className="inline-flex items-center px-2 py-1 rounded-lg bg-[#eff4ff] border border-[#00aee0]/25 text-[#006685] font-bold">
+                            {row.testId}
+                          </span>
                         )}
                       </td>
 
-                      {/* Module & Page */}
-                      <td className="px-4 whitespace-nowrap">
-                        <div className="flex flex-col">
-                          <span className="font-bold text-[13px] text-[#0b1c30]">
-                            {row.module || row.project?.name || "-"}
+                      {/* 2. Module & Page */}
+                      <td className={`px-3.5 py-3 max-w-[185px] ${isRTL ? "text-right" : "text-left"}`}>
+                        <div className="flex flex-col gap-1">
+                          <span
+                            className="inline-flex items-center gap-1.5 font-bold text-[12px] text-[#006685] bg-[#eff4ff]/80 border border-[#00aee0]/25 px-2 py-0.5 rounded-md w-fit max-w-full truncate"
+                            title={row.module || row.project?.name || "-"}
+                          >
+                            <FolderGit2 className="w-3 h-3 shrink-0 text-[#006685]" />
+                            <span className="truncate">
+                              {row.module || row.project?.name || "-"}
+                            </span>
                           </span>
                           {row.pageName && (
-                            <span className="text-[11px] text-[#6d797f]">
+                            <span
+                              className="text-[11px] font-medium text-[#565e74] truncate block px-0.5"
+                              title={row.pageName}
+                            >
                               {row.pageName}
                             </span>
                           )}
                         </div>
                       </td>
 
-                      {/* Scenario */}
+                      {/* 3. Scenario */}
                       <td
-                        className="px-4 text-[13px] text-[#0b1c30] max-w-[220px] truncate"
+                        className={`px-3.5 py-3 text-[12.5px] font-semibold text-[#0b1c30] max-w-[230px] ${isRTL ? "text-right" : "text-left"}`}
                         title={row.scenario}
                       >
-                        {row.scenario}
+                        <div className="line-clamp-2 leading-snug">
+                          {row.scenario}
+                        </div>
                       </td>
 
-                      {/* Steps Preview */}
+                      {/* 4. Steps Preview */}
                       <td
-                        className="px-4 text-[12px] text-[#6d797f] max-w-[180px] truncate font-sans"
-                        title={Array.isArray(row.steps) ? row.steps.join("\n") : ""}
+                        className={`px-3.5 py-3 text-[11.5px] text-[#565e74] max-w-[180px] ${isRTL ? "text-right" : "text-left"}`}
+                        title={validSteps.join("\n")}
                       >
-                        {stepsPreview || "-"}
+                        {validSteps.length > 0 ? (
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-[10px] font-bold text-[#006685] bg-slate-100 px-1.5 py-0.2 rounded w-fit">
+                              {validSteps.length} {isRTL ? "خطوات" : "steps"}
+                            </span>
+                            <span className="truncate text-[#6d797f]">
+                              {stepsPreview}
+                            </span>
+                          </div>
+                        ) : (
+                          "-"
+                        )}
                       </td>
 
-                      {/* Expected Result */}
+                      {/* 5. Expected Result */}
                       <td
-                        className="px-4 text-[13px] text-[#3d484f] max-w-[150px] truncate"
+                        className={`px-3.5 py-3 text-[12px] text-[#3d484f] max-w-[180px] ${isRTL ? "text-right" : "text-left"}`}
                         title={row.expectedResult}
                       >
-                        {row.expectedResult}
+                        <div className="line-clamp-2 leading-snug">
+                          {row.expectedResult}
+                        </div>
                       </td>
 
-                      {/* Priority */}
-                      <td className="px-4 whitespace-nowrap">
+                      {/* 6. Priority */}
+                      <td className={`px-3.5 py-3 whitespace-nowrap ${isRTL ? "text-right" : "text-left"}`}>
                         <Badge
                           variant="outline"
                           className={`text-[11px] font-bold rounded-lg border px-2 py-0.5 ${pInfo.badgeClass}`}
@@ -1010,11 +1049,11 @@ export default function TestCasesTable({
                         </Badge>
                       </td>
 
-                      {/* Status */}
-                      <td className="px-4 whitespace-nowrap">
+                      {/* 7. Status */}
+                      <td className={`px-3.5 py-3 whitespace-nowrap ${isRTL ? "text-right" : "text-left"}`}>
                         <Badge
                           variant="outline"
-                          className={`text-[11px] font-bold rounded-lg border flex items-center gap-1.5 w-fit px-2 py-0.5 ${sInfo.badgeClass}`}
+                          className={`text-[11px] font-bold rounded-lg border inline-flex items-center gap-1.5 w-fit px-2.5 py-0.5 ${sInfo.badgeClass}`}
                         >
                           <span
                             className={`w-1.5 h-1.5 rounded-full ${sInfo.dot}`}
@@ -1023,10 +1062,10 @@ export default function TestCasesTable({
                         </Badge>
                       </td>
 
-                      {/* Tester / Action Performed & Last Update */}
-                      <td className="px-4 py-2.5 whitespace-nowrap">
+                      {/* 8. Tester / Action Performed & Last Update */}
+                      <td className={`px-3.5 py-3 whitespace-nowrap ${isRTL ? "text-right" : "text-left"}`}>
                         <div className="flex flex-col">
-                          <span className="font-bold text-[13px] text-[#0b1c30] flex items-center gap-1.5">
+                          <span className="font-bold text-[12.5px] text-[#0b1c30] flex items-center gap-1.5">
                             <User className="w-3.5 h-3.5 text-[#006685] shrink-0" />
                             <span>{row.tester?.name || (isRTL ? "مستخدم النظام" : "System User")}</span>
                           </span>
@@ -1035,8 +1074,8 @@ export default function TestCasesTable({
                             <span>{formatActionTimestamp(row.executedAt || row.createdAt, lang)}</span>
                           </span>
                           {isCaseUpdated(row) && (
-                            <div className="mt-1.5 px-2 py-1 rounded-lg bg-amber-50/90 border border-amber-200/80 flex flex-col gap-0.5">
-                              <span className="text-[11px] font-bold text-amber-800 flex items-center gap-1">
+                            <div className="mt-1.5 px-2 py-1 rounded-lg bg-amber-50/90 border border-amber-200/80 flex flex-col gap-0.5 w-fit">
+                              <span className="text-[10.5px] font-bold text-amber-800 flex items-center gap-1">
                                 <Pencil className="w-2.5 h-2.5 text-amber-600 shrink-0" />
                                 <span>
                                   {isRTL ? "آخر تعديل: " : "Updated by: "}
@@ -1052,23 +1091,8 @@ export default function TestCasesTable({
                         </div>
                       </td>
 
-                      {/* Execution Date */}
-                      <td className="px-4 text-[12px] text-[#6d797f] font-mono whitespace-nowrap">
-                        {row.executedAt
-                          ? new Date(row.executedAt).toLocaleDateString(
-                              isRTL ? "ar-EG" : "en-US",
-                              { year: "numeric", month: "short", day: "numeric" }
-                            )
-                          : row.createdAt
-                          ? new Date(row.createdAt).toLocaleDateString(
-                              isRTL ? "ar-EG" : "en-US",
-                              { year: "numeric", month: "short", day: "numeric" }
-                            )
-                          : "-"}
-                      </td>
-
-                      {/* Actions */}
-                      <td className="px-4 text-center whitespace-nowrap">
+                      {/* 9. Actions */}
+                      <td className="px-3.5 py-3 text-center whitespace-nowrap">
                         <div className="flex items-center justify-center gap-1">
                           {/* View Defect Button - ONLY for Failed test cases */}
                           {row.status === "failed" && (
