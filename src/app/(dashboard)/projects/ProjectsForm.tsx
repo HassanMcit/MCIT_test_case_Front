@@ -491,6 +491,14 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
 
   const confirmDeleteProject = async () => {
     if (!projectToDelete) return;
+    if ((projectToDelete.assignedUsers?.length || 0) > 0) {
+      toast.error(
+        isRTL
+          ? "لا يمكن حذف هذا المشروع لأنه مسند لمستخدمين حالياً. يرجى إلغاء إسناد المشروع أولاً."
+          : "Cannot delete this project because it is currently assigned to users. Please unassign it first."
+      );
+      return;
+    }
     const target = projectToDelete;
     setIsDeletingProject(true);
 
@@ -509,7 +517,8 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
       {
         loading: isRTL ? "جاري حذف المشروع..." : "Deleting project...",
         success: isRTL ? "تم حذف المشروع بنجاح" : "Project deleted successfully",
-        error: isRTL ? "فشل حذف المشروع" : "Failed to delete project",
+        error: (err: any) =>
+          err?.message || (isRTL ? "فشل حذف المشروع" : "Failed to delete project"),
       }
     ).finally(() => {
       setIsDeletingProject(false);
@@ -1919,106 +1928,144 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
       )}
 
       {/* ── MODAL 4: Delete Project Confirmation (Admin Only, NO native alerts) ── */}
-      {projectToDelete && (
-        <div
-          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget && !isDeletingProject) setProjectToDelete(null);
-          }}
-        >
+      {projectToDelete && (() => {
+        const hasAssignedUsers = (projectToDelete.assignedUsers?.length || 0) > 0;
+        return (
           <div
-            className="bg-white rounded-2xl max-w-md w-full border border-slate-200 shadow-2xl p-6 space-y-5"
-            dir={dir}
+            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
+            onMouseDown={(e) => {
+              if (e.target === e.currentTarget && !isDeletingProject) setProjectToDelete(null);
+            }}
           >
-            {/* Header */}
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
-                <Trash2 className="w-6 h-6" />
+            <div
+              className="bg-white rounded-2xl max-w-md w-full border border-slate-200 shadow-2xl p-6 space-y-5"
+              dir={dir}
+            >
+              {/* Header */}
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                  <Trash2 className="w-6 h-6" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-base sm:text-lg font-bold text-[#0b1c30]">
+                    {hasAssignedUsers
+                      ? isRTL
+                        ? "تعذر حذف المشروع"
+                        : "Cannot Delete Project"
+                      : isRTL
+                      ? "تأكيد حذف المشروع"
+                      : "Confirm Project Deletion"}
+                  </h3>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    {hasAssignedUsers
+                      ? isRTL
+                        ? "لا يمكن حذف هذا المشروع لأنه مسند حالياً إلى مستخدمين. يرجى إلغاء إسناد المشروع أولاً."
+                        : "This project cannot be deleted because it is currently assigned to users. Please unassign it first."
+                      : isRTL
+                      ? "هل أنت متأكد من رغبتك في حذف هذا المشروع نهائياً؟ لا يمكن التراجع عن هذا الإجراء بعد تنفيذه."
+                      : "Are you sure you want to permanently delete this project? This action cannot be undone."}
+                  </p>
+                </div>
               </div>
-              <div className="space-y-1">
-                <h3 className="text-base sm:text-lg font-bold text-[#0b1c30]">
-                  {isRTL ? "تأكيد حذف المشروع" : "Confirm Project Deletion"}
-                </h3>
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  {isRTL
-                    ? "هل أنت متأكد من رغبتك في حذف هذا المشروع نهائياً؟ سيتم إلغاء إسناد المشروع من جميع المستخدمين وإزالته من قوائمهم."
-                    : "Are you sure you want to permanently delete this project? It will be unassigned and removed from all users."}
-                </p>
-              </div>
-            </div>
 
-            {/* Target Project Info */}
-            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2 text-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500 font-medium">
-                  {isRTL ? "اسم المشروع:" : "Project Name:"}
-                </span>
-                <span className="font-bold text-[#0b1c30]">
-                  {projectToDelete.name}
-                </span>
+              {/* Target Project Info */}
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500 font-medium">
+                    {isRTL ? "اسم المشروع:" : "Project Name:"}
+                  </span>
+                  <span className="font-bold text-[#0b1c30]">
+                    {projectToDelete.name}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500 font-medium">
+                    {isRTL ? "البيئة:" : "Environment:"}
+                  </span>
+                  <span className="font-medium text-slate-700 capitalize">
+                    {projectToDelete.env}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500 font-medium">
+                    {isRTL ? "الأعضاء المسندين:" : "Assigned Members:"}
+                  </span>
+                  <span className={`font-bold ${hasAssignedUsers ? "text-red-600" : "text-[#006685]"}`}>
+                    {projectToDelete.assignedUsers?.length || 0}
+                  </span>
+                </div>
+                {hasAssignedUsers && (
+                  <div className="pt-2 border-t border-slate-200/70 flex flex-wrap gap-1.5">
+                    {projectToDelete.assignedUsers?.map((u: any, idx: number) => (
+                      <span
+                        key={u.id || idx}
+                        className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-red-50 text-red-700 border border-red-200"
+                      >
+                        {u.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500 font-medium">
-                  {isRTL ? "البيئة:" : "Environment:"}
-                </span>
-                <span className="font-medium text-slate-700 capitalize">
-                  {projectToDelete.env}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500 font-medium">
-                  {isRTL ? "الأعضاء المسندين:" : "Assigned Members:"}
-                </span>
-                <span className="font-bold text-[#006685]">
-                  {projectToDelete.assignedUsers?.length || 0}
-                </span>
-              </div>
-            </div>
 
-            {/* Warning Note */}
-            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[11px] leading-relaxed flex items-start gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-              <span>
-                {isRTL
-                  ? "هذا الإجراء متاح لمدير النظام (Admin) فقط، ولا يمكن التراجع عنه بعد الحذف."
-                  : "This action is restricted to Administrators and cannot be undone."}
-              </span>
-            </div>
+              {/* Warning Note */}
+              {hasAssignedUsers ? (
+                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-[11px] leading-relaxed flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                  <span>
+                    {isRTL
+                      ? "يجب إلغاء إسناد المشروع من جميع المستخدمين الموضحين أعلاه أولاً حتى تتمكن من حذفه."
+                      : "You must unassign all users listed above from this project before it can be deleted."}
+                  </span>
+                </div>
+              ) : (
+                <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[11px] leading-relaxed flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <span>
+                    {isRTL
+                      ? "هذا الإجراء متاح لمدير النظام (Admin) فقط، ولا يمكن التراجع عنه بعد الحذف."
+                      : "This action is restricted to Administrators and cannot be undone."}
+                  </span>
+                </div>
+              )}
 
-            {/* Action Buttons */}
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={isDeletingProject}
-                onClick={() => setProjectToDelete(null)}
-                className="h-10 px-4 text-xs font-semibold rounded-xl cursor-pointer"
-              >
-                {isRTL ? "إلغاء" : "Cancel"}
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                disabled={isDeletingProject}
-                onClick={confirmDeleteProject}
-                className="h-10 px-4 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer gap-2 transition-all"
-              >
-                <Trash2 className="w-4 h-4" />
-                <span>
-                  {isDeletingProject
-                    ? isRTL
-                      ? "جاري الحذف..."
-                      : "Deleting..."
-                    : isRTL
-                    ? "تأكيد الحذف"
-                    : "Delete"}
-                </span>
-              </Button>
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={isDeletingProject}
+                  onClick={() => setProjectToDelete(null)}
+                  className="h-10 px-4 text-xs font-semibold rounded-xl cursor-pointer"
+                >
+                  {isRTL ? "إغلاق" : "Close"}
+                </Button>
+                {!hasAssignedUsers && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={isDeletingProject}
+                    onClick={confirmDeleteProject}
+                    className="h-10 px-4 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer gap-2 transition-all"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>
+                      {isDeletingProject
+                        ? isRTL
+                          ? "جاري الحذف..."
+                          : "Deleting..."
+                        : isRTL
+                        ? "تأكيد الحذف"
+                        : "Delete"}
+                    </span>
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
