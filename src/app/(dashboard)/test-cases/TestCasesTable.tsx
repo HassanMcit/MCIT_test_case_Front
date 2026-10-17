@@ -201,22 +201,12 @@ export default function TestCasesTable({
 
     return true;
   }).sort((a, b) => {
-    const projA = a.projectId ?? 0;
-    const projB = b.projectId ?? 0;
-    if (projA !== projB) {
-      return projB - projA;
+    const timeA = new Date(a.executedAt || a.createdAt || 0).getTime();
+    const timeB = new Date(b.executedAt || b.createdAt || 0).getTime();
+    if (timeA !== timeB) {
+      return timeB - timeA;
     }
-    const modA = (a.module || "").toLowerCase();
-    const modB = (b.module || "").toLowerCase();
-    if (modA !== modB) {
-      return modA.localeCompare(modB);
-    }
-    const idA = (a.testId || "").replace(/^(TC|BUG)-/i, "");
-    const idB = (b.testId || "").replace(/^(TC|BUG)-/i, "");
-    return (
-      idA.localeCompare(idB, undefined, { numeric: true, sensitivity: "base" }) ||
-      a.id - b.id
-    );
+    return b.id - a.id;
   });
 
   // Calculate dynamic stats

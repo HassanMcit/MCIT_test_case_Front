@@ -309,7 +309,14 @@ export default function DashboardClient({ data }: DashboardClientProps) {
           (tc.tester?.name && tc.tester.name.toLowerCase().includes(q))
         );
       })
-      .sort((a, b) => b.id - a.id);
+      .sort((a, b) => {
+        const timeA = new Date(a.executedAt || a.createdAt || 0).getTime();
+        const timeB = new Date(b.executedAt || b.createdAt || 0).getTime();
+        if (timeA !== timeB) {
+          return timeB - timeA;
+        }
+        return b.id - a.id;
+      });
   }, [scopedTestCases, statusFilter, searchQuery]);
 
   // Pagination
