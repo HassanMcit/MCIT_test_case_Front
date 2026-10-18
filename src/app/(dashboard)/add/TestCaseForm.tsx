@@ -266,7 +266,7 @@ export default function AddTestCasePage({
             {/* Row 1: ID, Module, Page */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Test ID */}
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 min-w-0">
                 <Label className="text-[13px] text-[#0b1c30]">
                   {isRTL ? "معرف الحالة " : "Test ID"}
                 </Label>
@@ -287,7 +287,7 @@ export default function AddTestCasePage({
               </div>
 
               {/* Module / Project */}
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 min-w-0">
                 <Label className="text-[13px] text-[#0b1c30]">
                   {isRTL ? "المشروع / الوحدة " : "Project / Module"}
                 </Label>
@@ -321,8 +321,13 @@ export default function AddTestCasePage({
                       }}
                     >
                       <SelectTrigger
+                        title={
+                          allProjects.find(
+                            (p) => String(p.id) === selectedProjectId
+                          )?.name || ""
+                        }
                         className={cn(
-                          "rounded-xl text-[13px] bg-[#f8f9ff] border-[#bcc8d0]",
+                          "w-full min-w-0 max-w-full overflow-hidden rounded-xl text-[13px] bg-[#f8f9ff] border-[#bcc8d0]",
                           errors.module &&
                             "border-red-400 focus-visible:border-red-400"
                         )}
@@ -338,7 +343,7 @@ export default function AddTestCasePage({
                             (isRTL ? "اختر المشروع" : "Select Project")}
                         </SelectValue>
                       </SelectTrigger>
-                      <SelectContent className="px-1 w-56">
+                      <SelectContent className="w-(--anchor-width) min-w-[260px] max-w-[90vw] p-1">
                         {allProjects.map((e) => (
                           <SelectItem key={e.id} value={String(e.id)}>
                             {e.name}
@@ -356,7 +361,7 @@ export default function AddTestCasePage({
               </div>
 
               {/* Page Name */}
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 min-w-0">
                 <Label className="text-[13px] text-[#0b1c30]">
                   {isRTL ? "اسم الصفحة" : "Page Name"}
                 </Label>
