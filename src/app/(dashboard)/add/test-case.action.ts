@@ -11,17 +11,27 @@ export async function addNewTestCase(data: TestCaseFormValues) {
       return { success: false, message: "انتهت صلاحية الجلسة، يرجى تسجيل الدخول مرة أخرى" };
     }
 
+    const safePayload = {
+      ...data,
+      module: (data.module || "").slice(0, 50).trim(),
+    };
+
     let response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/test-cases`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
         "content-type": "application/json",
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify(safePayload),
       cache: "force-cache",
     });
 
-    if (!response.ok && response.status === 400 && data.module && data.module.length > 50) {
+    if (!response.ok && response.status === 409) {
+      const freshNextId = await getNextTestCaseId(data.module, data.projectId);
+      const nextIdFormatted =
+        data.status === "failed"
+          ? freshNextId.replace(/^TC-/, "BUG-")
+          : freshNextId;
       response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/test-cases`, {
         method: "POST",
         headers: {
@@ -29,8 +39,8 @@ export async function addNewTestCase(data: TestCaseFormValues) {
           "content-type": "application/json",
         },
         body: JSON.stringify({
-          ...data,
-          module: data.module.slice(0, 50).trim(),
+          ...safePayload,
+          testId: nextIdFormatted,
         }),
         cache: "force-cache",
       });

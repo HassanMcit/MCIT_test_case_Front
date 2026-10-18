@@ -125,7 +125,7 @@ export async function updateTestCase(
 
     const payload: Record<string, any> = {};
     if (data.testId !== undefined) payload.testId = data.testId;
-    if (data.module !== undefined) payload.module = data.module;
+    if (data.module !== undefined) payload.module = data.module.slice(0, 50).trim();
     if (data.pageName !== undefined) payload.pageName = data.pageName;
     if (data.scenario !== undefined) payload.scenario = data.scenario;
     if (data.preConditions !== undefined) payload.preConditions = data.preConditions;

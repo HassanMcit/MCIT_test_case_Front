@@ -972,11 +972,11 @@ export default function TestCasesTable({
                         <div className="flex flex-col gap-1">
                           <span
                             className="inline-flex items-center gap-1.5 font-bold text-[12px] text-[#006685] bg-[#eff4ff]/80 border border-[#00aee0]/25 px-2 py-0.5 rounded-md w-fit max-w-full truncate"
-                            title={row.module || row.project?.name || "-"}
+                            title={row.project?.name || row.module || "-"}
                           >
                             <FolderGit2 className="w-3 h-3 shrink-0 text-[#006685]" />
                             <span className="truncate">
-                              {row.module || row.project?.name || "-"}
+                              {row.project?.name || row.module || "-"}
                             </span>
                           </span>
                           {row.pageName && (
