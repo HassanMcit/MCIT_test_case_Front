@@ -4,6 +4,15 @@ import { getUserToken } from "@/app/myUtil";
 import type { AddTestCaseResponse, TestCaseFormValues } from "./test-case-interface";
 import { revalidatePath, updateTag } from "next/cache";
 
+function computeScheduledExecutedAt(testId?: string): string {
+  const match = (testId || "").match(/(\d+)$/);
+  const caseNum = match ? Math.max(1, parseInt(match[1], 10)) : 1;
+  // 2026-10-19 09:10:00 AM Cairo time (UTC+3) = 2026-10-19T06:10:00.000Z
+  const baseUtcMs = Date.UTC(2026, 9, 19, 6, 10, 0, 0);
+  const scheduledMs = baseUtcMs + (caseNum - 1) * 4 * 60 * 1000;
+  return new Date(scheduledMs).toISOString();
+}
+
 export async function addNewTestCase(data: TestCaseFormValues) {
   try {
     const token = await getUserToken();
@@ -14,6 +23,7 @@ export async function addNewTestCase(data: TestCaseFormValues) {
     const safePayload = {
       ...data,
       module: (data.module || "").slice(0, 50).trim(),
+      executedAt: computeScheduledExecutedAt(data.testId),
     };
 
     let response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/test-cases`, {
@@ -41,6 +51,7 @@ export async function addNewTestCase(data: TestCaseFormValues) {
         body: JSON.stringify({
           ...safePayload,
           testId: nextIdFormatted,
+          executedAt: computeScheduledExecutedAt(nextIdFormatted),
         }),
         cache: "force-cache",
       });
