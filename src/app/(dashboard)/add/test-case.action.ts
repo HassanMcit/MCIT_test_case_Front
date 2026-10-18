@@ -6,17 +6,22 @@ import { revalidatePath, updateTag } from "next/cache";
 
 export async function addNewTestCase(data: TestCaseFormValues) {
   try {
+    const token = await getUserToken();
+    if (!token) {
+      return { success: false, message: "انتهت صلاحية الجلسة، يرجى تسجيل الدخول مرة أخرى" };
+    }
+
     const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/test-cases`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${await getUserToken()}`,
+        Authorization: `Bearer ${token}`,
         "content-type": "application/json",
       },
       body: JSON.stringify(data),
       cache: "force-cache",
     });
 
-    const responseData: AddTestCaseResponse = await response.json();
+    const responseData: Partial<AddTestCaseResponse> = await response.json().catch(() => ({}));
 
     if (response.ok) {
       updateTag("test-cases");
@@ -28,17 +33,23 @@ export async function addNewTestCase(data: TestCaseFormValues) {
       revalidatePath("/projects");
       revalidatePath("/dashboard");
       revalidatePath("/users");
-      revalidatePath("/", "layout");
-      return { success: true, message: "Test case created successfully" };
+      return {
+        success: true,
+        message: "Test case created successfully",
+        data: responseData,
+      };
     }
 
     const errorMsg = Array.isArray(responseData.message)
       ? responseData.message.join(" - ")
       : responseData.message || "حدث خطأ أثناء إضافة حالة الاختبار";
 
-    throw new Error(errorMsg);
+    return { success: false, message: errorMsg };
   } catch (err) {
-    throw new Error(err instanceof Error ? err.message : "حدث خطأ غير متوقع");
+    return {
+      success: false,
+      message: err instanceof Error ? err.message : "حدث خطأ غير متوقع في الاتصال بالخادم",
+    };
   }
 }
 

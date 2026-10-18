@@ -54,6 +54,20 @@ export default function AddTestCasePage({
   const isRTL = dir === "rtl";
   const schema = useMemo(() => getTestCaseSchema(lang), [lang]);
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
+  const [executionTimeStr, setExecutionTimeStr] = useState<string>("");
+
+  useEffect(() => {
+    const updateLocalTime = () => {
+      const now = new Date();
+      const localIso = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+        .toISOString()
+        .slice(0, 16);
+      setExecutionTimeStr(localIso);
+    };
+    updateLocalTime();
+    const timer = setInterval(updateLocalTime, 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   const {
     handleSubmit,
@@ -130,9 +144,6 @@ export default function AddTestCasePage({
       Number(selectedProjectId) ||
       allProjects.find((e) => e.name === userData.module)?.id ||
       1;
-    const matchedProj =
-      allProjects.find((e) => e.id === targetProjId) ||
-      allProjects.find((e) => e.name === userData.module);
 
     const validSteps = steps
       .filter((e) => e.value.trim() !== "")
@@ -151,7 +162,14 @@ export default function AddTestCasePage({
       projectId: targetProjId,
     };
 
-    toast.promise(addNewTestCase(updateUserdata), {
+    const addPromise = addNewTestCase(updateUserdata).then((res) => {
+      if (!res.success) {
+        throw new Error(res.message);
+      }
+      return res;
+    });
+
+    toast.promise(addPromise, {
       loading: isRTL ? "جاري إضافة حالة الاختبار..." : "Adding test case...",
       success: () => {
         const currentMod = userData.module;
@@ -758,12 +776,7 @@ export default function AddTestCasePage({
                 </Label>
                 <Input
                   type="datetime-local"
-                  value={new Date(
-                    new Date().getTime() -
-                      new Date().getTimezoneOffset() * 60000
-                  )
-                    .toISOString()
-                    .slice(0, 16)}
+                  value={executionTimeStr}
                   readOnly
                   className="rounded-xl text-[13px] bg-[#f8f9ff] border-[#bcc8d0]"
                 />
