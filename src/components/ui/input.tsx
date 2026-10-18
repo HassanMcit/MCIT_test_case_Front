@@ -25,7 +25,7 @@ function Input({ className, type, dir, onInput, value, defaultValue, style, ...p
     }
   }, [value, dir])
 
-  const handleInput = (e: React.FormEvent<HTMLInputElement>) => {
+  const handleInput: React.InputEventHandler<HTMLInputElement> = (e) => {
     const val = e.currentTarget.value || ""
     if (ARABIC_REGEX.test(val)) {
       e.currentTarget.dir = "rtl"

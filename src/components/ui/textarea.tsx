@@ -24,7 +24,7 @@ function Textarea({ className, dir, onInput, value, defaultValue, style, ...prop
     }
   }, [value, dir])
 
-  const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
+  const handleInput: React.InputEventHandler<HTMLTextAreaElement> = (e) => {
     const val = e.currentTarget.value || ""
     if (ARABIC_REGEX.test(val)) {
       e.currentTarget.dir = "rtl"
