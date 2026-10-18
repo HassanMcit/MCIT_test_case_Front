@@ -981,6 +981,7 @@ export default function TestCasesTable({
                           </span>
                           {row.pageName && (
                             <span
+                              dir="auto"
                               className="text-[11px] font-medium text-[#565e74] truncate block px-0.5"
                               title={row.pageName}
                             >
@@ -995,7 +996,7 @@ export default function TestCasesTable({
                         className={`px-3.5 py-3 text-[12.5px] font-semibold text-[#0b1c30] max-w-[230px] ${isRTL ? "text-right" : "text-left"}`}
                         title={row.scenario}
                       >
-                        <div className="line-clamp-2 leading-snug">
+                        <div dir="auto" className="line-clamp-2 leading-snug">
                           {row.scenario}
                         </div>
                       </td>
@@ -1010,7 +1011,7 @@ export default function TestCasesTable({
                             <span className="text-[10px] font-bold text-[#006685] bg-slate-100 px-1.5 py-0.2 rounded w-fit">
                               {validSteps.length} {isRTL ? "خطوات" : "steps"}
                             </span>
-                            <span className="truncate text-[#6d797f]">
+                            <span dir="auto" className="truncate text-[#6d797f]">
                               {stepsPreview}
                             </span>
                           </div>
@@ -1024,7 +1025,7 @@ export default function TestCasesTable({
                         className={`px-3.5 py-3 text-[12px] text-[#3d484f] max-w-[180px] ${isRTL ? "text-right" : "text-left"}`}
                         title={row.expectedResult}
                       >
-                        <div className="line-clamp-2 leading-snug">
+                        <div dir="auto" className="line-clamp-2 leading-snug">
                           {row.expectedResult}
                         </div>
                       </td>
