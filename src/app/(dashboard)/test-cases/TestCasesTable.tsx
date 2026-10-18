@@ -114,7 +114,8 @@ export default function TestCasesTable({
     getTestCases({
       projectId: initialProjectId,
       limit: 100,
-    }).then((fresh) => {
+      _cv: String(Date.now()),
+    } as any).then((fresh) => {
       if (Array.isArray(fresh?.data) && fresh.data.length > 0) {
         setItems(fresh.data);
       }
