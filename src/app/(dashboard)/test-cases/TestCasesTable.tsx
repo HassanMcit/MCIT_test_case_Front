@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useEffect, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -43,7 +43,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useLanguage } from "@/context/language-context";
 import type { TestCaseItem, TestCaseListResponse } from "./test-cases.interface";
 import type { ProjectApiItem } from "../projects/getProjects.action";
-import { deleteTestCase, updateTestCase } from "./test-cases.action";
+import { deleteTestCase, getTestCases, updateTestCase } from "./test-cases.action";
 import toast from "react-hot-toast";
 import { toLocalDateKey } from "@/lib/utils";
 
@@ -105,6 +105,21 @@ export default function TestCasesTable({
   const isAdmin = session?.user?.role === "admin";
 
   const [items, setItems] = useState<TestCaseItem[]>(initialData.data || []);
+
+  useEffect(() => {
+    setItems(initialData.data || []);
+  }, [initialData.data]);
+
+  useEffect(() => {
+    getTestCases({
+      projectId: initialProjectId,
+      limit: 100,
+    }).then((fresh) => {
+      if (Array.isArray(fresh?.data) && fresh.data.length > 0) {
+        setItems(fresh.data);
+      }
+    });
+  }, [initialProjectId]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");

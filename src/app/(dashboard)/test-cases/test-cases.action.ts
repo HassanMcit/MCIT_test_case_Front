@@ -34,7 +34,7 @@ export async function getTestCases(params?: TestCaseQueryParams): Promise<TestCa
       url.searchParams.set("userId", String(sessionUser.id));
       url.searchParams.set("userRole", sessionUser.role);
     }
-    url.searchParams.set("cv", "20261019_v1");
+    url.searchParams.set("cv", "20261019_v2");
 
     const res = await fetch(url.toString(), {
       method: "GET",
