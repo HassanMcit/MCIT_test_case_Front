@@ -11,7 +11,7 @@ export async function addNewTestCase(data: TestCaseFormValues) {
       return { success: false, message: "انتهت صلاحية الجلسة، يرجى تسجيل الدخول مرة أخرى" };
     }
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/test-cases`, {
+    let response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/test-cases`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -20,6 +20,21 @@ export async function addNewTestCase(data: TestCaseFormValues) {
       body: JSON.stringify(data),
       cache: "force-cache",
     });
+
+    if (!response.ok && response.status === 400 && data.module && data.module.length > 50) {
+      response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/test-cases`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          ...data,
+          module: data.module.slice(0, 50).trim(),
+        }),
+        cache: "force-cache",
+      });
+    }
 
     const responseData: Partial<AddTestCaseResponse> = await response.json().catch(() => ({}));
 
