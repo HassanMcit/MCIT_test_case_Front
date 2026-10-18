@@ -551,6 +551,7 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
     handleSubmit,
     register,
     control,
+    reset,
     formState: { errors },
   } = useForm<ProjectFormValues>({
     resolver: zodResolver(projectSchema),
@@ -586,8 +587,14 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
 
   function handleCreateProject(data: ProjectFormValues) {
     toast.promise(addNewProject(data), {
-      loading: "Please Wait...",
+      loading: isRTL ? "جاري إضافة المشروع..." : "Please Wait...",
       success: (_) => {
+        reset({
+          name: "",
+          description: "",
+          environment: "",
+          status: "",
+        });
         setShowAddModal(false);
         getProjects().then((projs) => {
           if (projs && Array.isArray(projs)) setRawProjects(projs);
@@ -636,7 +643,15 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
 
           {isAdmin && (
             <Button
-              onClick={() => setShowAddModal(true)}
+              onClick={() => {
+                reset({
+                  name: "",
+                  description: "",
+                  environment: "",
+                  status: "",
+                });
+                setShowAddModal(true);
+              }}
               className="gap-2 bg-[#00A2D2] hover:bg-[#008eb8] text-white shadow-md shadow-[#00A2D2]/20 rounded-xl px-5 h-11 shrink-0 font-bold cursor-pointer"
             >
               <Plus className="w-4 h-4" />
