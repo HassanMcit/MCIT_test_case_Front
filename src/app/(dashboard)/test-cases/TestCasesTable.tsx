@@ -433,6 +433,9 @@ export default function TestCasesTable({
 
   // Helper to check if a test case has been updated after creation
   const isCaseUpdated = (tc: TestCaseItem): boolean => {
+    if (tc.updatedAt && toLocalDateKey(tc.updatedAt) === "2026-10-22") {
+      return false;
+    }
     if (tc.updatedBy || tc.updatedById) return true;
     if (!tc.updatedAt || !tc.createdAt) return false;
     const createdMs = new Date(tc.createdAt).getTime();

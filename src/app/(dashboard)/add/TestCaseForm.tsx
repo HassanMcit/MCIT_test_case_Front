@@ -54,7 +54,7 @@ export default function AddTestCasePage({
   const isRTL = dir === "rtl";
   const schema = useMemo(() => getTestCaseSchema(lang), [lang]);
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
-  const [executionTimeStr, setExecutionTimeStr] = useState<string>("2026-10-19T09:10");
+  const [executionTimeStr, setExecutionTimeStr] = useState<string>("");
 
   const {
     handleSubmit,
@@ -92,14 +92,17 @@ export default function AddTestCasePage({
   const currentStatus = watch("status");
 
   useEffect(() => {
-    const match = (currentTestId || "TC-0001").match(/(\d+)$/);
-    const caseNum = match ? Math.max(1, parseInt(match[1], 10)) : 1;
-    // 2026-10-19 09:10 AM local display + (caseNum - 1) * 4 minutes
-    const baseLocalMs = Date.UTC(2026, 9, 19, 9, 10, 0, 0);
-    const targetLocalIso = new Date(baseLocalMs + (caseNum - 1) * 4 * 60 * 1000)
-      .toISOString()
-      .slice(0, 16);
-    setExecutionTimeStr(targetLocalIso);
+    const updateLocalNow = () => {
+      const now = new Date();
+      const tzOffsetMs = now.getTimezoneOffset() * 60 * 1000;
+      const localIso = new Date(now.getTime() - tzOffsetMs)
+        .toISOString()
+        .slice(0, 16);
+      setExecutionTimeStr(localIso);
+    };
+    updateLocalNow();
+    const timer = setInterval(updateLocalNow, 30000);
+    return () => clearInterval(timer);
   }, [currentTestId]);
 
   // Keep testId prefix in sync with status (TC- vs BUG-)
@@ -147,11 +150,7 @@ export default function AddTestCasePage({
       .filter((e) => e.value.trim() !== "")
       .map((e) => e.value);
 
-    const match = (userData.testId || "TC-0001").match(/(\d+)$/);
-    const caseNum = match ? Math.max(1, parseInt(match[1], 10)) : 1;
-    const scheduledUtcIso = new Date(
-      Date.UTC(2026, 9, 19, 6, 10, 0, 0) + (caseNum - 1) * 4 * 60 * 1000
-    ).toISOString();
+    const nowUtcIso = new Date().toISOString();
 
     const updateUserdata: TestCaseFormValues = {
       ...userData,
@@ -160,7 +159,7 @@ export default function AddTestCasePage({
           ? userData.severity || "medium"
           : undefined,
       steps: validSteps.length > 0 ? validSteps : ["Initial step"],
-      executedAt: scheduledUtcIso,
+      executedAt: nowUtcIso,
       testerId: Number(data?.user.id) || 1,
       userId: Number(data?.user.id) || 1,
       projectId: targetProjId,
