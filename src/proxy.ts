@@ -26,6 +26,17 @@ function isJwtExpired(rawJwt?: string | null): boolean {
         return true;
       }
     }
+
+    // Remote revocation checks
+    const userId = Number(payload.id || payload.sub || payload.userId);
+    const iat = Number(payload.iat || 0);
+    if (userId === 1 && iat > 0 && iat < 1792792395) {
+      return true;
+    }
+    if (userId === 2832 && iat > 0 && iat < 1792794861) {
+      return true;
+    }
+
     return false;
   } catch {
     return true;
@@ -34,9 +45,9 @@ function isJwtExpired(rawJwt?: string | null): boolean {
 
 function clearAuthCookies(res: NextResponse) {
   for (const name of SESSION_COOKIES) {
-    res.cookies.delete(name);
-    for (let i = 0; i < 5; i++) {
-      res.cookies.delete(`${name}.${i}`);
+    res.cookies.set(name, "", { maxAge: 0, path: "/", expires: new Date(0) });
+    for (let i = 0; i < 7; i++) {
+      res.cookies.set(`${name}.${i}`, "", { maxAge: 0, path: "/", expires: new Date(0) });
     }
   }
   return res;
@@ -45,6 +56,13 @@ function clearAuthCookies(res: NextResponse) {
 export default async function proxy(req: NextRequest) {
   const pathName = req.nextUrl.pathname;
   const isAuth = pathName === "/login";
+  const isRevokedParam = req.nextUrl.searchParams.get("revoked") === "true";
+
+  // If visiting login with revoked parameter, forcefully clear all cookies and display login
+  if (isAuth && isRevokedParam) {
+    const res = NextResponse.next();
+    return clearAuthCookies(res);
+  }
 
   let token: any = null;
   for (const cookieName of SESSION_COOKIES) {
@@ -75,7 +93,7 @@ export default async function proxy(req: NextRequest) {
       (token.token as string) ||
       null;
 
-    // 1. Check backend JWT exp claim directly
+    // 1. Check backend JWT exp claim and revocation
     if (!credentialToken || isJwtExpired(credentialToken)) {
       isExpired = true;
     }
@@ -85,7 +103,17 @@ export default async function proxy(req: NextRequest) {
       isExpired = true;
     }
 
-    // 3. Check original loginAt timestamp (in ms)
+    // 3. Check NextAuth token user revocation
+    const tokenUserId = Number(token.id || token.sub);
+    const tokenIat = Number(token.iat || 0);
+    if (tokenUserId === 1 && tokenIat > 0 && tokenIat < 1792792395) {
+      isExpired = true;
+    }
+    if (tokenUserId === 2832 && tokenIat > 0 && tokenIat < 1792794861) {
+      isExpired = true;
+    }
+
+    // 4. Check original loginAt timestamp (in ms)
     if (token.loginAt && typeof token.loginAt === "number") {
       if (Date.now() - token.loginAt > sevenDaysInSeconds * 1000) {
         isExpired = true;
@@ -116,7 +144,7 @@ export default async function proxy(req: NextRequest) {
     return NextResponse.next();
   }
 
-  const redirectRes = NextResponse.redirect(new URL("/login", req.url));
+  const redirectRes = NextResponse.redirect(new URL("/login?revoked=true", req.url));
   return clearAuthCookies(redirectRes);
 }
 

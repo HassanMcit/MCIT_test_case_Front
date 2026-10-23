@@ -22,9 +22,9 @@ export async function GET() {
         "next-auth.session-token",
       ];
       for (const name of cookieNames) {
-        response.cookies.delete(name);
-        for (let i = 0; i < 5; i++) {
-          response.cookies.delete(`${name}.${i}`);
+        response.cookies.set(name, "", { maxAge: 0, path: "/", expires: new Date(0) });
+        for (let i = 0; i < 7; i++) {
+          response.cookies.set(`${name}.${i}`, "", { maxAge: 0, path: "/", expires: new Date(0) });
         }
       }
       return response;
