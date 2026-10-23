@@ -48,7 +48,7 @@ import {
 import { useLanguage } from "@/context/language-context";
 import type { TestCaseItem } from "../test-cases.interface";
 import toast from "react-hot-toast";
-import { getTeamsCallUrl, getTeamsMeetingUrl } from "@/lib/teams";
+import { getTeamsCallUrl } from "@/lib/teams";
 
 interface EmailComposerProps {
   initialTestCase: TestCaseItem | null;

@@ -32,7 +32,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLanguage } from "@/context/language-context";
 import { cn } from "@/lib/utils";
-import { getTeamsCallUrl, getTeamsChatUrl, getTeamsMeetingUrl } from "@/lib/teams";
+import { getTeamsCallUrl, getTeamsChatUrl } from "@/lib/teams";
 import toast from "react-hot-toast";
 import { deleteThisUser, getAllUsers } from "./user.action";
 import { GetAllUsersResponse } from "./user.interface";

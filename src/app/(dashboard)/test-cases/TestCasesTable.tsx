@@ -48,7 +48,7 @@ import type { ProjectApiItem } from "../projects/getProjects.action";
 import { deleteTestCase, getTestCases, updateTestCase } from "./test-cases.action";
 import toast from "react-hot-toast";
 import { toLocalDateKey } from "@/lib/utils";
-import { getTeamsCallUrl, getTeamsMeetingUrl } from "@/lib/teams";
+import { getTeamsCallUrl } from "@/lib/teams";
 
 interface TestCasesTableProps {
   initialData: TestCaseListResponse;

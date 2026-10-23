@@ -103,13 +103,21 @@ export async function collectLoginTelemetry(): Promise<{
         if (data.connection?.isp) {
           location += ` (${data.connection.isp})`;
         }
+        try {
+          if (clientIp) localStorage.setItem("mcit_client_ip", clientIp);
+          if (location) localStorage.setItem("mcit_client_location", location);
+        } catch {}
       }
     }
   } catch {
-    // If external ipwho.is fails, fallback to timezone
+    // Fallback to cached or timezone
     try {
-      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      location = tz ? `Timezone: ${tz}` : undefined;
+      clientIp = localStorage.getItem("mcit_client_ip") || undefined;
+      location = localStorage.getItem("mcit_client_location") || undefined;
+      if (!location) {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        location = tz ? `Timezone: ${tz}` : undefined;
+      }
     } catch {}
   }
 
@@ -121,3 +129,46 @@ export async function collectLoginTelemetry(): Promise<{
     userAgent,
   };
 }
+
+export function getClientTelemetrySync(): {
+  clientIp?: string;
+  macAddress: string;
+  deviceInfo: string;
+  location?: string;
+  userAgent: string;
+} {
+  const macAddress = getOrCreateDeviceMac();
+  const deviceInfo = getDeviceSummary();
+  const userAgent = typeof navigator !== "undefined" ? navigator.userAgent : "";
+  let clientIp: string | undefined;
+  let location: string | undefined;
+
+  if (typeof window !== "undefined") {
+    try {
+      clientIp = localStorage.getItem("mcit_client_ip") || undefined;
+      location = localStorage.getItem("mcit_client_location") || undefined;
+    } catch {}
+  }
+
+  return {
+    clientIp,
+    macAddress,
+    deviceInfo,
+    location,
+    userAgent,
+  };
+}
+
+/**
+ * Automatically fetch telemetry in background on load if not cached yet.
+ */
+if (typeof window !== "undefined") {
+  setTimeout(() => {
+    try {
+      if (!localStorage.getItem("mcit_client_ip")) {
+        collectLoginTelemetry();
+      }
+    } catch {}
+  }, 1000);
+}
+
