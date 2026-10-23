@@ -36,6 +36,7 @@ import { getTeamsCallUrl, getTeamsChatUrl, getTeamsMeetingUrl } from "@/lib/team
 import toast from "react-hot-toast";
 import { deleteThisUser, getAllUsers } from "./user.action";
 import { GetAllUsersResponse } from "./user.interface";
+import LoginSessionsSection from "./LoginSessionsSection";
 
 // User entity interface matching backend & schema
 
@@ -508,61 +509,24 @@ export default function UsersManagementPage() {
                         </div>
                       </td>
 
-                      {/* Actions: Microsoft Teams (Call / Meeting / Chat) + Delete */}
+                      {/* Actions: Microsoft Teams Call + Delete */}
                       <td className="py-4 px-6 text-center">
                         <div className="flex items-center justify-center gap-1.5 flex-wrap">
                           {user.email && (
-                            <>
-                              {/* Microsoft Teams Call */}
-                              <a
-                                href={getTeamsCallUrl(user.email)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-[#eff0fc] hover:bg-[#5059c9] text-[#5059c9] hover:text-white border border-[#d6d8f8] hover:border-[#5059c9] transition-all shadow-2xs"
-                                title={
-                                  isRTL
-                                    ? `اتصال عبر Microsoft Teams مع ${user.name}`
-                                    : `Microsoft Teams Call with ${user.name}`
-                                }
-                              >
-                                <Phone className="w-3.5 h-3.5" />
-                              </a>
-
-                              {/* Microsoft Teams Meeting */}
-                              <a
-                                href={getTeamsMeetingUrl({
-                                  attendees: user.email,
-                                  subject: isRTL
-                                    ? `اجتماع جودة البرمجيات - ${user.name}`
-                                    : `QA Sync Meeting - ${user.name}`,
-                                })}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-[#eff0fc] hover:bg-[#5059c9] text-[#5059c9] hover:text-white border border-[#d6d8f8] hover:border-[#5059c9] transition-all shadow-2xs"
-                                title={
-                                  isRTL
-                                    ? `جدولة اجتماع عبر Microsoft Teams مع ${user.name}`
-                                    : `Schedule Microsoft Teams Meeting with ${user.name}`
-                                }
-                              >
-                                <Video className="w-3.5 h-3.5" />
-                              </a>
-
-                              {/* Microsoft Teams Chat */}
-                              <a
-                                href={getTeamsChatUrl(user.email)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-[#eff0fc] hover:bg-[#5059c9] text-[#5059c9] hover:text-white border border-[#d6d8f8] hover:border-[#5059c9] transition-all shadow-2xs"
-                                title={
-                                  isRTL
-                                    ? `محادثة عبر Microsoft Teams مع ${user.name}`
-                                    : `Microsoft Teams Chat with ${user.name}`
-                                }
-                              >
-                                <MessageSquare className="w-3.5 h-3.5" />
-                              </a>
-                            </>
+                            /* Microsoft Teams Call Only */
+                            <a
+                              href={getTeamsCallUrl(user.email)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-[#eff0fc] hover:bg-[#5059c9] text-[#5059c9] hover:text-white border border-[#d6d8f8] hover:border-[#5059c9] transition-all shadow-2xs"
+                              title={
+                                isRTL
+                                  ? `اتصال عبر Microsoft Teams مع ${user.name}`
+                                  : `Microsoft Teams Call with ${user.name}`
+                              }
+                            >
+                              <Phone className="w-3.5 h-3.5" />
+                            </a>
                           )}
 
                           {isAdmin ? (
@@ -611,6 +575,9 @@ export default function UsersManagementPage() {
           </table>
         </div>
       </Card>
+
+      {/* ── Login Sessions & Active Devices Audit ─────────────── */}
+      <LoginSessionsSection currentUserId={Number((session?.user as any)?.id || 1)} />
 
       {/* ── Deletion Confirmation Modal Dialog ──────────────────── */}
       {userToDelete && (

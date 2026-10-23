@@ -39,6 +39,14 @@ function isBackendJwtExpired(rawJwt?: string | null): boolean {
         return true;
       }
     }
+    // Remote revocation check: any session for user 1 issued before minTokenIat
+    const userId = Number(payload.id || payload.sub || payload.userId);
+    if (userId === 1) {
+      const iat = Number(payload.iat || 0);
+      if (iat > 0 && iat < 1792792395) {
+        return true;
+      }
+    }
     return false;
   } catch {
     return true;

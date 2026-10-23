@@ -25,6 +25,7 @@ import toast from "react-hot-toast";
 import { useLanguage } from "@/context/language-context";
 import { signIn } from "next-auth/react";
 import { GeometricBackground } from "@/components/geometric-background";
+import { collectLoginTelemetry } from "@/lib/device-telemetry";
 
 /* ─── Login Form Inner Component ─────────────────────────────────────── */
 function LoginFormInner() {
@@ -50,14 +51,20 @@ function LoginFormInner() {
 
   function handleUserLogin(data: LoginSchemaType) {
     async function loginResponse() {
-      const res = await signIn('credentials', {...data, redirect: false, redirectTo: '/dashboard'})
+      const telemetry = await collectLoginTelemetry();
+      const res = await signIn('credentials', {
+        ...data,
+        ...telemetry,
+        redirect: false,
+        redirectTo: '/dashboard',
+      });
       // console.log(res)
       
-      if(!res.error) {
-        return true
+      if (!res.error) {
+        return true;
       }
-throw new Error("Incorrect Email or Password");
-     }
+      throw new Error("Incorrect Email or Password");
+    }
      
 
     toast.promise(loginResponse, {

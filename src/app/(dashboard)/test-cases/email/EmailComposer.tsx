@@ -1657,30 +1657,8 @@ export default function EmailComposer({
                     </Button>
                   </div>
 
-                  {/* Microsoft Teams Quick Actions Row */}
+                  {/* Microsoft Teams Call Action */}
                   <div className="pt-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        const allRecipients = Array.from(new Set([...toEmails, ...ccEmails]));
-                        const url = getTeamsMeetingUrl({
-                          attendees: allRecipients,
-                          subject,
-                          content,
-                        });
-                        window.open(url, "_blank", "noopener,noreferrer");
-                      }}
-                      className="h-11 flex-1 rounded-xl text-xs font-bold border-[#d6d8f8] bg-[#eff0fc] hover:bg-[#5059c9] text-[#5059c9] hover:text-white transition-all cursor-pointer gap-2 shadow-2xs"
-                    >
-                      <Video className="w-4 h-4" />
-                      <span>
-                        {isRTL
-                          ? "جدولة اجتماع عبر Microsoft Teams"
-                          : "Schedule Microsoft Teams Meeting"}
-                      </span>
-                    </Button>
-
                     <Button
                       type="button"
                       variant="outline"
@@ -1697,7 +1675,7 @@ export default function EmailComposer({
                         const url = getTeamsCallUrl(allRecipients);
                         window.open(url, "_blank", "noopener,noreferrer");
                       }}
-                      className="h-11 flex-1 rounded-xl text-xs font-bold border-[#d6d8f8] bg-white hover:bg-[#5059c9] text-[#5059c9] hover:text-white transition-all cursor-pointer gap-2 shadow-2xs"
+                      className="h-11 flex-1 rounded-xl text-xs font-bold border-[#d6d8f8] bg-[#eff0fc] hover:bg-[#5059c9] text-[#5059c9] hover:text-white transition-all cursor-pointer gap-2 shadow-2xs"
                     >
                       <Phone className="w-4 h-4" />
                       <span>

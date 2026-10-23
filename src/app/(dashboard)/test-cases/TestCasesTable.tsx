@@ -1140,44 +1140,21 @@ export default function TestCasesTable({
                             </Link>
                           )}
 
-                          {/* Microsoft Teams Call & Meeting with Tester */}
+                          {/* Microsoft Teams Call with Tester */}
                           {row.tester?.email && (
-                            <>
-                              <a
-                                href={getTeamsCallUrl(row.tester.email)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="p-1.5 hover:bg-[#eff0fc] rounded-lg text-[#5059c9] hover:text-[#3b429f] transition-colors cursor-pointer"
-                                title={
-                                  isRTL
-                                    ? `اتصال عبر Microsoft Teams مع ${row.tester.name || row.tester.email}`
-                                    : `Microsoft Teams Call with ${row.tester.name || row.tester.email}`
-                                }
-                              >
-                                <Phone className="w-4 h-4" />
-                              </a>
-                              <a
-                                href={getTeamsMeetingUrl({
-                                  attendees: row.tester.email,
-                                  subject: isRTL
-                                    ? `[مناقشة حالة اختبار] ${row.testId} - ${row.pageName || row.module}`
-                                    : `[Test Case Review] ${row.testId} - ${row.pageName || row.module}`,
-                                  content: isRTL
-                                    ? `المشروع: ${row.module}\nالصفحة: ${row.pageName || "-"}\nالسيناريو: ${row.scenario}\nالنتيجة المتوقعة: ${row.expectedResult}\nالنتيجة الفعلية: ${row.actualResult || "-"}`
-                                    : `Project: ${row.module}\nPage: ${row.pageName || "-"}\nScenario: ${row.scenario}\nExpected: ${row.expectedResult}\nActual: ${row.actualResult || "-"}`,
-                                })}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="p-1.5 hover:bg-[#eff0fc] rounded-lg text-[#5059c9] hover:text-[#3b429f] transition-colors cursor-pointer"
-                                title={
-                                  isRTL
-                                    ? `جدولة اجتماع عبر Microsoft Teams بخصوص ${row.testId}`
-                                    : `Schedule Microsoft Teams Meeting for ${row.testId}`
-                                }
-                              >
-                                <Video className="w-4 h-4" />
-                              </a>
-                            </>
+                            <a
+                              href={getTeamsCallUrl(row.tester.email)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1.5 hover:bg-[#eff0fc] rounded-lg text-[#5059c9] hover:text-[#3b429f] transition-colors cursor-pointer"
+                              title={
+                                isRTL
+                                  ? `اتصال عبر Microsoft Teams مع ${row.tester.name || row.tester.email}`
+                                  : `Microsoft Teams Call with ${row.tester.name || row.tester.email}`
+                              }
+                            >
+                              <Phone className="w-4 h-4" />
+                            </a>
                           )}
 
                           {/* Delete Button (Opens custom in-app modal, NO window.confirm) */}
@@ -1563,33 +1540,15 @@ export default function TestCasesTable({
                   </span>
                 </Link>
 
-                <a
-                  href={getTeamsMeetingUrl({
-                    attendees: selectedItem.tester?.email || "",
-                    subject: isRTL
-                      ? `[اجتماع خلل برمجي] ${selectedItem.testId.replace(/^TC-/, "BUG-")} - ${selectedItem.pageName || selectedItem.module}`
-                      : `[Defect Review Meeting] ${selectedItem.testId.replace(/^TC-/, "BUG-")} - ${selectedItem.pageName || selectedItem.module}`,
-                    content: isRTL
-                      ? `المشروع: ${selectedItem.module}\nالصفحة: ${selectedItem.pageName || "-"}\nالسيناريو: ${selectedItem.scenario}\nالنتيجة المتوقعة: ${selectedItem.expectedResult}\nالنتيجة الفعلية: ${selectedItem.actualResult || "-"}`
-                      : `Project: ${selectedItem.module}\nPage: ${selectedItem.pageName || "-"}\nScenario: ${selectedItem.scenario}\nExpected: ${selectedItem.expectedResult}\nActual: ${selectedItem.actualResult || "-"}`,
-                  })}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-[#5059c9] hover:bg-[#3b429f] text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
-                >
-                  <Video className="w-4 h-4" />
-                  <span>{isRTL ? "اجتماع عبر Teams" : "Teams Meeting"}</span>
-                </a>
-
                 {selectedItem.tester?.email && (
                   <a
                     href={getTeamsCallUrl(selectedItem.tester.email)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-[#eff0fc] hover:bg-[#5059c9] text-[#5059c9] hover:text-white border border-[#d6d8f8] text-xs font-bold transition-all shadow-xs cursor-pointer"
+                    className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-[#5059c9] hover:bg-[#3b429f] text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
                   >
                     <Phone className="w-4 h-4" />
-                    <span>{isRTL ? "مكالمة Teams" : "Teams Call"}</span>
+                    <span>{isRTL ? "مكالمة عبر Teams" : "Teams Call"}</span>
                   </a>
                 )}
               </div>
