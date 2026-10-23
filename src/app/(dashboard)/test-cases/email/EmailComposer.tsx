@@ -28,6 +28,8 @@ import {
   Plus,
   Sparkles,
   Users,
+  Phone,
+  Video,
 } from "lucide-react";
 import { getUserData } from "@/components/Navbar/navbar.action";
 import { Button } from "@/components/ui/button";
@@ -46,6 +48,7 @@ import {
 import { useLanguage } from "@/context/language-context";
 import type { TestCaseItem } from "../test-cases.interface";
 import toast from "react-hot-toast";
+import { getTeamsCallUrl, getTeamsMeetingUrl } from "@/lib/teams";
 
 interface EmailComposerProps {
   initialTestCase: TestCaseItem | null;
@@ -791,6 +794,16 @@ function EmailRecipientInput({
             >
               <Mail className="w-3 h-3 text-[#00aee0] shrink-0" />
               <span className="font-mono text-[11px]">{email}</span>
+              <a
+                href={getTeamsCallUrl(email)}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="w-4 h-4 rounded-full flex items-center justify-center text-[#5059c9] hover:text-white hover:bg-[#5059c9] transition-colors cursor-pointer shrink-0"
+                title={isRTL ? `اتصال عبر Microsoft Teams مع ${email}` : `Microsoft Teams Call with ${email}`}
+              >
+                <Phone className="w-2.5 h-2.5" />
+              </a>
               <button
                 type="button"
                 onClick={(e) => {
@@ -1641,6 +1654,57 @@ export default function EmailComposer({
                         <Copy className="w-4 h-4" />
                       )}
                       <span>{t("email_copy_content_btn")}</span>
+                    </Button>
+                  </div>
+
+                  {/* Microsoft Teams Quick Actions Row */}
+                  <div className="pt-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        const allRecipients = Array.from(new Set([...toEmails, ...ccEmails]));
+                        const url = getTeamsMeetingUrl({
+                          attendees: allRecipients,
+                          subject,
+                          content,
+                        });
+                        window.open(url, "_blank", "noopener,noreferrer");
+                      }}
+                      className="h-11 flex-1 rounded-xl text-xs font-bold border-[#d6d8f8] bg-[#eff0fc] hover:bg-[#5059c9] text-[#5059c9] hover:text-white transition-all cursor-pointer gap-2 shadow-2xs"
+                    >
+                      <Video className="w-4 h-4" />
+                      <span>
+                        {isRTL
+                          ? "جدولة اجتماع عبر Microsoft Teams"
+                          : "Schedule Microsoft Teams Meeting"}
+                      </span>
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        const allRecipients = Array.from(new Set([...toEmails, ...ccEmails]));
+                        if (allRecipients.length === 0) {
+                          toast.error(
+                            isRTL
+                              ? "يرجى اختيار مستلم واحد على الأقل لإجراء مكالمة Teams"
+                              : "Please select at least one recipient to start a Teams call"
+                          );
+                          return;
+                        }
+                        const url = getTeamsCallUrl(allRecipients);
+                        window.open(url, "_blank", "noopener,noreferrer");
+                      }}
+                      className="h-11 flex-1 rounded-xl text-xs font-bold border-[#d6d8f8] bg-white hover:bg-[#5059c9] text-[#5059c9] hover:text-white transition-all cursor-pointer gap-2 shadow-2xs"
+                    >
+                      <Phone className="w-4 h-4" />
+                      <span>
+                        {isRTL
+                          ? "بدء مكالمة عبر Microsoft Teams"
+                          : "Start Microsoft Teams Call"}
+                      </span>
                     </Button>
                   </div>
 

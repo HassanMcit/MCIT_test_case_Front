@@ -22,6 +22,9 @@ import {
   UserCheck,
   Info,
   ExternalLink,
+  Phone,
+  Video,
+  MessageSquare,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +32,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLanguage } from "@/context/language-context";
 import { cn } from "@/lib/utils";
+import { getTeamsCallUrl, getTeamsChatUrl, getTeamsMeetingUrl } from "@/lib/teams";
 import toast from "react-hot-toast";
 import { deleteThisUser, getAllUsers } from "./user.action";
 import { GetAllUsersResponse } from "./user.interface";
@@ -504,44 +508,100 @@ export default function UsersManagementPage() {
                         </div>
                       </td>
 
-                      {/* Actions: Red Delete Button (or Disabled Lock for Admin) */}
+                      {/* Actions: Microsoft Teams (Call / Meeting / Chat) + Delete */}
                       <td className="py-4 px-6 text-center">
-                        {isAdmin ? (
-                          // STRICT SECURITY: Admin is protected and CANNOT be deleted
-                          <div className="relative group/tooltip inline-block">
-                            <Button
-                              disabled
-                              size="sm"
-                              className="h-8 px-2.5 bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed rounded-lg opacity-70 gap-1 text-xs"
-                            >
-                              <Lock className="w-3.5 h-3.5 text-slate-400" />
-                              <span className="text-[11px]">
-                                {isRTL ? "محمي" : "Locked"}
-                              </span>
-                            </Button>
-                            {/* Hover tooltip explaining admin protection */}
-                            <div
-                              className={cn(
-                                "absolute bottom-full mb-2 hidden group-hover/tooltip:block z-50 w-56 p-2 bg-slate-900 text-white text-[11px] rounded-lg shadow-lg text-center leading-tight pointer-events-none",
-                                isRTL ? "right-1/2 translate-x-1/2" : "left-1/2 -translate-x-1/2"
-                              )}
-                            >
-                              {t("users_delete_tooltip_admin")}
-                              <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
+                        <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                          {user.email && (
+                            <>
+                              {/* Microsoft Teams Call */}
+                              <a
+                                href={getTeamsCallUrl(user.email)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-[#eff0fc] hover:bg-[#5059c9] text-[#5059c9] hover:text-white border border-[#d6d8f8] hover:border-[#5059c9] transition-all shadow-2xs"
+                                title={
+                                  isRTL
+                                    ? `اتصال عبر Microsoft Teams مع ${user.name}`
+                                    : `Microsoft Teams Call with ${user.name}`
+                                }
+                              >
+                                <Phone className="w-3.5 h-3.5" />
+                              </a>
+
+                              {/* Microsoft Teams Meeting */}
+                              <a
+                                href={getTeamsMeetingUrl({
+                                  attendees: user.email,
+                                  subject: isRTL
+                                    ? `اجتماع جودة البرمجيات - ${user.name}`
+                                    : `QA Sync Meeting - ${user.name}`,
+                                })}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-[#eff0fc] hover:bg-[#5059c9] text-[#5059c9] hover:text-white border border-[#d6d8f8] hover:border-[#5059c9] transition-all shadow-2xs"
+                                title={
+                                  isRTL
+                                    ? `جدولة اجتماع عبر Microsoft Teams مع ${user.name}`
+                                    : `Schedule Microsoft Teams Meeting with ${user.name}`
+                                }
+                              >
+                                <Video className="w-3.5 h-3.5" />
+                              </a>
+
+                              {/* Microsoft Teams Chat */}
+                              <a
+                                href={getTeamsChatUrl(user.email)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-[#eff0fc] hover:bg-[#5059c9] text-[#5059c9] hover:text-white border border-[#d6d8f8] hover:border-[#5059c9] transition-all shadow-2xs"
+                                title={
+                                  isRTL
+                                    ? `محادثة عبر Microsoft Teams مع ${user.name}`
+                                    : `Microsoft Teams Chat with ${user.name}`
+                                }
+                              >
+                                <MessageSquare className="w-3.5 h-3.5" />
+                              </a>
+                            </>
+                          )}
+
+                          {isAdmin ? (
+                            // STRICT SECURITY: Admin is protected and CANNOT be deleted
+                            <div className="relative group/tooltip inline-block">
+                              <Button
+                                disabled
+                                size="sm"
+                                className="h-8 px-2.5 bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed rounded-lg opacity-70 gap-1 text-xs"
+                              >
+                                <Lock className="w-3.5 h-3.5 text-slate-400" />
+                                <span className="text-[11px]">
+                                  {isRTL ? "محمي" : "Locked"}
+                                </span>
+                              </Button>
+                              {/* Hover tooltip explaining admin protection */}
+                              <div
+                                className={cn(
+                                  "absolute bottom-full mb-2 hidden group-hover/tooltip:block z-50 w-56 p-2 bg-slate-900 text-white text-[11px] rounded-lg shadow-lg text-center leading-tight pointer-events-none",
+                                  isRTL ? "right-1/2 translate-x-1/2" : "left-1/2 -translate-x-1/2"
+                                )}
+                              >
+                                {t("users_delete_tooltip_admin")}
+                                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
+                              </div>
                             </div>
-                          </div>
-                        ) : (
-                          // RED DELETE BUTTON for regular users & testers
-                          <Button
-                            type="button"
-                            onClick={() => initiateDelete(user)}
-                            className="h-8 px-2.5 bg-red-50 hover:bg-red-600 text-red-600 hover:text-white border border-red-200 hover:border-red-600 transition-all rounded-lg cursor-pointer shadow-xs gap-1 text-xs font-semibold"
-                            title={t("users_delete_btn")}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            <span>{t("users_delete_btn")}</span>
-                          </Button>
-                        )}
+                          ) : (
+                            // RED DELETE BUTTON for regular users & testers
+                            <Button
+                              type="button"
+                              onClick={() => initiateDelete(user)}
+                              className="h-8 px-2.5 bg-red-50 hover:bg-red-600 text-red-600 hover:text-white border border-red-200 hover:border-red-600 transition-all rounded-lg cursor-pointer shadow-xs gap-1 text-xs font-semibold"
+                              title={t("users_delete_btn")}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>{t("users_delete_btn")}</span>
+                            </Button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
