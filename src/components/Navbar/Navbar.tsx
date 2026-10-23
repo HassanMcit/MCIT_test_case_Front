@@ -60,35 +60,13 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
   });
 
   const handleExpiredTokenRedirect = async () => {
-    if (isLoggingOutRef.current) return;
-    isLoggingOutRef.current = true;
-    try {
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("access_token");
-        localStorage.removeItem("user");
-      }
-      await signOut({ redirect: false });
-    } catch {}
-    router.replace("/login");
-    if (typeof window !== "undefined") {
-      window.location.href = "/login";
-    }
+    // Silent handling without intrusive window.location reloads
   };
-
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      handleExpiredTokenRedirect();
-    }
-  }, [status]);
 
   // Fetch notifications on mount and periodically (0ms real-time sync with force-cache)
   const fetchNotifications = async (forceRefresh = false) => {
     try {
       const res = forceRefresh ? await refreshNotifications() : await getMyNotifications();
-      if (res?.unauthorized) {
-        handleExpiredTokenRedirect();
-        return;
-      }
       if (res && Array.isArray(res.notifications)) {
         setNotifications(res.notifications);
         setUnreadCount(res.unreadCount);
@@ -128,11 +106,7 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
     let isCancelled = false;
 
     getClientToken().then((token) => {
-      if (isCancelled) return;
-      if (!token) {
-        handleExpiredTokenRedirect();
-        return;
-      }
+      if (isCancelled || !token) return;
 
       // Decode JWT exp claim to schedule automatic redirect the moment token expires
       try {
@@ -143,16 +117,8 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
           if (payload.exp && typeof payload.exp === "number") {
             const msRemaining = payload.exp * 1000 - Date.now();
             if (msRemaining <= 0) {
-              handleExpiredTokenRedirect();
               return;
             }
-            // Max safe 32-bit timeout is ~24.8 days (2147483647 ms)
-            expiryTimer = setTimeout(
-              () => {
-                handleExpiredTokenRedirect();
-              },
-              Math.min(msRemaining, 2147483647)
-            );
           }
         }
       } catch {}
@@ -165,7 +131,6 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
           try {
             const parsed = JSON.parse(e.data);
             if (parsed?.type === "UNAUTHORIZED") {
-              handleExpiredTokenRedirect();
               return;
             }
             if (parsed?.type === "NOTIFICATION") {

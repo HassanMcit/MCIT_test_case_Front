@@ -31,6 +31,5 @@ export async function addNewProject(data: {
   revalidatePath("/test-cases");
   revalidatePath("/dashboard");
   revalidatePath("/users");
-  revalidatePath("/", "layout");
   return userData;
 }

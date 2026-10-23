@@ -64,7 +64,6 @@ export async function assignProjectToUser(userId: number, projectId: number) {
     revalidatePath("/test-cases");
     revalidatePath("/dashboard");
     revalidatePath("/users");
-    revalidatePath("/", "layout");
 
     return { success: true, message: data.message };
   } catch (error: any) {
@@ -99,7 +98,6 @@ export async function unassignProjectFromUser(userId: number, projectId: number)
     revalidatePath("/test-cases");
     revalidatePath("/dashboard");
     revalidatePath("/users");
-    revalidatePath("/", "layout");
 
     return { success: true, message: data.message };
   } catch (error: any) {

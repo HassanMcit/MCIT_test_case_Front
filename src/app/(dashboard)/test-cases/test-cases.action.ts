@@ -101,7 +101,6 @@ export async function deleteTestCase(id: number): Promise<{ success: boolean; me
     revalidatePath("/projects");
     revalidatePath("/dashboard");
     revalidatePath("/users");
-    revalidatePath("/", "layout");
 
     return {
       success: true,
@@ -173,7 +172,6 @@ export async function updateTestCase(
     revalidatePath("/projects");
     revalidatePath("/dashboard");
     revalidatePath("/users");
-    revalidatePath("/", "layout");
 
     return {
       success: true,

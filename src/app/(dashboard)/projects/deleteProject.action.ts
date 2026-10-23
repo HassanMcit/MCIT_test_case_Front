@@ -7,13 +7,14 @@ export async function deleteProject(id: number) {
   try {
     const token = await getUserToken();
     if (!token) {
-      return { success: false, message: "غير مصرح لك بالعملية (Unauthorized)" };
+      return { success: false, message: "يرجى تسجيل الدخول أولاً" };
     }
 
     const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/projects/${id}`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
       },
       cache: "force-cache",
     });
@@ -21,10 +22,10 @@ export async function deleteProject(id: number) {
     const result = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      const errorMsg = Array.isArray(result?.message)
-        ? result.message.join(", ")
-        : result?.message || "فشل حذف المشروع";
-      return { success: false, message: errorMsg };
+      return {
+        success: false,
+        message: result?.message || "فشل حذف المشروع",
+      };
     }
 
     updateTag("projects");
@@ -38,7 +39,6 @@ export async function deleteProject(id: number) {
     revalidatePath("/test-cases");
     revalidatePath("/dashboard");
     revalidatePath("/users");
-    revalidatePath("/", "layout");
 
     return { success: true, message: result?.message || "تم حذف المشروع بنجاح" };
   } catch (err: any) {

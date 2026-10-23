@@ -3,25 +3,26 @@
 import { getUserToken } from "@/app/myUtil";
 import { revalidatePath, updateTag } from "next/cache";
 
-export interface UpdateProjectInput {
-  name: string;
-  description?: string;
-  environment: "production" | "staging";
-  status: "active" | "archived";
-}
-
-export async function updateProject(id: number, data: UpdateProjectInput) {
+export async function updateProject(
+  id: number,
+  data: {
+    name?: string;
+    description?: string;
+    environment?: string;
+    status?: string;
+  }
+) {
   try {
     const token = await getUserToken();
     if (!token) {
-      return { success: false, message: "غير مصرح لك بالعملية (Unauthorized)" };
+      return { success: false, message: "يرجى تسجيل الدخول أولاً" };
     }
 
     const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/projects/${id}`, {
       method: "PATCH",
       headers: {
-        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(data),
       cache: "force-cache",
@@ -31,7 +32,7 @@ export async function updateProject(id: number, data: UpdateProjectInput) {
 
     if (!response.ok) {
       const errorMsg = Array.isArray(result.message)
-        ? result.message.join(", ")
+        ? result.message.join(" - ")
         : result.message || "Failed to update project";
       return { success: false, message: errorMsg };
     }
@@ -47,7 +48,6 @@ export async function updateProject(id: number, data: UpdateProjectInput) {
     revalidatePath("/test-cases");
     revalidatePath("/dashboard");
     revalidatePath("/users");
-    revalidatePath("/", "layout");
     return { success: true, data: result };
   } catch (err: any) {
     return {

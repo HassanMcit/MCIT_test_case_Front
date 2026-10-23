@@ -36,7 +36,6 @@ export async function refreshNotifications(): Promise<NotificationsResponse> {
 export async function revalidateNotificationsTag() {
   try {
     updateTag("notifications");
-    revalidatePath("/", "layout");
     return { success: true };
   } catch {
     return { success: false };
@@ -46,7 +45,7 @@ export async function revalidateNotificationsTag() {
 export async function getMyNotifications(): Promise<NotificationsResponse> {
   try {
     const token = await getUserToken();
-    if (!token) return { notifications: [], unreadCount: 0, unauthorized: true };
+    if (!token) return { notifications: [], unreadCount: 0 };
 
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_BASE_URL}/api/users/notifications`,
@@ -96,7 +95,6 @@ export async function markNotificationAsRead(id: number) {
     );
 
     updateTag("notifications");
-    revalidatePath("/", "layout");
     return { success: true };
   } catch {
     return { success: false };
@@ -120,7 +118,6 @@ export async function markAllNotificationsAsRead() {
     );
 
     updateTag("notifications");
-    revalidatePath("/", "layout");
     return { success: true };
   } catch {
     return { success: false };
