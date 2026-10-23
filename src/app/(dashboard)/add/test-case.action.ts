@@ -3,6 +3,7 @@
 import { getUserToken } from "@/app/myUtil";
 import type { AddTestCaseResponse, TestCaseFormValues } from "./test-case-interface";
 import { revalidatePath, updateTag } from "next/cache";
+import { recordServerAuditLog } from "@/lib/audit-logger";
 
 export async function addNewTestCase(data: TestCaseFormValues) {
   try {
@@ -52,6 +53,14 @@ export async function addNewTestCase(data: TestCaseFormValues) {
     const responseData: Partial<AddTestCaseResponse> = await response.json().catch(() => ({}));
 
     if (response.ok) {
+      recordServerAuditLog({
+        action: "إضافة حالة اختبار جديدة",
+        category: "TEST_CASES",
+        description: `تمت إضافة حالة الاختبار (${data.testId || "جديدة"}) في مشروع (${data.module || ""})`,
+        method: "POST",
+        endpoint: "/add",
+      });
+
       updateTag("test-cases");
       updateTag("dashboard-stats");
       updateTag("dashboard");
