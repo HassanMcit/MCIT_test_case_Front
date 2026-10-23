@@ -3,7 +3,6 @@
 import { getUserToken, getCurrentUserSession } from "@/app/myUtil";
 import { revalidatePath, updateTag } from "next/cache";
 import type { TestCaseItem, TestCaseListResponse, TestCaseQueryParams } from "./test-cases.interface";
-import { recordServerAuditLog } from "@/lib/audit-logger";
 
 export async function getTestCases(params?: TestCaseQueryParams): Promise<TestCaseListResponse> {
   try {
@@ -93,14 +92,6 @@ export async function deleteTestCase(id: number): Promise<{ success: boolean; me
       throw new Error(data.message || "فشل حذف حالة الاختبار");
     }
 
-    recordServerAuditLog({
-      action: "حذف حالة اختبار",
-      category: "TEST_CASES",
-      description: `تم حذف حالة الاختبار رقم #${id}`,
-      method: "DELETE",
-      endpoint: `/api/test-cases/${id}`,
-    });
-
     updateTag("test-cases");
     updateTag("dashboard-stats");
     updateTag("dashboard");
@@ -172,14 +163,6 @@ export async function updateTestCase(
         : responseData.message || "فشل تحديث حالة الاختبار";
       throw new Error(errorMsg);
     }
-
-    recordServerAuditLog({
-      action: "تعديل حالة اختبار",
-      category: "TEST_CASES",
-      description: `تم تعديل حالة الاختبار رقم #${id}`,
-      method: "PATCH",
-      endpoint: `/api/test-cases/${id}`,
-    });
 
     updateTag("test-cases");
     updateTag("dashboard-stats");
