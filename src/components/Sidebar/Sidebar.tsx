@@ -31,6 +31,9 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const isRTL = dir === "rtl";
   const { data: session } = useSession();
   const isAdmin = session?.user?.role === "admin";
+  const isHassan =
+    session?.user?.email?.trim().toLowerCase() === "h.ali@mcit.gov.eg" ||
+    String(session?.user?.id) === "1";
 
   const [stats, setStats] = useState<DashboardStatsResponse>({
     total: 0,
@@ -229,6 +232,20 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
                   <KeyRound className="w-4 h-4" />
                   <span className="truncate">{t("reset_codes")}</span>
                 </Link>
+
+                {isHassan && (
+                  <Link
+                    href="/devices"
+                    onClick={onClose}
+                    className={cn(
+                      "sidebar-nav-link border border-indigo-200/80 bg-indigo-50/50 text-indigo-700 hover:bg-indigo-100/70 font-semibold",
+                      (pathname === "/devices" || pathname.startsWith("/devices/")) && "active bg-indigo-600 text-white"
+                    )}
+                  >
+                    <ShieldCheck className="w-4 h-4 text-indigo-600" />
+                    <span className="truncate">{isRTL ? "مراقبة الأجهزة والدخول" : "Devices & Security"}</span>
+                  </Link>
+                )}
               </nav>
             </div>
           )}

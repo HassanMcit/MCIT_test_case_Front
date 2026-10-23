@@ -36,7 +36,6 @@ import { getTeamsCallUrl, getTeamsChatUrl, getTeamsMeetingUrl } from "@/lib/team
 import toast from "react-hot-toast";
 import { deleteThisUser, getAllUsers } from "./user.action";
 import { GetAllUsersResponse } from "./user.interface";
-import LoginSessionsSection from "./LoginSessionsSection";
 
 // User entity interface matching backend & schema
 
@@ -575,9 +574,6 @@ export default function UsersManagementPage() {
           </table>
         </div>
       </Card>
-
-      {/* ── Login Sessions & Active Devices Audit ─────────────── */}
-      <LoginSessionsSection currentUserId={Number((session?.user as any)?.id || 1)} />
 
       {/* ── Deletion Confirmation Modal Dialog ──────────────────── */}
       {userToDelete && (
