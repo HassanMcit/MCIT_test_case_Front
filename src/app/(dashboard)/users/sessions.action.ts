@@ -50,10 +50,22 @@ export async function getLoginSessions(): Promise<LoginSessionItem[]> {
 
 export async function revokeLoginSession(sessionId: string): Promise<{ success: boolean; message: string }> {
   try {
-    await pool.query(
-      `UPDATE user_login_sessions SET "isActive" = FALSE, "revokedAt" = NOW() WHERE "sessionId" = $1`,
+    const res = await pool.query(
+      `UPDATE user_login_sessions 
+       SET "isActive" = FALSE, "revokedAt" = NOW() 
+       WHERE "sessionId" = $1 
+       RETURNING "userId", "userName", email`,
       [sessionId]
     );
+
+    const revokedUser = res.rows[0];
+    if (revokedUser?.userId) {
+      const nowInSeconds = Math.floor(Date.now() / 1000);
+      await pool.query(
+        `UPDATE users SET "minTokenIat" = $1 WHERE id = $2`,
+        [nowInSeconds, revokedUser.userId]
+      );
+    }
 
     // Also record this security revocation in audit logs
     try {
@@ -63,7 +75,7 @@ export async function revokeLoginSession(sessionId: string): Promise<{ success: 
         ) VALUES (
           'تسجيل خروج جهاز عن بُعد', 'SECURITY', $1, 'REVOKE', '/devices', 'System Security', '02:00:00:00:00:01', 'HQ', 'Security Console', 'success', NOW()
         )`,
-        [`تم إنهاء جلسة الجهاز (${sessionId}) عن بُعد بواسطة مدير النظام`]
+        [`تم إنهاء جلسة المستخدم (${revokedUser?.userName || revokedUser?.email || sessionId}) عن بُعد وتحديث معيار الأمان`]
       );
     } catch {}
 

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import MySession from "@/components/MySession/MySession";
 import Navbar from "@/components/Navbar/Navbar";
 import Sidebar from "@/components/Sidebar/Sidebar";
+import SessionWatcher from "@/components/SessionWatcher";
 import { useLanguage } from "@/context/language-context";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +26,7 @@ export default function DashboardLayout({
 
   return (
     <MySession>
+      <SessionWatcher />
       <div className="min-h-screen bg-[#f8f9ff] text-[#0b1c30] antialiased overflow-x-hidden">
         {/* Mobile Backdrop Overlay */}
         {isSidebarOpen && (

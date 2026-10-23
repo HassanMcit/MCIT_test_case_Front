@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Mail, Lock, Eye, EyeOff, Globe } from "lucide-react";
@@ -46,6 +46,17 @@ function LoginFormInner() {
     mode: "all",
     resolver: zodResolver(getLoginSchema(t)),
   });
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.search.includes("revoked=true")) {
+      toast.error(
+        isRTL
+          ? "تم إنهاء جلستك عن بُعد بواسطة مسؤول النظام، يرجى تسجيل الدخول مرة أخرى"
+          : "Your session was remotely revoked by system administrator. Please log in again.",
+        { id: "remote-revocation-toast", duration: 5000 }
+      );
+    }
+  }, [isRTL]);
 
   
 

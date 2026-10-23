@@ -1,5 +1,6 @@
 import { decode } from "next-auth/jwt";
 import { cookies } from "next/headers";
+import { pool } from "@/lib/db";
 
 const SESSION_COOKIE_NAMES = [
   "__Secure-authjs.session-token",
@@ -28,7 +29,7 @@ function readFullCookie(cookieStore: any, baseName: string): string | null {
   return assembled || null;
 }
 
-function isBackendJwtExpired(rawJwt?: string | null): boolean {
+async function isBackendJwtExpired(rawJwt?: string | null, sid?: string | null): Promise<boolean> {
   if (!rawJwt || typeof rawJwt !== "string") return true;
   try {
     const parts = rawJwt.split(".");
@@ -39,14 +40,37 @@ function isBackendJwtExpired(rawJwt?: string | null): boolean {
         return true;
       }
     }
-    // Remote revocation check: any session for user 1 issued before minTokenIat
-    const userId = Number(payload.id || payload.sub || payload.userId);
-    if (userId === 1) {
-      const iat = Number(payload.iat || 0);
-      if (iat > 0 && iat < 1792792395) {
-        return true;
-      }
+
+    // 1. Check specific session active status if sid is present
+    const effectiveSid = sid || payload.sid;
+    if (effectiveSid) {
+      try {
+        const sessRes = await pool.query(
+          'SELECT "isActive" FROM user_login_sessions WHERE "sessionId" = $1',
+          [effectiveSid]
+        );
+        if (sessRes.rows[0] && sessRes.rows[0].isActive === false) {
+          return true; // Force logged out
+        }
+      } catch {}
     }
+
+    // 2. Remote revocation check: check user's minTokenIat in DB
+    const userId = Number(payload.id || payload.sub || payload.userId);
+    if (userId) {
+      try {
+        const userRes = await pool.query(
+          'SELECT "minTokenIat" FROM users WHERE id = $1',
+          [userId]
+        );
+        const minIat = Number(userRes.rows[0]?.minTokenIat || 0);
+        const iat = Number(payload.iat || 0);
+        if (iat > 0 && minIat > 0 && iat < minIat) {
+          return true; // Token invalidated
+        }
+      } catch {}
+    }
+
     return false;
   } catch {
     return true;
@@ -83,7 +107,9 @@ async function getDecodedToken() {
             (decoded.token as string) ||
             null;
 
-          if (!credentialToken || isBackendJwtExpired(credentialToken)) {
+          const sid = (decoded.sid as string) || null;
+
+          if (!credentialToken || (await isBackendJwtExpired(credentialToken, sid))) {
             return null;
           }
 
