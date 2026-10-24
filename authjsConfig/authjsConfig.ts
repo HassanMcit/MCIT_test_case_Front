@@ -20,6 +20,7 @@ declare module "next-auth" {
       sid?: string;
       loginAt?: number;
       loginDate?: string;
+      isRevoked?: boolean;
     } & import("next-auth").DefaultSession["user"];
   }
 }
@@ -137,13 +138,47 @@ export const authConfig: NextAuthConfig = {
       return token;
     },
 
-    session: function ({ session, token }) {
+    session: async function ({ session, token }) {
       session.user.role = token.role as string;
       session.user.image = (token.picture as string) || session.user?.image;
       session.user.loginAt = token.loginAt as number;
       session.user.loginDate = token.loginDate as string;
       session.user.id = token.id as string;
       session.user.sid = token.sid as string | undefined;
+
+      // Real-time remote revocation check
+      const userId = Number(token.id || token.sub);
+      const tokenIat = Number(token.iat || 0);
+      const sid = token.sid as string | undefined;
+
+      let isRevoked = false;
+
+      if (sid) {
+        try {
+          const sessRes = await pool.query(
+            'SELECT "isActive" FROM user_login_sessions WHERE "sessionId" = $1',
+            [sid]
+          );
+          if (sessRes.rows[0] && sessRes.rows[0].isActive === false) {
+            isRevoked = true;
+          }
+        } catch {}
+      }
+
+      if (!isRevoked && userId) {
+        try {
+          const userRes = await pool.query(
+            'SELECT "minTokenIat" FROM users WHERE id = $1',
+            [userId]
+          );
+          const minIat = Number(userRes.rows[0]?.minTokenIat || 0);
+          if (minIat > 0 && tokenIat > 0 && tokenIat < minIat) {
+            isRevoked = true;
+          }
+        } catch {}
+      }
+
+      session.user.isRevoked = isRevoked;
       return session;
     },
   },
