@@ -3,6 +3,7 @@
 import { getUserToken } from "@/app/myUtil";
 import { revalidatePath, updateTag } from "next/cache";
 import { recordSystemAuditLog } from "@/lib/audit";
+import { pool } from "@/lib/db";
 
 export async function updateProject(
   id: number,
@@ -11,6 +12,7 @@ export async function updateProject(
     description?: string;
     environment?: string;
     status?: string;
+    application?: string;
   }
 ) {
   try {
@@ -36,6 +38,12 @@ export async function updateProject(
         ? result.message.join(" - ")
         : result.message || "Failed to update project";
       return { success: false, message: errorMsg };
+    }
+
+    if (data.application !== undefined) {
+      try {
+        await pool.query('UPDATE projects SET application = $1 WHERE id = $2', [data.application, id]);
+      } catch {}
     }
 
     updateTag("projects");

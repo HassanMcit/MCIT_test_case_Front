@@ -69,6 +69,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 const projectSchema = z.object({
   name: z.string().min(1, "proj_req_name"),
   description: z.string().min(1, "proj_req_desc"),
+  application: z.string().optional(),
   environment: z.string().min(1, "proj_req_env"),
   status: z.string().min(1, "proj_req_status"),
 });
@@ -131,6 +132,7 @@ import { updateProject } from "./updateProject.action";
 import { deleteProject } from "./deleteProject.action";
 import { getProjects, ProjectApiItem } from "./getProjects.action";
 import { getAllTester } from "./getAllUsers.action";
+import type { QualityApplication } from "../quality/quality.interface";
 
 interface ProjectItem {
   id: number;
@@ -138,6 +140,7 @@ interface ProjectItem {
   nameEn: string;
   desc: string;
   descEn: string;
+  application?: string;
   icon: any;
   env: "production" | "staging";
   status: "active" | "archived";
@@ -310,7 +313,13 @@ const initialProjects: ProjectItem[] = [
   },
 ];
 
-export default function ProjectsForm({ serverProjects }: { serverProjects?: ProjectApiItem[] }) {
+export default function ProjectsForm({
+  serverProjects,
+  allApplications = [],
+}: {
+  serverProjects?: ProjectApiItem[];
+  allApplications?: QualityApplication[];
+}) {
   const { dir, lang } = useLanguage();
   const router = useRouter();
 
@@ -382,6 +391,7 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
         nameEn: p.name,
         desc: p.description || (isRTL ? "لا يوجد وصف مسجل للمشروع" : "No project description provided"),
         descEn: p.description || "No project description provided",
+        application: p.application || undefined,
         icon: p.icon || icon,
         env: p.environment || p.env || "staging",
         status: p.status || "active",
@@ -423,6 +433,9 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
     null,
   );
 
+  const [addCustomApp, setAddCustomApp] = useState(false);
+  const [editApp, setEditApp] = useState("");
+  const [editCustomApp, setEditCustomApp] = useState(false);
   const [editName, setEditName] = useState("");
   const [editDesc, setEditDesc] = useState("");
   const [editEnv, setEditEnv] = useState<"production" | "staging">("staging");
@@ -433,6 +446,10 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
     if (editingProject) {
       setEditName(editingProject.name || "");
       setEditDesc(editingProject.desc || "");
+      const currentApp = editingProject.application || "";
+      setEditApp(currentApp);
+      const isKnownApp = allApplications.some((a) => a.name === currentApp);
+      setEditCustomApp(Boolean(currentApp && !isKnownApp));
       setEditEnv((editingProject.env as "production" | "staging") || "staging");
       setEditStatus((editingProject.status as "active" | "archived") || "active");
     }
@@ -456,6 +473,7 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
       const res = await updateProject(editingProject.id, {
         name: editName.trim(),
         description: editDesc.trim(),
+        application: editApp.trim() || undefined,
         environment: editEnv,
         status: editStatus,
       });
@@ -552,12 +570,14 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
     register,
     control,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<ProjectFormValues>({
     resolver: zodResolver(projectSchema),
     defaultValues: {
       name: "",
       description: "",
+      application: "",
       environment: "",
       status: "",
     },
@@ -592,6 +612,7 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
         reset({
           name: "",
           description: "",
+          application: "",
           environment: "",
           status: "",
         });
@@ -647,6 +668,7 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
                 reset({
                   name: "",
                   description: "",
+          application: "",
                   environment: "",
                   status: "",
                 });
@@ -898,9 +920,16 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
                           >
                             {isRTL ? p.name : p.nameEn}
                           </CardTitle>
-                          <span className="text-[11px] text-[#6d797f] truncate mt-0.5">
-                            {p.leadTester}
-                          </span>
+                          <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                            {p.application && (
+                              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-100/80 shrink-0">
+                                {p.application}
+                              </span>
+                            )}
+                            <span className="text-[11px] text-[#6d797f] truncate">
+                              {p.leadTester}
+                            </span>
+                          </div>
                         </div>
                       </div>
 
@@ -1150,9 +1179,16 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
                               <p.icon className={`w-4 h-4 ${p.color}`} />
                             </div>
                             <div className="flex flex-col">
-                              <span className="font-bold text-sm text-[#0b1c30]">
-                                {isRTL ? p.name : p.nameEn}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-sm text-[#0b1c30]">
+                                  {isRTL ? p.name : p.nameEn}
+                                </span>
+                                {p.application && (
+                                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-100/80">
+                                    {p.application}
+                                  </span>
+                                )}
+                              </div>
                               <span className="text-xs text-slate-500 line-clamp-1">
                                 {isRTL ? p.desc : p.descEn}
                               </span>
@@ -1411,6 +1447,87 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
                 {errors.name && (
                   <span className="text-xs text-red-500">
                     {translateError(errors.name.message)}
+                  </span>
+                )}
+              </div>
+
+              {/* Application (المنظومة / التطبيق) */}
+              <div className="space-y-1.5 min-w-0">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-bold text-slate-700">
+                    {isRTL ? "اسم التطبيق / المنظومة" : "Application"}
+                  </Label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAddCustomApp(!addCustomApp);
+                      setValue("application", "");
+                    }}
+                    className="text-[11px] text-indigo-600 hover:text-indigo-800 font-semibold cursor-pointer underline"
+                  >
+                    {addCustomApp
+                      ? (isRTL ? "اختر من القائمة" : "Select from list")
+                      : (isRTL ? "أو اكتب تطبيق مخصص" : "Or type custom")}
+                  </button>
+                </div>
+
+                {addCustomApp ? (
+                  <Input
+                    placeholder={
+                      isRTL
+                        ? "اكتب اسم التطبيق (مثال: بوابة الموظفين)"
+                        : "Type app name (e.g. Employee Portal)"
+                    }
+                    {...register("application")}
+                    className="h-10 text-sm"
+                  />
+                ) : (
+                  <Controller
+                    name="application"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        value={field.value || ""}
+                        onValueChange={(selectedVal) => {
+                          if (selectedVal === "__custom__") {
+                            setAddCustomApp(true);
+                            field.onChange("");
+                          } else {
+                            field.onChange(selectedVal);
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="h-10 text-xs">
+                          <SelectValue
+                            placeholder={
+                              isRTL ? "اختر التطبيق (اختياري)" : "Select Application (Optional)"
+                            }
+                          >
+                            {field.value || (isRTL ? "اختر التطبيق (اختياري)" : "Select Application (Optional)")}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent className="w-(--anchor-width) min-w-[260px] max-w-[90vw] p-1">
+                          {allApplications.map((app) => (
+                            <SelectItem key={app.id} value={app.name}>
+                              {isRTL && app.nameAr
+                                ? `${app.nameAr} (${app.name})`
+                                : app.name}
+                            </SelectItem>
+                          ))}
+                          <SelectItem
+                            value="__custom__"
+                            className="text-indigo-600 font-semibold border-t border-slate-100 mt-1"
+                          >
+                            {isRTL ? "+ كتابة اسم تطبيق آخر..." : "+ Enter custom application..."}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                )}
+                {errors.application && (
+                  <span className="text-xs text-red-500">
+                    {translateError(errors.application.message)}
                   </span>
                 )}
               </div>
@@ -1854,6 +1971,79 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
                   required
                   disabled={isUpdatingProject}
                 />
+              </div>
+
+              {/* Application (المنظومة / التطبيق) */}
+              <div className="space-y-1.5 min-w-0">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-bold text-slate-700">
+                    {isRTL ? "اسم التطبيق / المنظومة" : "Application"}
+                  </Label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditCustomApp(!editCustomApp);
+                      setEditApp("");
+                    }}
+                    className="text-[11px] text-indigo-600 hover:text-indigo-800 font-semibold cursor-pointer underline"
+                  >
+                    {editCustomApp
+                      ? (isRTL ? "اختر من القائمة" : "Select from list")
+                      : (isRTL ? "أو اكتب تطبيق مخصص" : "Or type custom")}
+                  </button>
+                </div>
+
+                {editCustomApp ? (
+                  <Input
+                    value={editApp}
+                    onChange={(e) => setEditApp(e.target.value)}
+                    placeholder={
+                      isRTL
+                        ? "اكتب اسم التطبيق (مثال: بوابة الموظفين)"
+                        : "Type app name (e.g. Employee Portal)"
+                    }
+                    className="h-10 text-sm"
+                    disabled={isUpdatingProject}
+                  />
+                ) : (
+                  <Select
+                    value={editApp || ""}
+                    onValueChange={(selectedVal) => {
+                      if (selectedVal === "__custom__") {
+                        setEditCustomApp(true);
+                        setEditApp("");
+                      } else {
+                        setEditApp(selectedVal || "");
+                      }
+                    }}
+                    disabled={isUpdatingProject}
+                  >
+                    <SelectTrigger className="h-10 text-xs">
+                      <SelectValue
+                        placeholder={
+                          isRTL ? "اختر التطبيق (اختياري)" : "Select Application (Optional)"
+                        }
+                      >
+                        {editApp || (isRTL ? "اختر التطبيق (اختياري)" : "Select Application (Optional)")}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="w-(--anchor-width) min-w-[260px] max-w-[90vw] p-1">
+                      {allApplications.map((app) => (
+                        <SelectItem key={app.id} value={app.name}>
+                          {isRTL && app.nameAr
+                            ? `${app.nameAr} (${app.name})`
+                            : app.name}
+                        </SelectItem>
+                      ))}
+                      <SelectItem
+                        value="__custom__"
+                        className="text-indigo-600 font-semibold border-t border-slate-100 mt-1"
+                      >
+                        {isRTL ? "+ كتابة اسم تطبيق آخر..." : "+ Enter custom application..."}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
 
               <div className="space-y-1.5">

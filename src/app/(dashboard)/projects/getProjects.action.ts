@@ -6,6 +6,7 @@ export interface ProjectApiItem {
   id: number;
   name: string;
   description: string | null;
+  application?: string | null;
   environment: "production" | "staging";
   status: "active" | "archived";
   createdAt: string;

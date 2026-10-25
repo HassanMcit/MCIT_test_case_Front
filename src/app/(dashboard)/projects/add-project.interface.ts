@@ -2,6 +2,7 @@ export interface AddProjectResponse {
   id: number
   name: string
   description: string
+  application?: string
   environment: string
   status: string
   createdAt: string
