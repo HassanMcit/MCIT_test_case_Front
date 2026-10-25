@@ -3,6 +3,7 @@
 import { getUserToken } from "@/app/myUtil";
 import { AddNewUserResponse, AddUserType } from "./adduser.interface";
 import { revalidatePath, updateTag } from "next/cache";
+import { recordSystemAuditLog } from "@/lib/audit";
 
 export async function addNewUser(data: AddUserType) {
   const token = await getUserToken();
@@ -26,5 +27,14 @@ export async function addNewUser(data: AddUserType) {
   revalidatePath("/users");
   revalidatePath("/assign-projects");
   revalidatePath("/dashboard");
+
+  recordSystemAuditLog({
+    action: "إضافة مستخدم جديد",
+    actionCategory: "USER_MANAGEMENT",
+    description: `إنشاء حساب مستخدم جديد (${data.name} - ${data.email}) بصلاحية (${data.role})`,
+    endpoint: "/api/users",
+    method: "POST",
+  }).catch(() => {});
+
   return true;
 }

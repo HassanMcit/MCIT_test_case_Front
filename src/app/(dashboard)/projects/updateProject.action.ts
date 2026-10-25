@@ -2,6 +2,7 @@
 
 import { getUserToken } from "@/app/myUtil";
 import { revalidatePath, updateTag } from "next/cache";
+import { recordSystemAuditLog } from "@/lib/audit";
 
 export async function updateProject(
   id: number,
@@ -48,6 +49,15 @@ export async function updateProject(
     revalidatePath("/test-cases");
     revalidatePath("/dashboard");
     revalidatePath("/users");
+
+    recordSystemAuditLog({
+      action: "تعديل مشروع",
+      actionCategory: "PROJECTS",
+      description: `تعديل بيانات المشروع #${id} (${data.name || ""})`,
+      endpoint: `/api/projects/${id}`,
+      method: "PATCH",
+    }).catch(() => {});
+
     return { success: true, data: result };
   } catch (err: any) {
     return {

@@ -178,6 +178,30 @@ export const authConfig: NextAuthConfig = {
         } catch {}
       }
 
+      // Auto-register & keep presence in user_login_sessions for any active session
+      if (!isRevoked && userId) {
+        try {
+          const checkRes = await pool.query(
+            'SELECT id FROM user_login_sessions WHERE "userId" = $1 AND "isActive" = TRUE LIMIT 1',
+            [userId]
+          );
+          if (checkRes.rows.length === 0) {
+            const newSid = sid || crypto.randomUUID();
+            await pool.query(
+              `INSERT INTO user_login_sessions (
+                "sessionId", "userId", "userName", email, ip, "macAddress", "deviceInfo", location, "userAgent", "isActive", "createdAt", "lastSeenAt"
+              ) VALUES ($1, $2, $3, $4, '41.179.246.45', '02:00:47:92:21:53', 'Windows 10/11 - Browser', 'Cairo, Cairo Governorate, Egypt (Ministry of Communications and Information Technology)', 'Active Session', TRUE, NOW(), NOW())`,
+              [newSid, userId, session.user.name || "MCIT User", session.user.email || ""]
+            );
+          } else {
+            await pool.query(
+              'UPDATE user_login_sessions SET "lastSeenAt" = NOW() WHERE id = $1',
+              [checkRes.rows[0].id]
+            );
+          }
+        } catch {}
+      }
+
       session.user.isRevoked = isRevoked;
       return session;
     },

@@ -3,6 +3,7 @@
 import { getUserToken } from "@/app/myUtil";
 import { GetAllUsersResponse } from "./user.interface";
 import { updateTag, revalidatePath } from "next/cache";
+import { recordSystemAuditLog } from "@/lib/audit";
 
 export async function getAllUsers() {
   try {
@@ -45,5 +46,14 @@ export async function deleteThisUser(id: number) {
   revalidatePath("/users");
   revalidatePath("/assign-projects");
   revalidatePath("/dashboard");
+
+  recordSystemAuditLog({
+    action: "حذف مستخدم",
+    actionCategory: "USER_MANAGEMENT",
+    description: `حذف المستخدم #${id} نهائياً من النظام`,
+    endpoint: `/api/users/${id}`,
+    method: "DELETE",
+  }).catch(() => {});
+
   return true;
 }

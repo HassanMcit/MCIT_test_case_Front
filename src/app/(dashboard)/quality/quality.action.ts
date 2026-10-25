@@ -3,6 +3,7 @@
 import { revalidatePath, updateTag } from "next/cache";
 import { pool } from "@/lib/db";
 import { getCurrentUserSession } from "@/app/myUtil";
+import { recordSystemAuditLog } from "@/lib/audit";
 import type {
   QualityApplication,
   QualityAssessment,
@@ -289,6 +290,14 @@ export async function submitQualityAssessment(payload: {
   revalidatePath("/quality");
   revalidatePath(`/quality/${appId}`);
 
+  recordSystemAuditLog({
+    action: "فحص جودة تطبيق",
+    actionCategory: "QUALITY",
+    description: `فحص جودة التطبيق #${appId} - نسبة النجاح: ${performanceScore}% - الحالة: ${status}`,
+    endpoint: `/api/quality/${appId}/checklist`,
+    method: "POST",
+  }).catch(() => {});
+
   return {
     success: true,
     performanceScore,
@@ -335,6 +344,14 @@ export async function registerQualityApplication(dto: CreateQualityAppDto) {
 
   updateTag("quality-apps");
   revalidatePath("/quality");
+
+  recordSystemAuditLog({
+    action: "إضافة تطبيق جودة جديد",
+    actionCategory: "QUALITY",
+    description: `إضافة تطبيق جودة (${dto.name}) لمصفوفة المراقبة`,
+    endpoint: "/api/quality",
+    method: "POST",
+  }).catch(() => {});
 
   return {
     success: true,
@@ -425,6 +442,14 @@ export async function updateQualityApplication(
   revalidatePath("/quality");
   revalidatePath(`/quality/${id}`);
 
+  recordSystemAuditLog({
+    action: "تعديل تطبيق جودة",
+    actionCategory: "QUALITY",
+    description: `تعديل بيانات تطبيق الجودة #${id} (${data.name || ""})`,
+    endpoint: `/api/quality/${id}`,
+    method: "PATCH",
+  }).catch(() => {});
+
   return {
     success: true,
     application: res.rows[0],
@@ -445,6 +470,14 @@ export async function deleteQualityApplication(id: number) {
 
   updateTag("quality-apps");
   revalidatePath("/quality");
+
+  recordSystemAuditLog({
+    action: "حذف تطبيق جودة",
+    actionCategory: "QUALITY",
+    description: `حذف تطبيق الجودة #${id}`,
+    endpoint: `/api/quality/${id}`,
+    method: "DELETE",
+  }).catch(() => {});
 
   return {
     success: true,

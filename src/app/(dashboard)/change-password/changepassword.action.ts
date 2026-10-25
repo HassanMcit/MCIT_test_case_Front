@@ -6,6 +6,7 @@ import {
   ChangePasswordActionResult,
   ChangePasswordForm,
 } from "./changepassword.interface";
+import { recordSystemAuditLog } from "@/lib/audit";
 
 export async function handleUserChangePassword(
   data: ChangePasswordForm
@@ -47,6 +48,15 @@ export async function handleUserChangePassword(
       updateTag("user-me");
       revalidatePath("/change-password");
       revalidatePath("/dashboard");
+
+      recordSystemAuditLog({
+        action: "تغيير كلمة المرور",
+        actionCategory: "SECURITY",
+        description: "تم تغيير كلمة المرور بنجاح للحساب",
+        endpoint: "/api/auth/change-password",
+        method: "POST",
+      }).catch(() => {});
+
       return {
         success: true,
         status: 200,

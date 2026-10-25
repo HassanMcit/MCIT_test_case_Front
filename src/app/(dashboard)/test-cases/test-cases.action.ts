@@ -3,6 +3,7 @@
 import { getUserToken, getCurrentUserSession } from "@/app/myUtil";
 import { revalidatePath, updateTag } from "next/cache";
 import type { TestCaseItem, TestCaseListResponse, TestCaseQueryParams } from "./test-cases.interface";
+import { recordSystemAuditLog } from "@/lib/audit";
 
 export async function getTestCases(params?: TestCaseQueryParams): Promise<TestCaseListResponse> {
   try {
@@ -102,6 +103,14 @@ export async function deleteTestCase(id: number): Promise<{ success: boolean; me
     revalidatePath("/dashboard");
     revalidatePath("/users");
 
+    recordSystemAuditLog({
+      action: "حذف حالة اختبار",
+      actionCategory: "TEST_CASES",
+      description: `حذف حالة الاختبار نهائياً #${id}`,
+      endpoint: `/api/test-cases/${id}`,
+      method: "DELETE",
+    }).catch(() => {});
+
     return {
       success: true,
       message: "تم حذف حالة الاختبار بنجاح",
@@ -172,6 +181,14 @@ export async function updateTestCase(
     revalidatePath("/projects");
     revalidatePath("/dashboard");
     revalidatePath("/users");
+
+    recordSystemAuditLog({
+      action: "تعديل حالة اختبار",
+      actionCategory: "TEST_CASES",
+      description: `تعديل حالة الاختبار #${id} ${data.testId ? `(${data.testId})` : ""} - الموديول: ${data.module || "بدون تغيير"} - الحالة: ${data.status || "بدون تغيير"}`,
+      endpoint: `/api/test-cases/${id}`,
+      method: "PATCH",
+    }).catch(() => {});
 
     return {
       success: true,

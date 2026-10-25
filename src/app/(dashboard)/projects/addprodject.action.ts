@@ -3,6 +3,7 @@
 import { getUserToken } from "@/app/myUtil";
 import { AddProjectResponse } from "./add-project.interface";
 import { revalidatePath, updateTag } from "next/cache";
+import { recordSystemAuditLog } from "@/lib/audit";
 
 export async function addNewProject(data: {
   name: string;
@@ -31,5 +32,16 @@ export async function addNewProject(data: {
   revalidatePath("/test-cases");
   revalidatePath("/dashboard");
   revalidatePath("/users");
+
+  if (response.ok) {
+    recordSystemAuditLog({
+      action: "إضافة مشروع جديد",
+      actionCategory: "PROJECTS",
+      description: `إضافة مشروع جديد (${data.name}) في بيئة (${data.environment || "production"})`,
+      endpoint: "/api/projects",
+      method: "POST",
+    }).catch(() => {});
+  }
+
   return userData;
 }

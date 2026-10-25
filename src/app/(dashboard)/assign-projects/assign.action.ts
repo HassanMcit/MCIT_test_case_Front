@@ -2,6 +2,7 @@
 
 import { getUserToken } from "@/app/myUtil";
 import { revalidatePath, updateTag } from "next/cache";
+import { recordSystemAuditLog } from "@/lib/audit";
 
 export async function fetchAssignData() {
   try {
@@ -65,6 +66,14 @@ export async function assignProjectToUser(userId: number, projectId: number) {
     revalidatePath("/dashboard");
     revalidatePath("/users");
 
+    recordSystemAuditLog({
+      action: "إسناد مشروع لمستخدم",
+      actionCategory: "PROJECTS",
+      description: `إسناد المستخدم #${userId} إلى المشروع #${projectId}`,
+      endpoint: `/api/users/${userId}/assign-project`,
+      method: "POST",
+    }).catch(() => {});
+
     return { success: true, message: data.message };
   } catch (error: any) {
     return { success: false, error: "Network error" };
@@ -98,6 +107,14 @@ export async function unassignProjectFromUser(userId: number, projectId: number)
     revalidatePath("/test-cases");
     revalidatePath("/dashboard");
     revalidatePath("/users");
+
+    recordSystemAuditLog({
+      action: "إلغاء إسناد مشروع",
+      actionCategory: "PROJECTS",
+      description: `إلغاء إسناد المشروع #${projectId} من المستخدم #${userId}`,
+      endpoint: `/api/users/${userId}/assign-project/${projectId}`,
+      method: "DELETE",
+    }).catch(() => {});
 
     return { success: true, message: data.message };
   } catch (error: any) {

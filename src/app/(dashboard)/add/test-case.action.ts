@@ -3,6 +3,7 @@
 import { getUserToken } from "@/app/myUtil";
 import type { AddTestCaseResponse, TestCaseFormValues } from "./test-case-interface";
 import { revalidatePath, updateTag } from "next/cache";
+import { recordSystemAuditLog } from "@/lib/audit";
 
 export async function addNewTestCase(data: TestCaseFormValues) {
   try {
@@ -61,6 +62,16 @@ export async function addNewTestCase(data: TestCaseFormValues) {
       revalidatePath("/projects");
       revalidatePath("/dashboard");
       revalidatePath("/users");
+
+      // Audit Log
+      recordSystemAuditLog({
+        action: "إضافة حالة اختبار جديدة",
+        actionCategory: "TEST_CASES",
+        description: `إضافة حالة اختبار برقم (${safePayload.testId || "جديد"}) في موديول (${safePayload.module || "العام"}) - الحالة: ${safePayload.status}`,
+        endpoint: "/api/test-cases",
+        method: "POST",
+      }).catch(() => {});
+
       return {
         success: true,
         message: "Test case created successfully",
