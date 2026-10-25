@@ -142,12 +142,6 @@ export default function ExecutionDashboard({
           >
             {w("Refresh", "تحديث")}
           </Button>
-          <Link
-            className="text-sm font-semibold text-[#0086ac]"
-            href="/test-cycles"
-          >
-            {w("Manage cycles →", "إدارة الدورات ←")}
-          </Link>
         </div>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
