@@ -25,6 +25,7 @@ import { getTestCaseSchema } from "./test-case.zod";
 import { addNewTestCase, getNextTestCaseId } from "./test-case.action";
 import toast from "react-hot-toast";
 import { cn } from "@/lib/utils";
+import type { QualityApplication } from "../quality/quality.interface";
 
 interface Step {
   id: number;
@@ -32,9 +33,11 @@ interface Step {
 }
 
 export default function AddTestCasePage({
-  allProjects,
+  allProjects = [],
+  allApplications = [],
 }: {
   allProjects: ProjectApiItem[];
+  allApplications?: QualityApplication[];
 }) {
   const [steps, setSteps] = useState<Step[]>([
     { id: 1, value: "" },
@@ -53,7 +56,10 @@ export default function AddTestCasePage({
   const { dir, lang } = useLanguage();
   const isRTL = dir === "rtl";
   const schema = useMemo(() => getTestCaseSchema(lang), [lang]);
-  const [selectedProjectId, setSelectedProjectId] = useState<string>("");
+  const [selectedProjectId, setSelectedProjectId] = useState<string>(
+    allProjects[0] ? String(allProjects[0].id) : ""
+  );
+  const [isCustomApp, setIsCustomApp] = useState(false);
   const [executionTimeStr, setExecutionTimeStr] = useState<string>("");
 
   const {
@@ -81,7 +87,7 @@ export default function AddTestCasePage({
       executedAt: "",
       testerId: 1,
       userId: 1,
-      projectId: 1,
+      projectId: allProjects[0]?.id || 1,
     },
     mode: "all",
     resolver: zodResolver(schema),
@@ -122,15 +128,12 @@ export default function AddTestCasePage({
     }
   }, [currentStatus, setValue, watch]);
 
-  // Auto-select project if user only has 1 project assigned
+  // Auto-init testId for the selected project
   useEffect(() => {
-    if (allProjects.length === 1 && !selectedProjectId) {
-      const singleProj = allProjects[0];
-      const idStr = String(singleProj.id);
-      setSelectedProjectId(idStr);
-      setValue("module", singleProj.name, { shouldValidate: true });
-      setValue("projectId", singleProj.id, { shouldValidate: true });
-      getNextTestCaseId(singleProj.name, singleProj.id).then((nextId) => {
+    const targetPid = Number(selectedProjectId) || allProjects[0]?.id;
+    if (targetPid) {
+      setValue("projectId", targetPid, { shouldValidate: true });
+      getNextTestCaseId(watch("module") || undefined, targetPid).then((nextId) => {
         const finalId =
           watch("status") === "failed"
             ? nextId.replace(/^TC-/, "BUG-")
@@ -266,12 +269,12 @@ export default function AddTestCasePage({
             onSubmit={handleSubmit(handleAddNewTestCase)}
             noValidate
           >
-            {/* Row 1: ID, Module, Page */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Row 1: ID, Project, Application, Page */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Test ID */}
               <div className="space-y-1.5 min-w-0">
-                <Label className="text-[13px] text-[#0b1c30]">
-                  {isRTL ? "معرف الحالة " : "Test ID"}
+                <Label className="text-[13px] font-semibold text-[#0b1c30]">
+                  {isRTL ? "معرف الحالة" : "Test ID"}
                 </Label>
                 <Input
                   readOnly
@@ -289,17 +292,17 @@ export default function AddTestCasePage({
                 )}
               </div>
 
-              {/* Module / Project */}
+              {/* Project (المشروع) */}
               <div className="space-y-1.5 min-w-0">
-                <Label className="text-[13px] text-[#0b1c30]">
-                  {isRTL ? "المشروع / الوحدة " : "Project / Module"}
+                <Label className="text-[13px] font-semibold text-[#0b1c30]">
+                  {isRTL ? "المشروع" : "Project"}
                 </Label>
                 <Controller
-                  name="module"
+                  name="projectId"
                   control={control}
                   render={({ field }) => (
                     <Select
-                      value={selectedProjectId}
+                      value={selectedProjectId ? String(selectedProjectId) : ""}
                       onValueChange={async (selectedIdStr) => {
                         const idStr = selectedIdStr || "";
                         setSelectedProjectId(idStr);
@@ -307,12 +310,9 @@ export default function AddTestCasePage({
                           (p) => String(p.id) === idStr
                         );
                         if (matchedProj) {
-                          field.onChange(matchedProj.name);
-                          setValue("projectId", matchedProj.id, {
-                            shouldValidate: true,
-                          });
+                          field.onChange(matchedProj.id);
                           const nextId = await getNextTestCaseId(
-                            matchedProj.name,
+                            watch("module") || matchedProj.name,
                             matchedProj.id
                           );
                           const finalId =
@@ -331,7 +331,7 @@ export default function AddTestCasePage({
                         }
                         className={cn(
                           "w-full min-w-0 max-w-full overflow-hidden rounded-xl text-[13px] bg-[#f8f9ff] border-[#bcc8d0]",
-                          errors.module &&
+                          errors.projectId &&
                             "border-red-400 focus-visible:border-red-400"
                         )}
                       >
@@ -356,6 +356,108 @@ export default function AddTestCasePage({
                     </Select>
                   )}
                 />
+                {errors.projectId && (
+                  <span className="text-xs text-red-500 font-medium block mt-1">
+                    {errors.projectId.message}
+                  </span>
+                )}
+              </div>
+
+              {/* Application (اسم التطبيق / المنظومة) */}
+              <div className="space-y-1.5 min-w-0">
+                <div className="flex items-center justify-between">
+                  <Label className="text-[13px] font-semibold text-[#0b1c30]">
+                    {isRTL ? "اسم التطبيق" : "Application"}
+                  </Label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsCustomApp(!isCustomApp);
+                      if (isCustomApp) {
+                        setValue("module", "");
+                      }
+                    }}
+                    className="text-[11px] text-indigo-600 hover:text-indigo-800 font-semibold cursor-pointer underline"
+                  >
+                    {isCustomApp
+                      ? (isRTL ? "اختر من القائمة" : "Select from list")
+                      : (isRTL ? "أو اكتب تطبيق مخصص" : "Or type custom")}
+                  </button>
+                </div>
+
+                {isCustomApp ? (
+                  <Input
+                    placeholder={
+                      isRTL
+                        ? "اكتب اسم التطبيق (مثال: بوابة الموظفين)"
+                        : "Type app name (e.g. Employee Portal)"
+                    }
+                    {...register("module")}
+                    className={cn(
+                      "rounded-xl text-[13px] bg-[#f8f9ff] border-[#bcc8d0]",
+                      errors.module && "border-red-400 focus-visible:border-red-400"
+                    )}
+                  />
+                ) : (
+                  <Controller
+                    name="module"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        value={field.value || ""}
+                        onValueChange={async (selectedVal) => {
+                          if (selectedVal === "__custom__") {
+                            setIsCustomApp(true);
+                            field.onChange("");
+                          } else {
+                            field.onChange(selectedVal);
+                            const currentPid = Number(selectedProjectId) || allProjects[0]?.id;
+                            if (currentPid) {
+                              const nextId = await getNextTestCaseId(selectedVal || undefined, currentPid);
+                              const finalId =
+                                watch("status") === "failed"
+                                  ? nextId.replace(/^TC-/, "BUG-")
+                                  : nextId;
+                              setValue("testId", finalId, { shouldValidate: true });
+                            }
+                          }
+                        }}
+                      >
+                        <SelectTrigger
+                          title={field.value || ""}
+                          className={cn(
+                            "w-full min-w-0 max-w-full overflow-hidden rounded-xl text-[13px] bg-[#f8f9ff] border-[#bcc8d0]",
+                            errors.module &&
+                              "border-red-400 focus-visible:border-red-400"
+                          )}
+                        >
+                          <SelectValue
+                            placeholder={
+                              isRTL ? "اختر التطبيق" : "Select Application"
+                            }
+                          >
+                            {field.value || (isRTL ? "اختر التطبيق" : "Select Application")}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent className="w-(--anchor-width) min-w-[260px] max-w-[90vw] p-1">
+                          {allApplications.map((app) => (
+                            <SelectItem key={app.id} value={app.name}>
+                              {isRTL && app.nameAr
+                                ? `${app.nameAr} (${app.name})`
+                                : app.name}
+                            </SelectItem>
+                          ))}
+                          <SelectItem
+                            value="__custom__"
+                            className="text-indigo-600 font-semibold border-t border-slate-100 mt-1"
+                          >
+                            {isRTL ? "+ كتابة اسم تطبيق آخر..." : "+ Enter custom application..."}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                )}
                 {errors.module && (
                   <span className="text-xs text-red-500 font-medium block mt-1">
                     {errors.module.message}
@@ -365,7 +467,7 @@ export default function AddTestCasePage({
 
               {/* Page Name */}
               <div className="space-y-1.5 min-w-0">
-                <Label className="text-[13px] text-[#0b1c30]">
+                <Label className="text-[13px] font-semibold text-[#0b1c30]">
                   {isRTL ? "اسم الصفحة" : "Page Name"}
                 </Label>
                 <Input

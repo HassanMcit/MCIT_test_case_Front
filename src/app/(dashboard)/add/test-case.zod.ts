@@ -18,8 +18,8 @@ export const getTestCaseSchema = (lang: Language | boolean = "ar") => {
 
     module: z.string().min(1, {
       message: isArabic
-        ? "يرجى اختيار المشروع"
-        : "Please select a project",
+        ? "يرجى تحديد أو اختيار اسم التطبيق"
+        : "Please select or enter the application name",
     }),
 
     pageName: z.string().min(1, {

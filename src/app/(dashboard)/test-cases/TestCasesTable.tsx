@@ -987,10 +987,13 @@ export default function TestCasesTable({
                             {row.testId}
                           </span>
                         )}
+                        <Link href={`/test-cases/${row.id}/history`} className="block mt-2 text-[10px] font-sans font-medium text-[#0086ac] hover:underline">
+                          {isRTL ? "سجل التنفيذ" : "Execution history"}
+                        </Link>
                       </td>
 
                       {/* 2. Module & Page */}
-                      <td className={`px-3.5 py-3 max-w-[185px] ${isRTL ? "text-right" : "text-left"}`}>
+                      <td className={`px-3.5 py-3 max-w-[210px] ${isRTL ? "text-right" : "text-left"}`}>
                         <div className="flex flex-col gap-1">
                           <span
                             className="inline-flex items-center gap-1.5 font-bold text-[12px] text-[#006685] bg-[#eff4ff]/80 border border-[#00aee0]/25 px-2 py-0.5 rounded-md w-fit max-w-full truncate"
@@ -1001,6 +1004,14 @@ export default function TestCasesTable({
                               {row.project?.name || row.module || "-"}
                             </span>
                           </span>
+                          {row.module && row.project?.name && row.module !== row.project.name && (
+                            <span
+                              className="text-[10.5px] font-semibold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded w-fit max-w-full truncate"
+                              title={row.module}
+                            >
+                              {row.module}
+                            </span>
+                          )}
                           {row.pageName && (
                             <span
                               dir="auto"
@@ -1328,6 +1339,12 @@ export default function TestCasesTable({
             </div>
 
             {/* 1. Defect ID */}
+            <section className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+              <h4 className="text-sm font-semibold">{isRTL ? "سجل التنفيذ" : "Execution History"}</h4>
+              <Link href={`/test-cases/${selectedItem.id}/history`} className="mt-1 inline-block text-sm text-[#0086ac] hover:underline">
+                {isRTL ? "عرض كل المحاولات عبر الإصدارات والدورات" : "View all attempts across releases and cycles"}
+              </Link>
+            </section>
             <div className="p-3.5 bg-red-50/60 border border-red-200 rounded-xl flex items-center justify-between">
               <div>
                 <span className="text-xs font-bold text-red-700 block">
@@ -1626,36 +1643,53 @@ export default function TestCasesTable({
 
             {/* Edit Form */}
             <form onSubmit={handleUpdateSubmit} className="space-y-4">
-              {/* Row 1: Module / Project & Page Name */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Row 1: Project, Application & Page Name */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-[#0b1c30]">
-                    {isRTL ? "المشروع / الوحدة (Module)" : "Project / Module"}
+                    {isRTL ? "المشروع (Project)" : "Project"}
                   </label>
                   <Select
-                    value={editFormData.module || ""}
+                    value={editFormData.projectId ? String(editFormData.projectId) : ""}
                     onValueChange={(val) => {
-                      const proj = allProjects.find((p) => p.name === val);
+                      const proj = allProjects.find((p) => String(p.id) === val);
                       setEditFormData((prev) => ({
                         ...prev,
-                        module: val || "",
                         projectId: proj ? proj.id : prev.projectId,
                       }));
                     }}
                   >
                     <SelectTrigger className="h-10 text-[13px] bg-[#f8f9ff] border-slate-200 rounded-xl">
                       <SelectValue>
-                        {editFormData.module || (isRTL ? "اختر المشروع" : "Select Project")}
+                        {allProjects.find((p) => p.id === editFormData.projectId)?.name ||
+                          (isRTL ? "اختر المشروع" : "Select Project")}
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
                       {allProjects.map((p) => (
-                        <SelectItem key={p.id} value={p.name}>
+                        <SelectItem key={p.id} value={String(p.id)}>
                           {p.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-[#0b1c30]">
+                    {isRTL ? "اسم التطبيق (Application)" : "Application"}
+                  </label>
+                  <Input
+                    value={editFormData.module || ""}
+                    onChange={(e) =>
+                      setEditFormData((prev) => ({
+                        ...prev,
+                        module: e.target.value,
+                      }))
+                    }
+                    placeholder={isRTL ? "اسم التطبيق / المنظومة" : "Application name"}
+                    className="h-10 text-[13px] bg-[#f8f9ff] border-slate-200 rounded-xl"
+                  />
                 </div>
 
                 <div className="space-y-1.5">
