@@ -32,12 +32,8 @@ import {
   Users,
   AlertTriangle,
   FileSpreadsheet,
-  Calendar,
-  Download,
-  Loader2,
 } from "lucide-react";
-import { getProjectTestCasesForExport } from "./exportProjectReport.action";
-import { exportProjectExcelReport } from "./generateProjectExcel";
+import ExportReportModal from "@/components/ExportReportModal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -439,92 +435,11 @@ export default function ProjectsForm({
     null,
   );
 
-  // Excel Export Modal states
+  // Excel Export Modal state
   const [exportModalProject, setExportModalProject] = useState<ProjectItem | null>(null);
-  const [exportFromDate, setExportFromDate] = useState("");
-  const [exportToDate, setExportToDate] = useState("");
-  const [isExporting, setIsExporting] = useState(false);
 
   const handleOpenExportModal = (project: ProjectItem) => {
     setExportModalProject(project);
-    setExportFromDate("");
-    setExportToDate("");
-  };
-
-  const handleApplyPreset = (preset: "all" | "today" | "7d" | "30d" | "month") => {
-    const today = new Date();
-    const toStr = today.toISOString().slice(0, 10);
-
-    if (preset === "all") {
-      setExportFromDate("");
-      setExportToDate("");
-    } else if (preset === "today") {
-      setExportFromDate(toStr);
-      setExportToDate(toStr);
-    } else if (preset === "7d") {
-      const past = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-      setExportFromDate(past.toISOString().slice(0, 10));
-      setExportToDate(toStr);
-    } else if (preset === "30d") {
-      const past = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-      setExportFromDate(past.toISOString().slice(0, 10));
-      setExportToDate(toStr);
-    } else if (preset === "month") {
-      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-      setExportFromDate(firstDay.toISOString().slice(0, 10));
-      setExportToDate(toStr);
-    }
-  };
-
-  const handleExecuteExport = async () => {
-    if (!exportModalProject) return;
-
-    if (exportFromDate && exportToDate && new Date(exportFromDate) > new Date(exportToDate)) {
-      toast.error(
-        isRTL
-          ? "تاريخ البداية لا يمكن أن يكون بعد تاريخ النهاية"
-          : "Start date cannot be after end date"
-      );
-      return;
-    }
-
-    setIsExporting(true);
-    try {
-      const reportRes = await getProjectTestCasesForExport(
-        exportModalProject.id,
-        exportFromDate || undefined,
-        exportToDate || undefined
-      );
-
-      if (!reportRes.success || reportRes.testCases.length === 0) {
-        toast.error(
-          isRTL
-            ? "لا توجد حالات اختبار مسجلة لهذا المشروع في الفترة المحددة"
-            : "No test cases found for this project in the selected period"
-        );
-        setIsExporting(false);
-        return;
-      }
-
-      await exportProjectExcelReport(reportRes, {
-        from: exportFromDate,
-        to: exportToDate,
-      });
-
-      toast.success(
-        isRTL
-          ? `تم تصدير تقرير (${reportRes.projectName}) بإجمالي ${reportRes.testCases.length} حالة اختبار بنجاح!`
-          : `Exported ${reportRes.testCases.length} test cases for ${reportRes.projectName} successfully!`
-      );
-      setExportModalProject(null);
-    } catch (err: any) {
-      console.error("Export error:", err);
-      toast.error(
-        isRTL ? "حدث خطأ أثناء تصدير التقرير" : "Failed to export report"
-      );
-    } finally {
-      setIsExporting(false);
-    }
   };
 
   const [addCustomApp, setAddCustomApp] = useState(false);
@@ -2056,180 +1971,15 @@ export default function ProjectsForm({
         </div>
       )}
 
-      {/* ── MODAL 4: Export Project Excel Report ─────────────────────── */}
-      {exportModalProject && (
-        <div
-          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget && !isExporting) setExportModalProject(null);
-          }}
-        >
-          <Card className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-            <CardHeader className="p-6 border-b border-slate-100 flex flex-row items-center justify-between bg-gradient-to-r from-emerald-50/50 to-white">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-100/80 text-emerald-700 flex items-center justify-center shrink-0 shadow-xs">
-                  <FileSpreadsheet className="w-5 h-5" />
-                </div>
-                <div>
-                  <CardTitle className="text-base sm:text-lg font-bold text-[#0b1c30]">
-                    {isRTL ? "تصدير تقرير المشروع (Excel)" : "Export Project Report (Excel)"}
-                  </CardTitle>
-                  <CardDescription className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5">
-                    <span>{isRTL ? "المشروع:" : "Project:"}</span>
-                    <strong className="text-slate-800 font-semibold">{exportModalProject.name}</strong>
-                    {exportModalProject.application && (
-                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 border border-indigo-100">
-                        {exportModalProject.application}
-                      </span>
-                    )}
-                  </CardDescription>
-                </div>
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                disabled={isExporting}
-                onClick={() => setExportModalProject(null)}
-                className="h-8 w-8 p-0 rounded-full text-slate-400 hover:text-slate-700 cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </CardHeader>
-
-            <CardContent className="p-6 space-y-5">
-              {/* Presets */}
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-slate-700">
-                  {isRTL ? "تحديد الفترة الزمنية السريعة" : "Quick Period Filter"}
-                </Label>
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleApplyPreset("all")}
-                    className="h-7 text-xs rounded-lg px-2.5 bg-slate-50 hover:bg-slate-100 cursor-pointer"
-                  >
-                    {isRTL ? "الكل (بدون تحديد)" : "All Time"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleApplyPreset("today")}
-                    className="h-7 text-xs rounded-lg px-2.5 bg-slate-50 hover:bg-slate-100 cursor-pointer"
-                  >
-                    {isRTL ? "اليوم" : "Today"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleApplyPreset("7d")}
-                    className="h-7 text-xs rounded-lg px-2.5 bg-slate-50 hover:bg-slate-100 cursor-pointer"
-                  >
-                    {isRTL ? "آخر 7 أيام" : "Last 7 Days"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleApplyPreset("30d")}
-                    className="h-7 text-xs rounded-lg px-2.5 bg-slate-50 hover:bg-slate-100 cursor-pointer"
-                  >
-                    {isRTL ? "آخر 30 يوم" : "Last 30 Days"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleApplyPreset("month")}
-                    className="h-7 text-xs rounded-lg px-2.5 bg-slate-50 hover:bg-slate-100 cursor-pointer"
-                  >
-                    {isRTL ? "هذا الشهر" : "This Month"}
-                  </Button>
-                </div>
-              </div>
-
-              {/* Date pickers (From - To) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>{isRTL ? "من يوم" : "From Date"}</span>
-                  </Label>
-                  <Input
-                    type="date"
-                    value={exportFromDate}
-                    onChange={(e) => setExportFromDate(e.target.value)}
-                    className="h-10 text-xs bg-slate-50/70 border-slate-200"
-                    disabled={isExporting}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>{isRTL ? "إلى يوم" : "To Date"}</span>
-                  </Label>
-                  <Input
-                    type="date"
-                    value={exportToDate}
-                    onChange={(e) => setExportToDate(e.target.value)}
-                    className="h-10 text-xs bg-slate-50/70 border-slate-200"
-                    disabled={isExporting}
-                  />
-                </div>
-              </div>
-
-              {/* Format Note */}
-              <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-3 text-xs text-slate-600 space-y-1">
-                <p className="font-semibold text-emerald-800 flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span>{isRTL ? "هيكل التقرير المعتمد (5 صفحات)" : "Standard Report Layout (5 Sheets)"}</span>
-                </p>
-                <p className="text-[11px] text-slate-500 leading-relaxed">
-                  {isRTL
-                    ? "سيتم استخراج ملف Excel (.xlsx) متطابق مع تقرير الجودة المعتمد: Test Cases (حالات الاختبار)، Defect Log (سجل العيوب)، Execution Summary (ملخص التنفيذ)، Dashboard (لوحة القياس)، و Test Environment (بيئة الفحص)."
-                    : "The exported Excel will include 5 sheets matching the official format: Test Cases, Defect Log, Execution Summary, Dashboard, and Test Environment."}
-                </p>
-              </div>
-            </CardContent>
-
-            <CardFooter className="p-4 px-6 border-t border-slate-100 bg-slate-50/60 flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={isExporting}
-                onClick={() => setExportModalProject(null)}
-                className="text-xs cursor-pointer"
-              >
-                {isRTL ? "إلغاء" : "Cancel"}
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                disabled={isExporting}
-                onClick={handleExecuteExport}
-                className="text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer gap-1.5"
-              >
-                {isExporting ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>{isRTL ? "جاري إنشاء التقرير..." : "Generating Report..."}</span>
-                  </>
-                ) : (
-                  <>
-                    <Download className="w-3.5 h-3.5" />
-                    <span>{isRTL ? "تنزيل تقرير الإكسيل (.xlsx)" : "Download Excel (.xlsx)"}</span>
-                  </>
-                )}
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
-      )}
+      {/* ── MODAL 4: Export Project Excel Report (Mandatory Date Period) ── */}
+      <ExportReportModal
+        open={Boolean(exportModalProject)}
+        onClose={() => setExportModalProject(null)}
+        projectId={exportModalProject?.id || null}
+        projectName={exportModalProject?.name}
+        projectApplication={exportModalProject?.application}
+        lockProject={true}
+      />
 
       {/* ── MODAL 3: Edit Project ─────────────────────────────────────── */}
       {editingProject && (

@@ -29,6 +29,8 @@ import {
   Mail,
   Phone,
   Video,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -49,11 +51,13 @@ import { deleteTestCase, getTestCases, updateTestCase } from "./test-cases.actio
 import toast from "react-hot-toast";
 import { toLocalDateKey } from "@/lib/utils";
 import { getTeamsCallUrl } from "@/lib/teams";
+import ExportReportModal from "@/components/ExportReportModal";
 
 interface TestCasesTableProps {
   initialData: TestCaseListResponse;
   allProjects: ProjectApiItem[];
   initialProjectId?: number;
+  autoOpenExport?: boolean;
 }
 
 /**
@@ -100,6 +104,7 @@ export default function TestCasesTable({
   initialData,
   allProjects,
   initialProjectId,
+  autoOpenExport = false,
 }: TestCasesTableProps) {
   const router = useRouter();
   const { dir, lang } = useLanguage();
@@ -116,7 +121,7 @@ export default function TestCasesTable({
   useEffect(() => {
     getTestCases({
       projectId: initialProjectId,
-      limit: 100,
+      limit: 1000,
       _cv: String(Date.now()),
     } as any).then((fresh) => {
       if (Array.isArray(fresh?.data) && fresh.data.length > 0) {
@@ -132,6 +137,13 @@ export default function TestCasesTable({
   const [projectFilter, setProjectFilter] = useState<string>(
     initialProjectId ? String(initialProjectId) : "all"
   );
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
+
+  // Reset pagination to page 1 whenever filters or search change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, statusFilter, priorityFilter, fromDateFilter, toDateFilter, projectFilter]);
   const [selectedItem, setSelectedItem] = useState<TestCaseItem | null>(null);
 
   // Extract distinct dates (sorted chronologically) for dropdowns — LOCAL day, not UTC
@@ -230,6 +242,26 @@ export default function TestCasesTable({
 
   // Calculate dynamic stats
   const totalCount = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const startIndex = (safePage - 1) * PAGE_SIZE;
+  const paginatedRows = filtered.slice(startIndex, startIndex + PAGE_SIZE);
+  const showingFrom = totalCount === 0 ? 0 : startIndex + 1;
+  const showingTo = Math.min(startIndex + PAGE_SIZE, totalCount);
+
+  const getPageNumbers = (): Array<number | "ellipsis"> => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    const pages: Array<number | "ellipsis"> = [1];
+    if (safePage > 3) pages.push("ellipsis");
+    const start = Math.max(2, safePage - 1);
+    const end = Math.min(totalPages - 1, safePage + 1);
+    for (let p = start; p <= end; p++) pages.push(p);
+    if (safePage < totalPages - 2) pages.push("ellipsis");
+    pages.push(totalPages);
+    return pages;
+  };
   const passedCount = filtered.filter((i) => i.status === "passed").length;
   const failedCount = filtered.filter((i) => i.status === "failed").length;
   const pendingCount = filtered.filter(
@@ -506,72 +538,11 @@ export default function TestCasesTable({
     });
   };
 
-  // Export to CSV/Excel
-  const handleExportCSV = () => {
-    if (filtered.length === 0) {
-      toast.error(isRTL ? "لا توجد بيانات لتصديرها" : "No data to export");
-      return;
-    }
+  const [showExportModal, setShowExportModal] = useState(autoOpenExport);
 
-    const headers = isRTL
-      ? [
-          "معرف الحالة",
-          "الوحدة / المشروع",
-          "اسم الصفحة",
-          "سيناريو الاختبار",
-          "الخطوات",
-          "النتيجة المتوقعة",
-          "النتيجة الفعلية",
-          "الأولوية",
-          "الحالة",
-          "المختبر",
-          "تاريخ التنفيذ",
-        ]
-      : [
-          "Test ID",
-          "Module / Project",
-          "Page Name",
-          "Scenario",
-          "Steps",
-          "Expected Result",
-          "Actual Result",
-          "Priority",
-          "Status",
-          "Tester",
-          "Executed At",
-        ];
-
-    const rows = filtered.map((tc) => [
-      tc.testId || "",
-      tc.module || tc.project?.name || "",
-      tc.pageName || "",
-      `"${(tc.scenario || "").replace(/"/g, '""')}"`,
-      `"${(tc.steps || []).join(" | ").replace(/"/g, '""')}"`,
-      `"${(tc.expectedResult || "").replace(/"/g, '""')}"`,
-      `"${(tc.actualResult || "").replace(/"/g, '""')}"`,
-      tc.priority || "",
-      tc.status || "",
-      tc.tester?.name || "",
-      tc.executedAt ? new Date(tc.executedAt).toLocaleString(lang === "ar" ? "ar-EG" : "en-US") : "",
-    ]);
-
-    const csvContent =
-      "\uFEFF" +
-      [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute(
-      "download",
-      `test-cases-${selectedProjectObj?.name || "all"}-${new Date().toISOString().slice(0, 10)}.csv`
-    );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success(isRTL ? "تم تصدير البيانات بنجاح" : "Exported successfully");
-  };
+  useEffect(() => {
+    if (autoOpenExport) setShowExportModal(true);
+  }, [autoOpenExport]);
 
   return (
     <div className="flex flex-col w-full p-4 sm:p-6 lg:p-8 gap-6 max-w-7xl mx-auto">
@@ -616,8 +587,8 @@ export default function TestCasesTable({
         <div className="flex items-center gap-2.5 self-start sm:self-auto">
           <Button
             variant="outline"
-            onClick={handleExportCSV}
-            className="h-10 px-4 rounded-xl text-xs sm:text-[13px] font-bold border-slate-200 hover:bg-[#eff4ff] text-[#0b1c30] cursor-pointer flex items-center gap-2 shadow-xs transition-colors"
+            onClick={() => setShowExportModal(true)}
+            className="h-10 px-4 rounded-xl text-xs sm:text-[13px] font-bold border-emerald-200 bg-emerald-50/40 hover:bg-emerald-50 text-emerald-800 cursor-pointer flex items-center gap-2 shadow-xs transition-colors"
           >
             <Download className="w-4 h-4 text-[#006685]" />
             <span>{isRTL ? "تصدير إلى إكسل" : "Export Excel"}</span>
@@ -948,7 +919,7 @@ export default function TestCasesTable({
                   </td>
                 </tr>
               ) : (
-                filtered.map((row) => {
+                paginatedRows.map((row) => {
                   const sInfo = statusMap[row.status] || {
                     labelAr: row.status,
                     labelEn: row.status,
@@ -1187,13 +1158,62 @@ export default function TestCasesTable({
           </table>
         </div>
 
-        {/* Footer info */}
-        <div className="bg-[#f8f9ff] px-5 py-3.5 flex items-center justify-between border-t border-[#e5eeff]">
-          <span className="text-[13px] text-[#565e74]">
+        {/* Footer info & Pagination (10 per page) */}
+        <div className="bg-[#f8f9ff] px-5 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-[#e5eeff]">
+          <span className="text-[13px] font-medium text-[#565e74]">
             {isRTL
-              ? `عرض ${filtered.length} من أصل ${items.length} حالة اختبار`
-              : `Showing ${filtered.length} of ${items.length} test cases`}
+              ? `عرض ${showingFrom} إلى ${showingTo} من أصل ${totalCount} حالة اختبار`
+              : `Showing ${showingFrom} to ${showingTo} of ${totalCount} test cases`}
           </span>
+
+          {totalPages > 1 && (
+            <div className="flex items-center gap-1.5 flex-wrap justify-center">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={safePage <= 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                className="h-8 px-2.5 text-xs rounded-lg border-slate-200 bg-white hover:bg-[#eff4ff] text-[#0b1c30] disabled:opacity-40 cursor-pointer flex items-center gap-1"
+              >
+                {isRTL ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
+                <span>{isRTL ? "السابق" : "Prev"}</span>
+              </Button>
+
+              {getPageNumbers().map((p, idx) =>
+                p === "ellipsis" ? (
+                  <span key={`el-${idx}`} className="px-1.5 text-xs text-slate-400 font-bold">
+                    ...
+                  </span>
+                ) : (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setCurrentPage(p)}
+                    className={`h-8 min-w-8 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+                      safePage === p
+                        ? "bg-[#00A2D2] text-white border-[#00A2D2] shadow-xs"
+                        : "bg-white text-[#0b1c30] border-slate-200 hover:bg-[#eff4ff] hover:border-[#00A2D2]/40"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                )
+              )}
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={safePage >= totalPages}
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                className="h-8 px-2.5 text-xs rounded-lg border-slate-200 bg-white hover:bg-[#eff4ff] text-[#0b1c30] disabled:opacity-40 cursor-pointer flex items-center gap-1"
+              >
+                <span>{isRTL ? "التالي" : "Next"}</span>
+                {isRTL ? <ChevronLeft className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+              </Button>
+            </div>
+          )}
         </div>
       </Card>
 
@@ -2019,6 +2039,19 @@ export default function TestCasesTable({
           </div>
         </div>
       )}
+
+      {/* ── Official 5-Tab Excel Export Modal (Mandatory Date Range) ─── */}
+      <ExportReportModal
+        open={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        projectId={selectedProjectObj ? selectedProjectObj.id : null}
+        projectName={selectedProjectObj?.name}
+        projectApplication={selectedProjectObj?.application || undefined}
+        allProjects={allProjects}
+        lockProject={Boolean(selectedProjectObj && initialProjectId)}
+        initialFromDate={fromDateFilter !== "all" ? fromDateFilter : ""}
+        initialToDate={toDateFilter !== "all" ? toDateFilter : ""}
+      />
     </div>
   );
 }

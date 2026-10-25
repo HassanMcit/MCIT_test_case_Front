@@ -299,7 +299,7 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
         </Link>
 
         <Link
-          href="/test-cases"
+          href="/test-cases?export=1"
           onClick={onClose}
           className="w-full p-2.5 flex items-center justify-center gap-2 h-8.5 rounded-lg bg-white text-[#0b1c30] border border-slate-200 shadow-xs hover:bg-[#eff4ff] transition-all text-[12px] font-medium cursor-pointer"
         >

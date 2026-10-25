@@ -8,6 +8,7 @@ interface PageProps {
     status?: string;
     priority?: string;
     search?: string;
+    export?: string;
   }>;
 }
 
@@ -25,7 +26,7 @@ export default async function TestCasesPage({ searchParams }: PageProps) {
       status: resolvedSearchParams?.status,
       priority: resolvedSearchParams?.priority,
       search: resolvedSearchParams?.search,
-      limit: 100,
+      limit: 1000,
     }),
   ]);
 
@@ -34,6 +35,7 @@ export default async function TestCasesPage({ searchParams }: PageProps) {
       initialData={initialData}
       allProjects={allProjects}
       initialProjectId={parsedProjectId}
+      autoOpenExport={resolvedSearchParams?.export === "1"}
     />
   );
 }
