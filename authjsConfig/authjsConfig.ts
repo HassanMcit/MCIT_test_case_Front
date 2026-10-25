@@ -81,6 +81,11 @@ export const authConfig: NextAuthConfig = {
           );
 
           await pool.query(
+            `UPDATE users SET "minTokenIat" = 0 WHERE id = $1`,
+            [id]
+          );
+
+          await pool.query(
             `INSERT INTO audit_logs (
               "userId", "userName", email, role, action, "actionCategory",
               description, method, endpoint, ip, "macAddress", location,
