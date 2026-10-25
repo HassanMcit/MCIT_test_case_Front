@@ -37,6 +37,7 @@ import type { TestCaseItem } from "../test-cases/test-cases.interface";
 import { formatActionTimestamp } from "../test-cases/TestCasesTable";
 import { revalidateDashboardAction } from "./dashboard.action";
 import { toLocalDateKey } from "@/lib/utils";
+import ExecutionDashboard from './ExecutionDashboard';
 
 interface DashboardClientProps {
   data: DashboardDataPayload;
@@ -401,6 +402,7 @@ export default function DashboardClient({ data }: DashboardClientProps) {
 
   return (
     <div className="w-full p-4 sm:p-6 lg:p-8 flex flex-col gap-6 relative">
+      <ExecutionDashboard projects={data.projects} />
       {/* ── Ambient Background Glow Accents ──────────────────────── */}
       <div className="absolute -top-10 right-20 w-96 h-96 bg-[#00aee0]/8 rounded-full blur-3xl pointer-events-none -z-10" />
       <div className="absolute top-72 left-10 w-80 h-80 bg-[#08b77f]/8 rounded-full blur-3xl pointer-events-none -z-10" />

@@ -16,6 +16,7 @@ import {
   UserPlus,
   FolderKanban,
   Users,
+  Layers,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSession } from "next-auth/react";
@@ -85,6 +86,11 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       href: "/quality",
       label: t("quality_assurance"),
       icon: ShieldCheck,
+    },
+    {
+      href: "/test-cycles",
+      label: isRTL ? "الإصدارات ودورات الاختبار" : "Releases & Test Cycles",
+      icon: Layers,
     },
   ];
 

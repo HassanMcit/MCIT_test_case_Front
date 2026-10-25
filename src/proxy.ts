@@ -122,6 +122,7 @@ export default async function proxy(req: NextRequest) {
 
 export const config = {
   matcher: [
+    "/test-cycles/:path*",
     "/login",
     "/dashboard/:path*",
     "/dashboard",

@@ -1053,6 +1053,9 @@ export default function ProjectsForm({ serverProjects }: { serverProjects?: Proj
                   </div>
 
                   <div className="flex items-center gap-1.5">
+                    <Button variant="outline" size="sm" className="h-8 px-2.5 text-xs text-[#00A2D2]" onClick={e=>{e.stopPropagation();router.push(`/test-cycles?projectId=${p.id}`);}}>
+                      {isRTL ? "دورات الاختبار" : "Test cycles"}
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"

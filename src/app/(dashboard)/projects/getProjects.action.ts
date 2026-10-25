@@ -79,6 +79,7 @@ export async function getProjects(params?: {
     const data = await res.json();
     return Array.isArray(data) ? data : [];
   } catch (error) {
+    if (error && typeof error === 'object' && 'digest' in error && String(error.digest).startsWith('DYNAMIC_SERVER_USAGE')) throw error;
     console.error("Error fetching projects:", error);
     return [];
   }
