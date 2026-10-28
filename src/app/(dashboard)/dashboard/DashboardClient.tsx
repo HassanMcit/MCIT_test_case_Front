@@ -28,15 +28,23 @@ import {
   Filter,
   UserCheck,
   Pencil,
+  Calendar as CalendarIcon,
+  ChevronDown,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import toast from "react-hot-toast";
 import type { DashboardDataPayload } from "./dashboard.interface";
 import type { TestCaseItem } from "../test-cases/test-cases.interface";
 import { formatActionTimestamp } from "../test-cases/TestCasesTable";
 import { revalidateDashboardAction } from "./dashboard.action";
-import { toLocalDateKey } from "@/lib/utils";
+import { cn, toLocalDateKey } from "@/lib/utils";
 
 interface DashboardClientProps {
   data: DashboardDataPayload;
@@ -52,6 +60,8 @@ export default function DashboardClient({ data }: DashboardClientProps) {
   // Interactive Filters
   const [selectedProjectId, setSelectedProjectId] = useState<string>("all");
   const [selectedUserId, setSelectedUserId] = useState<string>("all");
+  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [datePickerOpen, setDatePickerOpen] = useState<boolean>(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [severityFilter, setSeverityFilter] = useState<string>("all");
   const [trendDays, setTrendDays] = useState<14 | 30>(() => {
@@ -119,8 +129,24 @@ export default function DashboardClient({ data }: DashboardClientProps) {
     );
   }, [selectedProjectId, data.projects]);
 
-  // Test cases scoped by Selected User + Selected Project (drives KPIs, Chart, Severity, and Table)
-  const scopedTestCases = useMemo(() => {
+  // Selected date object (from "YYYY-MM-DD" local date key)
+  const selectedDateObj = useMemo(() => {
+    if (!selectedDate) return undefined;
+    const [y, m, d] = selectedDate.split("-").map(Number);
+    if (!y || !m || !d) return undefined;
+    return new Date(y, m - 1, d);
+  }, [selectedDate]);
+
+  // All test cases filtered by selectedDate (before project/user filter)
+  const dateFilteredAllCases = useMemo(() => {
+    if (!selectedDate) return data.testCases;
+    return data.testCases.filter(
+      (tc) => toLocalDateKey(tc.executedAt || tc.createdAt) === selectedDate
+    );
+  }, [data.testCases, selectedDate]);
+
+  // Test cases scoped by Selected User + Selected Project (before date filter)
+  const userAndProjectScopedCases = useMemo(() => {
     return data.testCases.filter((tc) => {
       // 1. If Admin filtered by a specific User:
       if (selectedUserObj) {
@@ -161,6 +187,117 @@ export default function DashboardClient({ data }: DashboardClientProps) {
       return true;
     });
   }, [data.testCases, selectedUserObj, selectedProjectId, selectedProjectObj]);
+
+  // Activity map for Calendar indicator dots (shows which days have executions/defects)
+  const dateActivityMap = useMemo(() => {
+    const map = new Map<string, { total: number; failed: number }>();
+    for (const tc of userAndProjectScopedCases) {
+      const k = toLocalDateKey(tc.executedAt || tc.createdAt);
+      if (!k) continue;
+      const prev = map.get(k) || { total: 0, failed: 0 };
+      prev.total += 1;
+      if (tc.status === "failed") prev.failed += 1;
+      map.set(k, prev);
+    }
+    return map;
+  }, [userAndProjectScopedCases]);
+
+  // Test cases scoped by Selected User + Selected Project + Selected Date (drives KPIs, Severity, and Table)
+  const scopedTestCases = useMemo(() => {
+    if (!selectedDate) return userAndProjectScopedCases;
+    return userAndProjectScopedCases.filter(
+      (tc) => toLocalDateKey(tc.executedAt || tc.createdAt) === selectedDate
+    );
+  }, [userAndProjectScopedCases, selectedDate]);
+
+  // Dynamic per-project metrics (updates live when Date or User filter is active)
+  const { projectDynamicStatsMap, userScopedDateCasesCount } = useMemo(() => {
+    const map = new Map<
+      number,
+      {
+        total: number;
+        passed: number;
+        failed: number;
+        pending: number;
+        successRate: number;
+      }
+    >();
+
+    const baseCases = selectedUserObj
+      ? dateFilteredAllCases.filter((tc) => {
+          const userProjIds = new Set(
+            selectedUserObj.assignedProjects.map((ap) => ap.projectId || ap.id)
+          );
+          const userProjNames = new Set(
+            selectedUserObj.assignedProjects
+              .map((ap) => ap.name?.trim().toLowerCase())
+              .filter(Boolean)
+          );
+          const inUserProjects =
+            (tc.projectId && userProjIds.has(tc.projectId)) ||
+            (tc.module && userProjNames.has(tc.module.trim().toLowerCase()));
+          const isAuthoredByUser =
+            tc.testerId === selectedUserObj.id ||
+            tc.tester?.id === selectedUserObj.id;
+          return Boolean(inUserProjects || isAuthoredByUser);
+        })
+      : dateFilteredAllCases;
+
+    for (const proj of data.projects) {
+      const pNameLower = proj.name?.trim().toLowerCase() || "";
+      let total = 0;
+      let passed = 0;
+      let failed = 0;
+      let pending = 0;
+      for (const tc of baseCases) {
+        const matchId = tc.projectId && Number(tc.projectId) === Number(proj.id);
+        const matchMod =
+          !tc.projectId &&
+          pNameLower &&
+          tc.module?.trim().toLowerCase() === pNameLower;
+        if (matchId || matchMod) {
+          total += 1;
+          if (tc.status === "passed") passed += 1;
+          else if (tc.status === "failed") failed += 1;
+          else pending += 1;
+        }
+      }
+      const successRate =
+        total > 0 ? Number(((passed / total) * 100).toFixed(1)) : 0;
+      map.set(proj.id, { total, passed, failed, pending, successRate });
+    }
+
+    return {
+      projectDynamicStatsMap: map,
+      userScopedDateCasesCount: baseCases.length,
+    };
+  }, [data.projects, dateFilteredAllCases, selectedUserObj]);
+
+  // Dynamic per-user metrics for Admin Matrix when a Date filter is active
+  const userDynamicStatsMap = useMemo(() => {
+    const map = new Map<
+      number,
+      { total: number; passed: number; failed: number; pending: number }
+    >();
+    if (!selectedDate) return map;
+
+    for (const u of data.usersOverview) {
+      let total = 0;
+      let passed = 0;
+      let failed = 0;
+      let pending = 0;
+      for (const tc of dateFilteredAllCases) {
+        if (tc.testerId === u.id || tc.tester?.id === u.id) {
+          total += 1;
+          if (tc.status === "passed") passed += 1;
+          else if (tc.status === "failed") failed += 1;
+          else pending += 1;
+        }
+      }
+      map.set(u.id, { total, passed, failed, pending });
+    }
+    return map;
+  }, [data.usersOverview, dateFilteredAllCases, selectedDate]);
 
   // Dynamic KPI Calculations from scopedTestCases
   const totalTests = scopedTestCases.length;
@@ -239,19 +376,41 @@ export default function DashboardClient({ data }: DashboardClientProps) {
       f: number;
       pe: number;
       isToday?: boolean;
+      isSelectedDate?: boolean;
     }> = [];
 
     const now = new Date();
+    const todayKey = toLocalDateKey(now) as string;
+    const oldestDefaultWindow = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() - (daysCount - 1)
+    );
+    const oldestDefaultKey = toLocalDateKey(oldestDefaultWindow) as string;
+
+    // Anchor the chart window to include selectedDate if it lies outside the default [today - N, today] window
+    const anchorEnd =
+      selectedDateObj &&
+      selectedDate &&
+      (selectedDate < oldestDefaultKey || selectedDate > todayKey)
+        ? selectedDateObj
+        : now;
+
     // Pre-compute each case's LOCAL day key once (not UTC)
-    const caseDayKeys = scopedTestCases.map((tc) => ({
+    const caseDayKeys = userAndProjectScopedCases.map((tc) => ({
       tc,
       key: toLocalDateKey(tc.executedAt || tc.createdAt),
     }));
 
     for (let i = daysCount - 1; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+      const d = new Date(
+        anchorEnd.getFullYear(),
+        anchorEnd.getMonth(),
+        anchorEnd.getDate() - i
+      );
       const dateKey = toLocalDateKey(d) as string;
-      const isToday = i === 0;
+      const isToday = dateKey === todayKey;
+      const isSelectedDate = Boolean(selectedDate && dateKey === selectedDate);
       const dayEn = isToday
         ? "Today"
         : d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -274,7 +433,12 @@ export default function DashboardClient({ data }: DashboardClientProps) {
 
       const idx = daysCount - 1 - i;
       const showLabel =
-        daysCount === 14 || isToday || idx === 0 || idx % 3 === 0 || rawF > 0;
+        daysCount === 14 ||
+        isToday ||
+        isSelectedDate ||
+        idx === 0 ||
+        idx % 3 === 0 ||
+        rawF > 0;
       result.push({
         dateKey,
         day: dayEn,
@@ -289,6 +453,7 @@ export default function DashboardClient({ data }: DashboardClientProps) {
         f: 0,
         pe: 0,
         isToday,
+        isSelectedDate,
       });
     }
 
@@ -312,7 +477,7 @@ export default function DashboardClient({ data }: DashboardClientProps) {
         pe: Math.max(r.rawPe > 0 ? 6 : 0, Math.round(r.rawPe * scale)),
       };
     });
-  }, [scopedTestCases, trendDays]);
+  }, [userAndProjectScopedCases, trendDays, selectedDate, selectedDateObj]);
 
   const maxChartScale = useMemo(() => {
     return Math.max(
@@ -480,12 +645,15 @@ export default function DashboardClient({ data }: DashboardClientProps) {
         {/* Action Controls */}
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Active Scope Pill */}
-          {(selectedProjectId !== "all" || selectedUserId !== "all") && (
+          {(selectedProjectId !== "all" ||
+            selectedUserId !== "all" ||
+            Boolean(selectedDate)) && (
             <button
               type="button"
               onClick={() => {
                 setSelectedProjectId("all");
                 setSelectedUserId("all");
+                setSelectedDate("");
                 setCurrentPage(1);
               }}
               className="inline-flex items-center gap-1.5 bg-rose-50 text-rose-700 border border-rose-200 rounded-xl px-3 py-2 text-xs font-bold hover:bg-rose-100 transition-all cursor-pointer"
@@ -496,6 +664,92 @@ export default function DashboardClient({ data }: DashboardClientProps) {
               </span>
             </button>
           )}
+
+          {/* shadcn/ui Date Picker (<Popover /> + <Calendar />) */}
+          <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+            <PopoverTrigger
+              render={
+                <Button
+                  variant="outline"
+                  id="dashboard-date-picker"
+                  className={cn(
+                    "w-48 justify-between font-normal h-9 px-3 rounded-xl text-xs shadow-xs cursor-pointer transition-colors",
+                    selectedDate
+                      ? "bg-[#eff4ff] border-[#00A2D2]/50 text-[#0b1c30] font-semibold hover:bg-[#e2ecff]"
+                      : "bg-white border-slate-200/80 text-muted-foreground hover:bg-slate-50 hover:text-[#0b1c30]"
+                  )}
+                />
+              }
+            >
+              <span className="flex items-center gap-2 truncate">
+                <CalendarIcon
+                  className={cn(
+                    "w-3.5 h-3.5 shrink-0",
+                    selectedDate ? "text-[#00A2D2]" : "text-slate-400"
+                  )}
+                />
+                <span className="truncate">
+                  {selectedDateObj
+                    ? selectedDateObj.toLocaleDateString(
+                        isRTL ? "ar-EG" : "en-US",
+                        {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        }
+                      )
+                    : isRTL
+                    ? "اختر التاريخ"
+                    : "Pick a date"}
+                </span>
+              </span>
+              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            </PopoverTrigger>
+            <PopoverContent
+              className="w-auto overflow-hidden p-0"
+              align={isRTL ? "end" : "start"}
+            >
+              <Calendar
+                mode="single"
+                selected={selectedDateObj}
+                locale={isRTL ? "ar" : "en"}
+                highlightedDates={dateActivityMap}
+                onSelect={(d) => {
+                  const nextKey = d ? toLocalDateKey(d) || "" : "";
+                  setSelectedDate(nextKey);
+                  setCurrentPage(1);
+                  setDatePickerOpen(false);
+                }}
+              />
+              <div className="border-t border-slate-100 px-3 py-2 bg-slate-50/70 flex items-center justify-between gap-2 text-xs">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const todayKey = toLocalDateKey(new Date()) || "";
+                    setSelectedDate(todayKey);
+                    setCurrentPage(1);
+                    setDatePickerOpen(false);
+                  }}
+                  className="font-semibold text-[#006685] hover:text-[#00A2D2] transition-colors cursor-pointer"
+                >
+                  {isRTL ? "اليوم" : "Today"}
+                </button>
+                {selectedDate && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedDate("");
+                      setCurrentPage(1);
+                      setDatePickerOpen(false);
+                    }}
+                    className="font-semibold text-rose-600 hover:text-rose-700 transition-colors cursor-pointer"
+                  >
+                    {isRTL ? "عرض كل الأيام" : "All Dates"}
+                  </button>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
 
           {/* Revalidate / Sync Button */}
           <button
@@ -740,11 +994,19 @@ export default function DashboardClient({ data }: DashboardClientProps) {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-4">
             {visibleProjects.map((proj) => {
               const isSelected = String(proj.id) === selectedProjectId;
-              const pTotal = proj.stats?.total || 0;
-              const pPassed = proj.stats?.passed || 0;
-              const pFailed = proj.stats?.failed || 0;
-              const pPending = proj.stats?.pending || 0;
-              const pRate = proj.stats?.successRate || 0;
+              const dynStats =
+                selectedDate || selectedUserObj
+                  ? projectDynamicStatsMap.get(proj.id)
+                  : undefined;
+              const pTotal = dynStats ? dynStats.total : proj.stats?.total || 0;
+              const pPassed = dynStats ? dynStats.passed : proj.stats?.passed || 0;
+              const pFailed = dynStats ? dynStats.failed : proj.stats?.failed || 0;
+              const pPending = dynStats
+                ? dynStats.pending
+                : proj.stats?.pending || 0;
+              const pRate = dynStats
+                ? dynStats.successRate
+                : proj.stats?.successRate || 0;
 
               return (
                 <div
@@ -910,10 +1172,15 @@ export default function DashboardClient({ data }: DashboardClientProps) {
                     .toUpperCase()
                 : "U";
 
-              const uTotal = u._count?.testCases || 0;
-              const uPassed = u._count?.passed || 0;
-              const uFailed = u._count?.failed || 0;
-              const uPending = u._count?.pending || 0;
+              const dynUser = selectedDate
+                ? userDynamicStatsMap.get(u.id)
+                : undefined;
+              const uTotal = dynUser ? dynUser.total : u._count?.testCases || 0;
+              const uPassed = dynUser ? dynUser.passed : u._count?.passed || 0;
+              const uFailed = dynUser ? dynUser.failed : u._count?.failed || 0;
+              const uPending = dynUser
+                ? dynUser.pending
+                : u._count?.pending || 0;
 
               return (
                 <div
@@ -1049,6 +1316,18 @@ export default function DashboardClient({ data }: DashboardClientProps) {
                             const projId = ap.projectId || ap.id;
                             const isProjActive =
                               String(projId) === selectedProjectId;
+                            const apDyn = selectedDate
+                              ? projectDynamicStatsMap.get(Number(projId))
+                              : undefined;
+                            const apTotal = apDyn
+                              ? apDyn.total
+                              : ap.stats?.total || 0;
+                            const apPassed = apDyn
+                              ? apDyn.passed
+                              : ap.stats?.passed || 0;
+                            const apFailed = apDyn
+                              ? apDyn.failed
+                              : ap.stats?.failed || 0;
                             return (
                               <div
                                 key={`${u.id}-${projId}`}
@@ -1075,19 +1354,19 @@ export default function DashboardClient({ data }: DashboardClientProps) {
                                     className="px-1.5 py-0.5 rounded bg-slate-100 text-[#0b1c30] font-bold"
                                     title={isRTL ? "إجمالي الحالات" : "Total Cases"}
                                   >
-                                    {ap.stats?.total || 0} TC
+                                    {apTotal} TC
                                   </span>
                                   <span
                                     className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold"
                                     title={isRTL ? "ناجح" : "Passed"}
                                   >
-                                    ✓{ap.stats?.passed || 0}
+                                    ✓{apPassed}
                                   </span>
                                   <span
                                     className="px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 font-bold"
                                     title={isRTL ? "فاشل" : "Failed"}
                                   >
-                                    ✗{ap.stats?.failed || 0}
+                                    ✗{apFailed}
                                   </span>
                                 </div>
                               </div>
@@ -1347,6 +1626,14 @@ export default function DashboardClient({ data }: DashboardClientProps) {
                   const rawTotal = bar.rawP + bar.rawF + bar.rawPe;
                   const isHovered =
                     hoveredBar?.day === (isRTL ? bar.dayAr : bar.day);
+                  const isDateSelected = Boolean(bar.isSelectedDate);
+                  const barOpacity = selectedDate
+                    ? isDateSelected || isHovered
+                      ? "1"
+                      : "0.28"
+                    : hoveredBar && !isHovered
+                    ? "0.6"
+                    : "1";
 
                   return (
                     <g
@@ -1364,24 +1651,24 @@ export default function DashboardClient({ data }: DashboardClientProps) {
                       }
                       onMouseLeave={() => setHoveredBar(null)}
                       onClick={() => {
-                        if (bar.rawF > 0) {
-                          setStatusFilter("failed");
-                          setSeverityFilter("all");
-                          setCurrentPage(1);
-                          scrollToTable();
-                        }
+                        setSelectedDate(
+                          isDateSelected ? "" : bar.dateKey
+                        );
+                        setCurrentPage(1);
                       }}
                     >
-                      {/* Background hover highlight pillar */}
-                      {isHovered && (
+                      {/* Background hover / selected-date highlight pillar */}
+                      {(isHovered || isDateSelected) && (
                         <rect
                           x={bar.x - 3}
                           y="15"
                           width={bar.barW + 6}
                           height="170"
                           rx="4"
-                          fill="#eff4ff"
-                          opacity="0.8"
+                          fill={isDateSelected ? "#e0f2fe" : "#eff4ff"}
+                          stroke={isDateSelected ? "#00A2D2" : "none"}
+                          strokeWidth={isDateSelected ? "1.2" : "0"}
+                          opacity="0.9"
                         />
                       )}
 
@@ -1407,7 +1694,7 @@ export default function DashboardClient({ data }: DashboardClientProps) {
                           x={bar.x}
                           y={yP}
                           className="transition-opacity"
-                          opacity={hoveredBar && !isHovered ? "0.6" : "1"}
+                          opacity={barOpacity}
                         />
                       )}
                       {bar.f > 0 && (
@@ -1419,7 +1706,7 @@ export default function DashboardClient({ data }: DashboardClientProps) {
                           x={bar.x}
                           y={yF}
                           className="transition-opacity"
-                          opacity={hoveredBar && !isHovered ? "0.6" : "1"}
+                          opacity={barOpacity}
                         />
                       )}
                       {bar.pe > 0 && (
@@ -1431,18 +1718,22 @@ export default function DashboardClient({ data }: DashboardClientProps) {
                           x={bar.x}
                           y={yPe}
                           className="transition-opacity"
-                          opacity={hoveredBar && !isHovered ? "0.6" : "1"}
+                          opacity={barOpacity}
                         />
                       )}
 
                       {/* X-Axis day label */}
-                      {(bar.showLabel || isHovered) && (
+                      {(bar.showLabel || isHovered || isDateSelected) && (
                         <text
                           className={`text-[9.5px] font-mono ${
-                            bar.isToday || isHovered || bar.rawF > 0 ? "font-bold" : ""
+                            bar.isToday || isHovered || isDateSelected || bar.rawF > 0
+                              ? "font-bold"
+                              : ""
                           }`}
                           fill={
-                            bar.rawF > 0
+                            isDateSelected
+                              ? "#006685"
+                              : bar.rawF > 0
                               ? "#BA1A1A"
                               : bar.isToday
                               ? "#00A2D2"
@@ -1811,10 +2102,18 @@ export default function DashboardClient({ data }: DashboardClientProps) {
                     : "bg-[#eff4ff] text-[#3d484f] hover:bg-[#dce9ff]"
                 }`}
               >
-                {t("all_modules")} ({data.testCases.length})
+                {t("all_modules")} (
+                {selectedDate || selectedUserObj
+                  ? userScopedDateCasesCount
+                  : data.testCases.length}
+                )
               </button>
               {visibleProjects.map((proj) => {
                 const isSelected = selectedProjectId === String(proj.id);
+                const pillCount =
+                  selectedDate || selectedUserObj
+                    ? projectDynamicStatsMap.get(proj.id)?.total ?? 0
+                    : proj.stats?.total || 0;
                 return (
                   <button
                     key={proj.id}
@@ -1839,7 +2138,7 @@ export default function DashboardClient({ data }: DashboardClientProps) {
                           : "bg-white text-[#006685]"
                       }`}
                     >
-                      {proj.stats?.total || 0}
+                      {pillCount}
                     </span>
                   </button>
                 );
@@ -1889,6 +2188,7 @@ export default function DashboardClient({ data }: DashboardClientProps) {
                           : "No test cases matched your current filter"}
                       </p>
                       {(searchQuery ||
+                        Boolean(selectedDate) ||
                         selectedProjectId !== "all" ||
                         selectedUserId !== "all" ||
                         statusFilter !== "all" ||
@@ -1897,6 +2197,7 @@ export default function DashboardClient({ data }: DashboardClientProps) {
                           type="button"
                           onClick={() => {
                             setSearchQuery("");
+                            setSelectedDate("");
                             setSelectedProjectId("all");
                             setSelectedUserId("all");
                             setStatusFilter("all");
