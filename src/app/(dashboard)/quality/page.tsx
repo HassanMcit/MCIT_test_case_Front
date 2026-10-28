@@ -1,6 +1,8 @@
 import { getQualityApplications } from "./quality.action";
 import QualityClient from "./QualityClient";
 
+export const fetchCache = "force-cache";
+
 interface QualityPageProps {
   searchParams: Promise<{
     category?: string;

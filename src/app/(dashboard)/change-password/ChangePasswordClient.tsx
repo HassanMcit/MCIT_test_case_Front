@@ -1,0 +1,296 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+import { Eye, EyeOff, Lock, ArrowRight, ArrowLeft, ShieldCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { useLanguage } from "@/context/language-context";
+import toast from "react-hot-toast";
+import { getChangePasswordSchema } from "./changepassword.zod";
+import { ChangePasswordForm } from "./changepassword.interface";
+import { handleUserChangePassword } from "./changepassword.action";
+
+export default function ChangePasswordPage() {
+  const router = useRouter();
+  const { dir, t } = useLanguage();
+  const isRTL = dir === "rtl";
+  const [showOld, setShowOld] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm<ChangePasswordForm>({
+    defaultValues: {
+      oldPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+    mode: "all",
+    resolver: zodResolver(getChangePasswordSchema(t)),
+  });
+
+  async function onSubmit(data: ChangePasswordForm) {
+    setIsSubmitting(true);
+    const toastId = toast.loading(
+      isRTL ? "جاري تغيير كلمة المرور..." : "Updating password..."
+    );
+
+    try {
+      const res = await handleUserChangePassword(data);
+      toast.dismiss(toastId);
+
+      if (res.success) {
+        toast.success(
+          <span className="font-semibold text-emerald-600">
+            {isRTL ? res.message : res.messageEn}
+          </span>
+        );
+        reset();
+        setTimeout(() => router.push("/dashboard"), 1200);
+      } else {
+        toast.error(
+          <span className="font-semibold text-red-600">
+            {isRTL ? res.message : res.messageEn}
+          </span>
+        );
+        if (res.status === 401) {
+          setTimeout(() => router.push("/login"), 1500);
+        }
+      }
+    } catch {
+      toast.dismiss(toastId);
+      toast.error(
+        <span className="font-semibold text-red-600">
+          {isRTL ? "حدث خطأ غير متوقع" : "An unexpected error occurred"}
+        </span>
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  const BackArrow = isRTL ? ArrowRight : ArrowLeft;
+
+  return (
+    <div className="min-h-screen bg-[#f8f9ff] py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-lg mx-auto">
+        {/* Back Button */}
+        <button
+          type="button"
+          onClick={() => router.push("/dashboard")}
+          className="flex items-center gap-2 text-[#00A2D2] hover:text-[#008eb8] transition-colors mb-6 cursor-pointer"
+        >
+          <BackArrow className="w-4 h-4" />
+          <span className="text-sm font-medium">{t("cp_back")}</span>
+        </button>
+
+        <Card className="shadow-[0_4px_20px_-4px_rgba(0,0,0,0.06)] border-slate-200/80 rounded-2xl">
+          <CardHeader className="text-center pb-2">
+            <div className="mx-auto w-14 h-14 rounded-2xl bg-[#e5eeff] flex items-center justify-center mb-3">
+              <ShieldCheck className="w-7 h-7 text-[#00A2D2]" />
+            </div>
+            <CardTitle className="text-xl font-bold text-[#0b1c30]">
+              {t("cp_title")}
+            </CardTitle>
+            <CardDescription className="text-sm text-[#6d797f]">
+              {t("cp_subtitle")}
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="pt-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5" noValidate>
+              {/* Current Password */}
+              <div className="space-y-1.5">
+                <Label
+                  htmlFor="oldPassword"
+                  className={cn(
+                    "text-slate-600 text-sm font-semibold block",
+                    isRTL ? "text-right" : "text-left"
+                  )}
+                >
+                  {t("cp_current_password")}
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="oldPassword"
+                    type={showOld ? "text" : "password"}
+                    {...register("oldPassword")}
+                    dir={isRTL ? "rtl" : "ltr"}
+                    autoComplete="off"
+                    placeholder={t("cp_current_password_placeholder")}
+                    className={cn(
+                      "h-12 text-sm text-slate-800 rounded-xl transition-all",
+                      isRTL ? "pr-11 pl-11 text-right placeholder:text-right" : "pl-11 pr-11 text-left placeholder:text-left",
+                      errors.oldPassword
+                        ? "border-[#F00] focus-visible:border-[#F00] focus-visible:ring-[#F00]/15"
+                        : "border-[#E2E8F0] focus-visible:border-[#00A2D2] focus-visible:ring-2 focus-visible:ring-[#00A2D2]/25",
+                      "placeholder:text-slate-400"
+                    )}
+                  />
+                  <span
+                    className={cn(
+                      "absolute inset-y-0 flex items-center pointer-events-none text-slate-400",
+                      isRTL ? "right-0 pr-3.5" : "left-0 pl-3.5"
+                    )}
+                  >
+                    <Lock className="w-5 h-5" strokeWidth={1.6} />
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowOld((v) => !v)}
+                    className={cn(
+                      "absolute inset-y-0 flex items-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer",
+                      isRTL ? "left-0 pl-3.5" : "right-0 pr-3.5"
+                    )}
+                  >
+                    {showOld ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+                {errors.oldPassword && (
+                  <span className={cn("text-xs text-red-500 block mt-1", isRTL ? "text-right" : "text-left")}>
+                    {errors.oldPassword?.message}
+                  </span>
+                )}
+              </div>
+
+              {/* New Password */}
+              <div className="space-y-1.5">
+                <Label
+                  htmlFor="newPassword"
+                  className={cn(
+                    "text-slate-600 text-sm font-semibold block",
+                    isRTL ? "text-right" : "text-left"
+                  )}
+                >
+                  {t("cp_new_password")}
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="newPassword"
+                    type={showNew ? "text" : "password"}
+                    {...register("newPassword")}
+                    dir={isRTL ? "rtl" : "ltr"}
+                    autoComplete="off"
+                    placeholder={t("cp_new_password_placeholder")}
+                    className={cn(
+                      "h-12 text-sm text-slate-800 rounded-xl transition-all",
+                      isRTL ? "pr-11 pl-11 text-right placeholder:text-right" : "pl-11 pr-11 text-left placeholder:text-left",
+                      errors.newPassword
+                        ? "border-[#F00] focus-visible:border-[#F00] focus-visible:ring-[#F00]/15"
+                        : "border-[#E2E8F0] focus-visible:border-[#00A2D2] focus-visible:ring-2 focus-visible:ring-[#00A2D2]/25",
+                      "placeholder:text-slate-400"
+                    )}
+                  />
+                  <span
+                    className={cn(
+                      "absolute inset-y-0 flex items-center pointer-events-none text-slate-400",
+                      isRTL ? "right-0 pr-3.5" : "left-0 pl-3.5"
+                    )}
+                  >
+                    <Lock className="w-5 h-5" strokeWidth={1.6} />
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowNew((v) => !v)}
+                    className={cn(
+                      "absolute inset-y-0 flex items-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer",
+                      isRTL ? "left-0 pl-3.5" : "right-0 pr-3.5"
+                    )}
+                  >
+                    {showNew ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+                {errors.newPassword && (
+                  <span className={cn("text-xs text-red-500 block mt-1", isRTL ? "text-right" : "text-left")}>
+                    {errors.newPassword?.message}
+                  </span>
+                )}
+              </div>
+
+              {/* Confirm Password */}
+              <div className="space-y-1.5">
+                <Label
+                  htmlFor="confirmPassword"
+                  className={cn(
+                    "text-slate-600 text-sm font-semibold block",
+                    isRTL ? "text-right" : "text-left"
+                  )}
+                >
+                  {t("cp_confirm_password")}
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirm ? "text" : "password"}
+                    {...register("confirmPassword")}
+                    dir={isRTL ? "rtl" : "ltr"}
+                    autoComplete="off"
+                    placeholder={t("cp_confirm_password_placeholder")}
+                    className={cn(
+                      "h-12 text-sm text-slate-800 rounded-xl transition-all",
+                      isRTL ? "pr-11 pl-11 text-right placeholder:text-right" : "pl-11 pr-11 text-left placeholder:text-left",
+                      errors.confirmPassword
+                        ? "border-[#F00] focus-visible:border-[#F00] focus-visible:ring-[#F00]/15"
+                        : "border-[#E2E8F0] focus-visible:border-[#00A2D2] focus-visible:ring-2 focus-visible:ring-[#00A2D2]/25",
+                      "placeholder:text-slate-400"
+                    )}
+                  />
+                  <span
+                    className={cn(
+                      "absolute inset-y-0 flex items-center pointer-events-none text-slate-400",
+                      isRTL ? "right-0 pr-3.5" : "left-0 pl-3.5"
+                    )}
+                  >
+                    <Lock className="w-5 h-5" strokeWidth={1.6} />
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm((v) => !v)}
+                    className={cn(
+                      "absolute inset-y-0 flex items-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer",
+                      isRTL ? "left-0 pl-3.5" : "right-0 pr-3.5"
+                    )}
+                  >
+                    {showConfirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+                {errors.confirmPassword && (
+                  <span className={cn("text-xs text-red-500 block mt-1", isRTL ? "text-right" : "text-left")}>
+                    {errors.confirmPassword?.message}
+                  </span>
+                )}
+              </div>
+
+              {/* Submit */}
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className={cn(
+                  "w-full h-12 mt-2 rounded-xl text-base font-bold text-white cursor-pointer",
+                  "bg-[#00A2D2] hover:bg-[#008eb8] active:scale-[0.99]",
+                  "shadow-[0_4px_14px_0_rgba(0,162,210,0.3)] hover:shadow-[0_6px_20px_rgba(0,162,210,0.4)]",
+                  "transition-all duration-200",
+                  isSubmitting && "opacity-70 cursor-not-allowed"
+                )}
+              >
+                {isSubmitting ? t("cp_submitting") : t("cp_submit")}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

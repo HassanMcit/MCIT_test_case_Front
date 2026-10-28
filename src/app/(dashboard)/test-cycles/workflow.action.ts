@@ -21,7 +21,14 @@ export async function workflowRequest<T>(
       `${process.env.NEXT_PUBLIC_BASE_URL}/api/${path}`,
       {
         method,
-        cache: "no-store",
+        cache: "force-cache",
+        ...(method === "GET"
+          ? {
+              next: {
+                tags: ["test-cases", "dashboard", "dashboard-stats", "projects"],
+              },
+            }
+          : {}),
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",

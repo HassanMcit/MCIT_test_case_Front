@@ -364,6 +364,7 @@ export default function ProjectsForm({
   useEffect(() => {
     if (serverProjects && serverProjects.length > 0) {
       setRawProjects(serverProjects);
+      return;
     }
     getProjects().then((data) => {
       if (data && Array.isArray(data) && data.length > 0) {

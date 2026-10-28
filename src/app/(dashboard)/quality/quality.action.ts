@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath, updateTag } from "next/cache";
+import { revalidatePath, unstable_cache, updateTag } from "next/cache";
 import { pool } from "@/lib/db";
 import { getCurrentUserSession } from "@/app/myUtil";
 import { recordSystemAuditLog } from "@/lib/audit";
@@ -13,49 +13,16 @@ import type {
   CreateQualityAppDto,
 } from "./quality.interface";
 
-/**
- * Fetch all Quality Applications and portfolio metrics.
- * Strictly uses cache: "force-cache" with tag "quality-apps".
- */
-export async function getQualityApplications(
-  category?: string,
-  search?: string
-): Promise<QualityPageData> {
-  const defaultMetrics: QualityMetricsSummary = {
-    totalApps: 16,
-    avgPassRate: 94.6,
-    totalSuites: 3124,
-    totalDefects: 145,
-    criticalDefects: 12,
-  };
+const getCachedQualityApplicationsFromDb = unstable_cache(
+  async (category?: string, search?: string): Promise<QualityPageData> => {
+    const defaultMetrics: QualityMetricsSummary = {
+      totalApps: 16,
+      avgPassRate: 94.6,
+      totalSuites: 3124,
+      totalDefects: 145,
+      criticalDefects: 12,
+    };
 
-  try {
-    const qs = new URLSearchParams();
-    if (category && category !== "All") qs.set("category", category);
-    if (search && search.trim() !== "") qs.set("search", search.trim());
-
-    const host = process.env.INTERNAL_APP_URL || "http://localhost:3000";
-    const res = await fetch(`${host}/api/quality?${qs.toString()}`, {
-      method: "GET",
-      cache: "force-cache",
-      next: { tags: ["quality-apps"] },
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      if (data?.success && Array.isArray(data?.applications)) {
-        return {
-          applications: data.applications,
-          metrics: data.metrics || defaultMetrics,
-        };
-      }
-    }
-  } catch (err) {
-    // Fallback to direct DB query if loopback fetch is not ready
-  }
-
-  // Resilient DB fallback directly from Supabase pool
-  try {
     let query = "SELECT * FROM quality_applications";
     const conditions: string[] = [];
     const params: any[] = [];
@@ -67,7 +34,9 @@ export async function getQualityApplications(
 
     if (search && search.trim() !== "") {
       params.push(`%${search.trim().toLowerCase()}%`);
-      conditions.push(`(LOWER(name) LIKE $${params.length} OR LOWER(COALESCE("nameAr", '')) LIKE $${params.length})`);
+      conditions.push(
+        `(LOWER(name) LIKE $${params.length} OR LOWER(COALESCE("nameAr", '')) LIKE $${params.length})`
+      );
     }
 
     if (conditions.length > 0) {
@@ -94,8 +63,8 @@ export async function getQualityApplications(
         : typeof r.defaultFunctions === "string"
         ? JSON.parse(r.defaultFunctions || "[]")
         : [],
-      createdAt: r.createdAt,
-      updatedAt: r.updatedAt,
+      createdAt: r.createdAt instanceof Date ? r.createdAt.toISOString() : r.createdAt,
+      updatedAt: r.updatedAt instanceof Date ? r.updatedAt.toISOString() : r.updatedAt,
     }));
 
     const totalApps = applications.length;
@@ -128,6 +97,58 @@ export async function getQualityApplications(
         criticalDefects: 12,
       },
     };
+  },
+  ["quality-applications-db"],
+  {
+    tags: ["quality-apps"],
+    revalidate: false,
+  }
+);
+
+/**
+ * Fetch all Quality Applications and portfolio metrics.
+ * Strictly uses cache: "force-cache" / Data Cache with tag "quality-apps".
+ */
+export async function getQualityApplications(
+  category?: string,
+  search?: string
+): Promise<QualityPageData> {
+  const defaultMetrics: QualityMetricsSummary = {
+    totalApps: 16,
+    avgPassRate: 94.6,
+    totalSuites: 3124,
+    totalDefects: 145,
+    criticalDefects: 12,
+  };
+
+  if (process.env.INTERNAL_APP_URL) {
+    try {
+      const qs = new URLSearchParams();
+      if (category && category !== "All") qs.set("category", category);
+      if (search && search.trim() !== "") qs.set("search", search.trim());
+
+      const res = await fetch(`${process.env.INTERNAL_APP_URL}/api/quality?${qs.toString()}`, {
+        method: "GET",
+        cache: "force-cache",
+        next: { tags: ["quality-apps"] },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.success && Array.isArray(data?.applications)) {
+          return {
+            applications: data.applications,
+            metrics: data.metrics || defaultMetrics,
+          };
+        }
+      }
+    } catch {
+      // Fallback to cached DB query
+    }
+  }
+
+  try {
+    return await getCachedQualityApplicationsFromDb(category, search);
   } catch (dbErr) {
     console.error("Direct DB fallback error in getQualityApplications:", dbErr);
     return {
@@ -137,33 +158,10 @@ export async function getQualityApplications(
   }
 }
 
-/**
- * Fetch application details by ID and its assessment history.
- */
-export async function getQualityAppById(
-  id: number
-): Promise<{ application: QualityApplication | null; assessments: QualityAssessment[] }> {
-  try {
-    const host = process.env.INTERNAL_APP_URL || "http://localhost:3000";
-    const res = await fetch(`${host}/api/quality/${id}`, {
-      method: "GET",
-      cache: "force-cache",
-      next: { tags: ["quality-apps", `quality-app-${id}`] },
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      if (data?.success && data?.application) {
-        return {
-          application: data.application,
-          assessments: data.assessments || [],
-        };
-      }
-    }
-  } catch {}
-
-  // Direct DB Fallback
-  try {
+const getCachedQualityAppByIdFromDb = unstable_cache(
+  async (
+    id: number
+  ): Promise<{ application: QualityApplication | null; assessments: QualityAssessment[] }> => {
     const appRes = await pool.query("SELECT * FROM quality_applications WHERE id = $1", [id]);
     if (appRes.rows.length === 0) {
       return { application: null, assessments: [] };
@@ -187,8 +185,8 @@ export async function getQualityAppById(
         : typeof r.defaultFunctions === "string"
         ? JSON.parse(r.defaultFunctions || "[]")
         : [],
-      createdAt: r.createdAt,
-      updatedAt: r.updatedAt,
+      createdAt: r.createdAt instanceof Date ? r.createdAt.toISOString() : r.createdAt,
+      updatedAt: r.updatedAt instanceof Date ? r.updatedAt.toISOString() : r.updatedAt,
     };
 
     const histRes = await pool.query(
@@ -210,10 +208,46 @@ export async function getQualityAppById(
       issuesCount: parseInt(c.issuesCount, 10) || 0,
       performanceScore: parseFloat(c.performanceScore) || 0,
       notes: c.notes || "",
-      createdAt: c.createdAt,
+      createdAt: c.createdAt instanceof Date ? c.createdAt.toISOString() : c.createdAt,
     }));
 
     return { application, assessments };
+  },
+  ["quality-app-by-id-db"],
+  {
+    tags: ["quality-apps"],
+    revalidate: false,
+  }
+);
+
+/**
+ * Fetch application details by ID and its assessment history.
+ */
+export async function getQualityAppById(
+  id: number
+): Promise<{ application: QualityApplication | null; assessments: QualityAssessment[] }> {
+  if (process.env.INTERNAL_APP_URL) {
+    try {
+      const res = await fetch(`${process.env.INTERNAL_APP_URL}/api/quality/${id}`, {
+        method: "GET",
+        cache: "force-cache",
+        next: { tags: ["quality-apps", `quality-app-${id}`] },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.success && data?.application) {
+          return {
+            application: data.application,
+            assessments: data.assessments || [],
+          };
+        }
+      }
+    } catch {}
+  }
+
+  try {
+    return await getCachedQualityAppByIdFromDb(id);
   } catch (err) {
     console.error("Direct DB error in getQualityAppById:", err);
     return { application: null, assessments: [] };

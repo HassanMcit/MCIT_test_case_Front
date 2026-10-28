@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { ForgetPasswordForm } from "@/components/forget-password-form";
 
+export const fetchCache = "force-cache";
+
 export const metadata: Metadata = {
   title: "استعادة كلمة المرور | نظام إدارة اختبارات الجودة",
   description: "Forget Password – Get Verification Code",

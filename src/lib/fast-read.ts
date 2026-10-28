@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { pool } from "@/lib/db";
 import type { ProjectApiItem } from "@/app/(dashboard)/projects/getProjects.action";
 import type {
@@ -52,7 +53,7 @@ function parseStepsArray(rawSteps: any): string[] {
 /**
  * Fast direct PostgreSQL fallback for `getProjects` (~80ms on Supabase Pooler)
  */
-export async function queryProjectsFromDb(params?: {
+async function queryProjectsFromDbRaw(params?: {
   environment?: string;
   status?: string;
   search?: string;
@@ -164,10 +165,19 @@ export async function queryProjectsFromDb(params?: {
   return items;
 }
 
+export const queryProjectsFromDb = unstable_cache(
+  queryProjectsFromDbRaw,
+  ["fast-read-projects"],
+  {
+    tags: ["projects", "test-cases", "dashboard", "dashboard-stats"],
+    revalidate: false,
+  }
+);
+
 /**
  * Fast direct PostgreSQL fallback for `getTestCases` (~80ms on Supabase Pooler)
  */
-export async function queryTestCasesFromDb(
+async function queryTestCasesFromDbRaw(
   params?: TestCaseQueryParams,
   sessionUser?: { id?: number; role?: string } | null
 ): Promise<TestCaseListResponse> {
@@ -298,10 +308,19 @@ export async function queryTestCasesFromDb(
   };
 }
 
+export const queryTestCasesFromDb = unstable_cache(
+  queryTestCasesFromDbRaw,
+  ["fast-read-test-cases"],
+  {
+    tags: ["test-cases", "projects", "dashboard", "dashboard-stats"],
+    revalidate: false,
+  }
+);
+
 /**
  * Fast direct PostgreSQL fallback for `getAllUsers` (~80ms on Supabase Pooler)
  */
-export async function queryAllUsersFromDb() {
+async function queryAllUsersFromDbRaw() {
   const [usersRes, assignRes, tcCountRes] = await Promise.all([
     pool.query(`SELECT to_jsonb(u) AS u_json FROM users u ORDER BY u.id DESC`),
     pool.query(`
@@ -367,3 +386,12 @@ export async function queryAllUsersFromDb() {
     };
   });
 }
+
+export const queryAllUsersFromDb = unstable_cache(
+  queryAllUsersFromDbRaw,
+  ["fast-read-all-users"],
+  {
+    tags: ["users", "projects", "test-cases", "dashboard"],
+    revalidate: false,
+  }
+);

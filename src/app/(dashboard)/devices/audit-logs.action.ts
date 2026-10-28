@@ -1,5 +1,6 @@
 "use server";
 
+import { unstable_cache, updateTag } from "next/cache";
 import { getUserToken } from "@/app/myUtil";
 import { pool } from "@/lib/db";
 
@@ -33,14 +34,14 @@ export interface AuditLogsResponse {
   };
 }
 
-export async function getAuditLogs(query?: {
-  page?: number;
-  limit?: number;
-  search?: string;
-  category?: string;
-  userId?: number;
-}): Promise<AuditLogsResponse> {
-  try {
+const getCachedAuditLogs = unstable_cache(
+  async (query?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    category?: string;
+    userId?: number;
+  }): Promise<AuditLogsResponse> => {
     const page = Math.max(1, Number(query?.page) || 1);
     const limit = Math.min(100, Math.max(1, Number(query?.limit) || 25));
     const offset = (page - 1) * limit;
@@ -119,6 +120,23 @@ export async function getAuditLogs(query?: {
         totalPages: Math.ceil(total / limit) || 1,
       },
     };
+  },
+  ["audit-logs-query"],
+  {
+    tags: ["audit-logs"],
+    revalidate: false,
+  }
+);
+
+export async function getAuditLogs(query?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  category?: string;
+  userId?: number;
+}): Promise<AuditLogsResponse> {
+  try {
+    return await getCachedAuditLogs(query);
   } catch (err) {
     console.error("Direct Postgres query failed for audit logs:", err);
     return { data: [], meta: { total: 0, page: 1, limit: 25, totalPages: 1 } };
@@ -185,6 +203,7 @@ export async function recordClientAuditAction(payload: {
       ]
     );
 
+    updateTag("audit-logs");
     return true;
   } catch (err) {
     console.error("Failed to record client audit action to DB:", err);

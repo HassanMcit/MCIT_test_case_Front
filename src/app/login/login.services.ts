@@ -7,6 +7,7 @@ export async function sendUserLogin(userData:LoginSchemaType):Promise<LoginRespo
     try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/login`, {
             method: "POST",
+            cache: "force-cache",
             headers: {
                 "content-type" : "application/json",
             },

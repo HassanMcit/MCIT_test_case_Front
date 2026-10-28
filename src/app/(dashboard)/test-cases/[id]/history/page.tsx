@@ -1,4 +1,7 @@
 import ExecutionHistory from "./ExecutionHistory";
+
+export const fetchCache = "force-cache";
+
 export default async function HistoryPage({
   params,
 }: {

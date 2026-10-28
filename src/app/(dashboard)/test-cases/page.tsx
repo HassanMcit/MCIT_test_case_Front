@@ -2,6 +2,8 @@ import { getProjects } from "../projects/getProjects.action";
 import { getTestCases } from "./test-cases.action";
 import TestCasesTable from "./TestCasesTable";
 
+export const fetchCache = "force-cache";
+
 interface PageProps {
   searchParams: Promise<{
     projectId?: string;

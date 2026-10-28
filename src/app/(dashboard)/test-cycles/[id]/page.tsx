@@ -2,6 +2,9 @@ import { getCurrentUserSession } from "@/app/myUtil";
 import { workflowRequest } from "../workflow.action";
 import type { Cycle } from "../workflow.types";
 import CycleWorkspace from "./CycleWorkspace";
+
+export const fetchCache = "force-cache";
+
 export default async function CyclePage({
   params,
 }: {

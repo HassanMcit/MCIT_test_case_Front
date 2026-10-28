@@ -1,5 +1,6 @@
 "use server";
 
+import { unstable_cache, updateTag } from "next/cache";
 import { getUserToken } from "@/app/myUtil";
 import { pool } from "@/lib/db";
 
@@ -20,8 +21,8 @@ export interface LoginSessionItem {
   revokedAt?: string;
 }
 
-export async function getLoginSessions(): Promise<LoginSessionItem[]> {
-  try {
+const getCachedLoginSessions = unstable_cache(
+  async (): Promise<LoginSessionItem[]> => {
     const res = await pool.query(
       `SELECT * FROM user_login_sessions ORDER BY "createdAt" DESC, id DESC LIMIT 100`
     );
@@ -42,6 +43,17 @@ export async function getLoginSessions(): Promise<LoginSessionItem[]> {
       lastSeenAt: r.lastSeenAt instanceof Date ? r.lastSeenAt.toISOString() : String(r.lastSeenAt),
       revokedAt: r.revokedAt ? (r.revokedAt instanceof Date ? r.revokedAt.toISOString() : String(r.revokedAt)) : undefined,
     }));
+  },
+  ["login-sessions-query"],
+  {
+    tags: ["login-sessions"],
+    revalidate: false,
+  }
+);
+
+export async function getLoginSessions(): Promise<LoginSessionItem[]> {
+  try {
+    return await getCachedLoginSessions();
   } catch (err) {
     console.error("Failed to query login sessions directly from DB:", err);
     return [];
@@ -79,6 +91,8 @@ export async function revokeLoginSession(sessionId: string): Promise<{ success: 
       );
     } catch {}
 
+    updateTag("login-sessions");
+    updateTag("audit-logs");
     return { success: true, message: "تم تسجيل الخروج من هذا الجهاز بنجاح" };
   } catch (err: any) {
     return { success: false, message: err?.message || "حدث خطأ أثناء إنهاء الجلسة" };
@@ -98,6 +112,7 @@ export async function revokeAllOtherSessions(userId: number): Promise<{ success:
       [userId]
     );
 
+    updateTag("login-sessions");
     return { success: true, message: "تم تسجيل الخروج من كافة الأجهزة الأخرى فورياً" };
   } catch (err: any) {
     return { success: false, message: err?.message || "حدث خطأ أثناء إنهاء الجلسات" };

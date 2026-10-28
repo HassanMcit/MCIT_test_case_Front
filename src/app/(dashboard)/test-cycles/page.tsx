@@ -1,7 +1,7 @@
 import { getProjects } from "../projects/getProjects.action";
 import { getCurrentUserSession } from "@/app/myUtil";
 import WorkflowManager from "./WorkflowManager";
-export const dynamic = "force-dynamic";
+export const fetchCache = "force-cache";
 export default async function TestCyclesPage({
   searchParams,
 }: {

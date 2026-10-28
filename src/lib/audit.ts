@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+import { revalidateTag } from "next/cache";
 import { pool } from "@/lib/db";
 import { getCurrentUserSession } from "@/app/myUtil";
 import * as crypto from "node:crypto";
@@ -215,6 +216,11 @@ export async function recordSystemAuditLog(payload: AuditLogPayload): Promise<bo
         payload.status || "success",
       ]
     );
+
+    try {
+      revalidateTag("audit-logs", { expire: 0 });
+      revalidateTag("login-sessions", { expire: 0 });
+    } catch {}
 
     return true;
   } catch (err) {
