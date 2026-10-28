@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useEffect, useMemo, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -146,14 +147,19 @@ export default function TestCasesTable({
   }, [search, statusFilter, priorityFilter, fromDateFilter, toDateFilter, projectFilter]);
   const [selectedItem, setSelectedItem] = useState<TestCaseItem | null>(null);
 
-  // Extract distinct dates (sorted chronologically) for dropdowns — LOCAL day, not UTC
-  const uniqueDateStrings = Array.from(
-    new Set(
-      items
-        .map((tc) => toLocalDateKey(tc.executedAt || tc.createdAt))
-        .filter(Boolean) as string[]
-    )
-  ).sort();
+  // Build activity map per local day for Calendar indicator dots
+  const dateActivityMap = useMemo(() => {
+    const map = new Map<string, { total: number; failed: number }>();
+    for (const tc of items) {
+      const k = toLocalDateKey(tc.executedAt || tc.createdAt);
+      if (!k) continue;
+      const prev = map.get(k) || { total: 0, failed: 0 };
+      prev.total += 1;
+      if (tc.status === "failed") prev.failed += 1;
+      map.set(k, prev);
+    }
+    return map;
+  }, [items]);
 
   // Deletion State (In-app modal, NO native browser alert/confirm)
   const [itemToDelete, setItemToDelete] = useState<TestCaseItem | null>(null);
@@ -761,63 +767,29 @@ export default function TestCasesTable({
               </SelectContent>
             </Select>
 
-            {/* From Date Filter Dropdown */}
-            <Select
-              value={fromDateFilter}
-              onValueChange={(val) => setFromDateFilter(val || "all")}
-            >
-              <SelectTrigger className="h-10 w-full text-xs font-semibold bg-[#f8f9ff] border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
-                <div className="flex items-center gap-2 truncate">
-                  <Calendar className="w-3.5 h-3.5 text-[#006685] shrink-0" />
-                  <SelectValue>
-                    {fromDateFilter === "all"
-                      ? (isRTL ? "من تاريخ: الكل" : "From: All Dates")
-                      : (isRTL
-                          ? `من: ${formatActionTimestamp(fromDateFilter, lang).split(" - ")[0]}`
-                          : `From: ${fromDateFilter}`)}
-                  </SelectValue>
-                </div>
-              </SelectTrigger>
-              <SelectContent className="rounded-xl max-h-60">
-                <SelectItem value="all">
-                  {isRTL ? "من تاريخ: البداية (الكل)" : "From: Beginning (All)"}
-                </SelectItem>
-                {uniqueDateStrings.map((day) => (
-                  <SelectItem key={day} value={day}>
-                    {formatActionTimestamp(day, lang).split(" - ")[0]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* From Date Picker (shadcn/ui <Popover /> + <Calendar />) */}
+            <DatePicker
+              value={fromDateFilter === "all" ? "" : fromDateFilter}
+              onChange={(val) => setFromDateFilter(val || "all")}
+              prefixLabel={isRTL ? "من:" : "From:"}
+              placeholder={isRTL ? "من تاريخ: الكل" : "From: Pick a date"}
+              clearLabel={isRTL ? "كل التواريخ" : "All Dates"}
+              locale={isRTL ? "ar" : "en"}
+              highlightedDates={dateActivityMap}
+              className="bg-[#f8f9ff]"
+            />
 
-            {/* To Date Filter Dropdown */}
-            <Select
-              value={toDateFilter}
-              onValueChange={(val) => setToDateFilter(val || "all")}
-            >
-              <SelectTrigger className="h-10 w-full text-xs font-semibold bg-[#f8f9ff] border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
-                <div className="flex items-center gap-2 truncate">
-                  <Calendar className="w-3.5 h-3.5 text-[#006685] shrink-0" />
-                  <SelectValue>
-                    {toDateFilter === "all"
-                      ? (isRTL ? "إلى تاريخ: الكل" : "To: All Dates")
-                      : (isRTL
-                          ? `إلى: ${formatActionTimestamp(toDateFilter, lang).split(" - ")[0]}`
-                          : `To: ${toDateFilter}`)}
-                  </SelectValue>
-                </div>
-              </SelectTrigger>
-              <SelectContent className="rounded-xl max-h-60">
-                <SelectItem value="all">
-                  {isRTL ? "إلى تاريخ: النهاية (الكل)" : "To: End (All)"}
-                </SelectItem>
-                {uniqueDateStrings.map((day) => (
-                  <SelectItem key={day} value={day}>
-                    {formatActionTimestamp(day, lang).split(" - ")[0]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* To Date Picker (shadcn/ui <Popover /> + <Calendar />) */}
+            <DatePicker
+              value={toDateFilter === "all" ? "" : toDateFilter}
+              onChange={(val) => setToDateFilter(val || "all")}
+              prefixLabel={isRTL ? "إلى:" : "To:"}
+              placeholder={isRTL ? "إلى تاريخ: الكل" : "To: Pick a date"}
+              clearLabel={isRTL ? "كل التواريخ" : "All Dates"}
+              locale={isRTL ? "ar" : "en"}
+              highlightedDates={dateActivityMap}
+              className="bg-[#f8f9ff]"
+            />
 
             {/* Reset Filters / Results Summary */}
             {hasActiveFilters ? (

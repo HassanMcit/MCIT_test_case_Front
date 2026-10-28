@@ -13,10 +13,11 @@ export async function addNewTestCase(data: TestCaseFormValues) {
     }
 
     const nowIso = new Date().toISOString();
+    const resolvedExecutedAt = data.executedAt || nowIso;
     const safePayload = {
       ...data,
       module: (data.module || "").slice(0, 50).trim(),
-      executedAt: nowIso,
+      executedAt: resolvedExecutedAt,
     };
 
     let response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/test-cases`, {
@@ -44,7 +45,7 @@ export async function addNewTestCase(data: TestCaseFormValues) {
         body: JSON.stringify({
           ...safePayload,
           testId: nextIdFormatted,
-          executedAt: new Date().toISOString(),
+          executedAt: resolvedExecutedAt,
         }),
         cache: "force-cache",
       });

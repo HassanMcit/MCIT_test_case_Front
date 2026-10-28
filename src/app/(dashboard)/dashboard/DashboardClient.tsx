@@ -28,23 +28,16 @@ import {
   Filter,
   UserCheck,
   Pencil,
-  Calendar as CalendarIcon,
-  ChevronDown,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+import { DatePicker } from "@/components/ui/date-picker";
 import toast from "react-hot-toast";
 import type { DashboardDataPayload } from "./dashboard.interface";
 import type { TestCaseItem } from "../test-cases/test-cases.interface";
 import { formatActionTimestamp } from "../test-cases/TestCasesTable";
 import { revalidateDashboardAction } from "./dashboard.action";
-import { cn, toLocalDateKey } from "@/lib/utils";
+import { toLocalDateKey } from "@/lib/utils";
 
 interface DashboardClientProps {
   data: DashboardDataPayload;
@@ -61,7 +54,6 @@ export default function DashboardClient({ data }: DashboardClientProps) {
   const [selectedProjectId, setSelectedProjectId] = useState<string>("all");
   const [selectedUserId, setSelectedUserId] = useState<string>("all");
   const [selectedDate, setSelectedDate] = useState<string>("");
-  const [datePickerOpen, setDatePickerOpen] = useState<boolean>(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [severityFilter, setSeverityFilter] = useState<string>("all");
   const [trendDays, setTrendDays] = useState<14 | 30>(() => {
@@ -666,90 +658,18 @@ export default function DashboardClient({ data }: DashboardClientProps) {
           )}
 
           {/* shadcn/ui Date Picker (<Popover /> + <Calendar />) */}
-          <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
-            <PopoverTrigger
-              render={
-                <Button
-                  variant="outline"
-                  id="dashboard-date-picker"
-                  className={cn(
-                    "w-48 justify-between font-normal h-9 px-3 rounded-xl text-xs shadow-xs cursor-pointer transition-colors",
-                    selectedDate
-                      ? "bg-[#eff4ff] border-[#00A2D2]/50 text-[#0b1c30] font-semibold hover:bg-[#e2ecff]"
-                      : "bg-white border-slate-200/80 text-muted-foreground hover:bg-slate-50 hover:text-[#0b1c30]"
-                  )}
-                />
-              }
-            >
-              <span className="flex items-center gap-2 truncate">
-                <CalendarIcon
-                  className={cn(
-                    "w-3.5 h-3.5 shrink-0",
-                    selectedDate ? "text-[#00A2D2]" : "text-slate-400"
-                  )}
-                />
-                <span className="truncate">
-                  {selectedDateObj
-                    ? selectedDateObj.toLocaleDateString(
-                        isRTL ? "ar-EG" : "en-US",
-                        {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        }
-                      )
-                    : isRTL
-                    ? "اختر التاريخ"
-                    : "Pick a date"}
-                </span>
-              </span>
-              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-            </PopoverTrigger>
-            <PopoverContent
-              className="w-auto overflow-hidden p-0"
-              align={isRTL ? "end" : "start"}
-            >
-              <Calendar
-                mode="single"
-                selected={selectedDateObj}
-                locale={isRTL ? "ar" : "en"}
-                highlightedDates={dateActivityMap}
-                onSelect={(d) => {
-                  const nextKey = d ? toLocalDateKey(d) || "" : "";
-                  setSelectedDate(nextKey);
-                  setCurrentPage(1);
-                  setDatePickerOpen(false);
-                }}
-              />
-              <div className="border-t border-slate-100 px-3 py-2 bg-slate-50/70 flex items-center justify-between gap-2 text-xs">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const todayKey = toLocalDateKey(new Date()) || "";
-                    setSelectedDate(todayKey);
-                    setCurrentPage(1);
-                    setDatePickerOpen(false);
-                  }}
-                  className="font-semibold text-[#006685] hover:text-[#00A2D2] transition-colors cursor-pointer"
-                >
-                  {isRTL ? "اليوم" : "Today"}
-                </button>
-                {selectedDate && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedDate("");
-                      setCurrentPage(1);
-                      setDatePickerOpen(false);
-                    }}
-                    className="font-semibold text-rose-600 hover:text-rose-700 transition-colors cursor-pointer"
-                  >
-                    {isRTL ? "عرض كل الأيام" : "All Dates"}
-                  </button>
-                )}
-              </div>
-            </PopoverContent>
-          </Popover>
+          <DatePicker
+            id="dashboard-date-picker"
+            value={selectedDate}
+            onChange={(val) => {
+              setSelectedDate(val);
+              setCurrentPage(1);
+            }}
+            locale={isRTL ? "ar" : "en"}
+            highlightedDates={dateActivityMap}
+            clearLabel={isRTL ? "عرض كل الأيام" : "All Dates"}
+            className="w-48 h-9 shadow-xs"
+          />
 
           {/* Revalidate / Sync Button */}
           <button

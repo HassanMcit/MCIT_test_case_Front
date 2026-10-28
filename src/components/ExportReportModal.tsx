@@ -14,7 +14,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import {
   Card,
@@ -304,19 +304,17 @@ export default function ExportReportModal({
                   <Calendar className="w-3.5 h-3.5 text-emerald-600" />
                   <span>{isRTL ? "من يوم *" : "From Date *"}</span>
                 </Label>
-                <Input
-                  type="date"
-                  required
+                <DatePicker
                   value={fromDate}
-                  onChange={(e) => {
-                    setFromDate(e.target.value);
+                  onChange={(val) => {
+                    setFromDate(val);
                     setValidationError("");
                   }}
+                  placeholder={isRTL ? "اختر تاريخ البداية" : "Pick start date"}
+                  locale={isRTL ? "ar" : "en"}
                   disabled={isExporting}
-                  className={cn(
-                    "h-10 text-xs bg-slate-50/70 border-slate-200 rounded-xl",
-                    validationError && !fromDate && "border-red-400 bg-red-50/30"
-                  )}
+                  hasError={Boolean(validationError && !fromDate)}
+                  className="bg-slate-50/70"
                 />
               </div>
 
@@ -325,19 +323,17 @@ export default function ExportReportModal({
                   <Calendar className="w-3.5 h-3.5 text-emerald-600" />
                   <span>{isRTL ? "إلى يوم *" : "To Date *"}</span>
                 </Label>
-                <Input
-                  type="date"
-                  required
+                <DatePicker
                   value={toDate}
-                  onChange={(e) => {
-                    setToDate(e.target.value);
+                  onChange={(val) => {
+                    setToDate(val);
                     setValidationError("");
                   }}
+                  placeholder={isRTL ? "اختر تاريخ النهاية" : "Pick end date"}
+                  locale={isRTL ? "ar" : "en"}
                   disabled={isExporting}
-                  className={cn(
-                    "h-10 text-xs bg-slate-50/70 border-slate-200 rounded-xl",
-                    validationError && !toDate && "border-red-400 bg-red-50/30"
-                  )}
+                  hasError={Boolean(validationError && !toDate)}
+                  className="bg-slate-50/70"
                 />
               </div>
             </div>

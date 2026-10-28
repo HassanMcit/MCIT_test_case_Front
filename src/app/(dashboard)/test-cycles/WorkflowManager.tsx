@@ -7,6 +7,7 @@ import { z } from "zod";
 import toast from "react-hot-toast";
 import { Plus, Layers, ArrowRight, Pencil, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { ProjectApiItem } from "../projects/getProjects.action";
@@ -81,6 +82,8 @@ export default function WorkflowManager({
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<Values>({ resolver: zodResolver(schema), defaultValues: blank });
   useEffect(() => {
@@ -521,16 +524,32 @@ export default function WorkflowManager({
               </select>
             </label>
             <div className="grid grid-cols-2 gap-3">
-              <label className="block space-y-1 text-sm">
-                {w("Start date", "تاريخ البداية")}
-                <Input type="date" {...register("startDate")} />
-              </label>
-              <label className="block space-y-1 text-sm">
-                {tab === "releases"
-                  ? w("Release date", "تاريخ الإصدار")
-                  : w("End date", "تاريخ النهاية")}
-                <Input type="date" {...register("endDate")} />
-              </label>
+              <div className="block space-y-1 text-sm">
+                <span>{w("Start date", "تاريخ البداية")}</span>
+                <DatePicker
+                  value={watch("startDate") || ""}
+                  onChange={(val) =>
+                    setValue("startDate", val, { shouldValidate: true })
+                  }
+                  locale={dir === "rtl" ? "ar" : "en"}
+                  placeholder={w("Pick a date", "اختر التاريخ")}
+                />
+              </div>
+              <div className="block space-y-1 text-sm">
+                <span>
+                  {tab === "releases"
+                    ? w("Release date", "تاريخ الإصدار")
+                    : w("End date", "تاريخ النهاية")}
+                </span>
+                <DatePicker
+                  value={watch("endDate") || ""}
+                  onChange={(val) =>
+                    setValue("endDate", val, { shouldValidate: true })
+                  }
+                  locale={dir === "rtl" ? "ar" : "en"}
+                  placeholder={w("Pick a date", "اختر التاريخ")}
+                />
+              </div>
             </div>
             {Object.values(errors).map((e, i) => (
               <p key={i} role="alert" className="text-xs text-red-600">

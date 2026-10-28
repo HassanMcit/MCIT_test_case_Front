@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Plus, Minus, Save, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,7 +25,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { getTestCaseSchema } from "./test-case.zod";
 import { addNewTestCase, getNextTestCaseId } from "./test-case.action";
 import toast from "react-hot-toast";
-import { cn } from "@/lib/utils";
+import { cn, toLocalDateKey } from "@/lib/utils";
 import type { QualityApplication } from "../quality/quality.interface";
 
 interface Step {
@@ -60,7 +61,9 @@ export default function AddTestCasePage({
     allProjects[0] ? String(allProjects[0].id) : ""
   );
   const [isCustomApp, setIsCustomApp] = useState(false);
-  const [executionTimeStr, setExecutionTimeStr] = useState<string>("");
+  const [executionDateKey, setExecutionDateKey] = useState<string>(
+    () => toLocalDateKey(new Date()) || ""
+  );
 
   const {
     handleSubmit,
@@ -96,20 +99,6 @@ export default function AddTestCasePage({
   const { data } = useSession();
   const currentTestId = watch("testId");
   const currentStatus = watch("status");
-
-  useEffect(() => {
-    const updateLocalNow = () => {
-      const now = new Date();
-      const tzOffsetMs = now.getTimezoneOffset() * 60 * 1000;
-      const localIso = new Date(now.getTime() - tzOffsetMs)
-        .toISOString()
-        .slice(0, 16);
-      setExecutionTimeStr(localIso);
-    };
-    updateLocalNow();
-    const timer = setInterval(updateLocalNow, 30000);
-    return () => clearInterval(timer);
-  }, [currentTestId]);
 
   // Keep testId prefix in sync with status (TC- vs BUG-)
   useEffect(() => {
@@ -153,7 +142,25 @@ export default function AddTestCasePage({
       .filter((e) => e.value.trim() !== "")
       .map((e) => e.value);
 
-    const nowUtcIso = new Date().toISOString();
+    const now = new Date();
+    let executedIso = now.toISOString();
+    if (executionDateKey) {
+      const [y, m, d] = executionDateKey.split("-").map(Number);
+      if (y && m && d) {
+        const chosenLocal = new Date(
+          y,
+          m - 1,
+          d,
+          now.getHours(),
+          now.getMinutes(),
+          now.getSeconds(),
+          now.getMilliseconds()
+        );
+        if (!isNaN(chosenLocal.getTime())) {
+          executedIso = chosenLocal.toISOString();
+        }
+      }
+    }
 
     const updateUserdata: TestCaseFormValues = {
       ...userData,
@@ -162,7 +169,7 @@ export default function AddTestCasePage({
           ? userData.severity || "medium"
           : undefined,
       steps: validSteps.length > 0 ? validSteps : ["Initial step"],
-      executedAt: nowUtcIso,
+      executedAt: executedIso,
       testerId: Number(data?.user.id) || 1,
       userId: Number(data?.user.id) || 1,
       projectId: targetProjId,
@@ -879,16 +886,20 @@ export default function AddTestCasePage({
                 />
               </div>
 
-              {/* Execution Date */}
+              {/* Execution Date (shadcn/ui Date Picker) */}
               <div className="space-y-1.5">
                 <Label className="text-[13px] text-[#0b1c30]">
                   {isRTL ? "تاريخ التنفيذ" : "Execution Date"}
                 </Label>
-                <Input
-                  type="datetime-local"
-                  value={executionTimeStr}
-                  readOnly
-                  className="rounded-xl text-[13px] bg-[#f8f9ff] border-[#bcc8d0]"
+                <DatePicker
+                  value={executionDateKey}
+                  onChange={(val) =>
+                    setExecutionDateKey(val || toLocalDateKey(new Date()) || "")
+                  }
+                  allowClear={false}
+                  locale={isRTL ? "ar" : "en"}
+                  placeholder={isRTL ? "اختر تاريخ التنفيذ" : "Pick execution date"}
+                  className="h-9 text-[13px] bg-[#f8f9ff] border-[#bcc8d0]"
                 />
               </div>
             </div>
