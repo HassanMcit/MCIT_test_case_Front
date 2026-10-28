@@ -3,6 +3,7 @@ import { getQualityAppById } from "../quality.action";
 import AppDetailClient from "./AppDetailClient";
 
 export const fetchCache = "force-cache";
+export const unstable_dynamicStaleTime = 600;
 
 interface AppDetailPageProps {
   params: Promise<{

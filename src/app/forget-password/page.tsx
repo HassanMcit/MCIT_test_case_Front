@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ForgetPasswordForm } from "@/components/forget-password-form";
 
 export const fetchCache = "force-cache";
+export const unstable_dynamicStaleTime = 600;
 
 export const metadata: Metadata = {
   title: "استعادة كلمة المرور | نظام إدارة اختبارات الجودة",

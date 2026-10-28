@@ -3,6 +3,7 @@ import { getQualityApplications } from "../quality/quality.action";
 import ProjectsForm from "./ProjectsForm";
 
 export const fetchCache = "force-cache";
+export const unstable_dynamicStaleTime = 600;
 
 export default async function Page() {
   const initialProjects = await getProjects();

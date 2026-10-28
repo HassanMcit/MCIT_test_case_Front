@@ -3,6 +3,12 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
+  experimental: {
+    staleTimes: {
+      dynamic: 600,
+      static: 600,
+    },
+  },
   images: {
     remotePatterns: [
       {

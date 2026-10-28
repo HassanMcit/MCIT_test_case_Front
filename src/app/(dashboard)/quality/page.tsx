@@ -2,6 +2,7 @@ import { getQualityApplications } from "./quality.action";
 import QualityClient from "./QualityClient";
 
 export const fetchCache = "force-cache";
+export const unstable_dynamicStaleTime = 600;
 
 interface QualityPageProps {
   searchParams: Promise<{

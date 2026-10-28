@@ -2,6 +2,7 @@ import { fetchAssignData } from "./assign.action";
 import AssignProjectsClient from "./AssignProjectsClient";
 
 export const fetchCache = "force-cache";
+export const unstable_dynamicStaleTime = 600;
 
 export default async function AssignProjectsPage() {
   const res = await fetchAssignData();

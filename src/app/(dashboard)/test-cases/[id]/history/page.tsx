@@ -1,6 +1,7 @@
 import ExecutionHistory from "./ExecutionHistory";
 
 export const fetchCache = "force-cache";
+export const unstable_dynamicStaleTime = 600;
 
 export default async function HistoryPage({
   params,

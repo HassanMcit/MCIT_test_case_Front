@@ -43,19 +43,25 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
 
   useEffect(() => {
     let isMounted = true;
-    getDashboardStats()
-      .then((data) => {
-        if (isMounted && data) {
-          setStats(data);
-        }
-      })
-      .catch((err) => {
-        console.error("Failed to load sidebar stats:", err);
-      });
+    const loadStats = () => {
+      getDashboardStats()
+        .then((data) => {
+          if (isMounted && data) {
+            setStats(data);
+          }
+        })
+        .catch((err) => {
+          console.error("Failed to load sidebar stats:", err);
+        });
+    };
+
+    loadStats();
+    window.addEventListener("mcit:notification_assigned", loadStats);
     return () => {
       isMounted = false;
+      window.removeEventListener("mcit:notification_assigned", loadStats);
     };
-  }, [pathname]);
+  }, []);
 
   const navItems = [
     {
