@@ -16,7 +16,6 @@ import {
   CheckCheck,
   ExternalLink,
   Layers,
-  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signOut, useSession } from "next-auth/react";
@@ -513,19 +512,6 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
 
               {/* Menu Items */}
               <div className="py-1">
-                {/* Devices & Security for Hassan Ali */}
-                {(data?.user?.email?.trim().toLowerCase() === "h.ali@mcit.gov.eg" ||
-                  String(data?.user?.id) === "1") && (
-                  <Link
-                    href="/devices"
-                    onClick={() => setShowDropdown(false)}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-indigo-700 bg-indigo-50/50 hover:bg-indigo-100/70 font-semibold transition-colors cursor-pointer"
-                  >
-                    <ShieldCheck className="w-4 h-4 text-indigo-600" />
-                    <span>{isRTL ? "مراقبة الأجهزة والدخول" : "Devices & Security"}</span>
-                  </Link>
-                )}
-
                 {/* Change Password */}
                 <Link
                   href="/change-password"

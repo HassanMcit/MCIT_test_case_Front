@@ -142,5 +142,7 @@ export const config = {
     "/assign-projects",
     "/reset-codes/:path*",
     "/reset-codes",
+    "/devices/:path*",
+    "/devices",
   ],
 };
