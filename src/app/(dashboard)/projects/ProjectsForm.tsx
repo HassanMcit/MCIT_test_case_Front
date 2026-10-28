@@ -900,7 +900,7 @@ export default function ProjectsForm({
 
       {/* ── Main View: Grid Mode ─────────────────────────────────────── */}
       {viewMode === "grid" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {filtered.map((p) => {
             const IconComponent = p.icon;
             const isProd = p.env === "production";
@@ -916,7 +916,7 @@ export default function ProjectsForm({
                   {/* Card Header Top */}
                   <CardHeader className="p-5 pb-3 flex flex-col min-w-0 w-full">
                     <div className="flex items-start justify-between gap-2.5 w-full min-w-0">
-                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="flex items-start gap-3 min-w-0 flex-1">
                         <div
                           className={`w-11 h-11 rounded-xl ${p.bg} flex items-center justify-center shrink-0 shadow-xs ring-1 ring-slate-200/50`}
                         >
@@ -925,7 +925,7 @@ export default function ProjectsForm({
                         <div className="flex flex-col min-w-0 flex-1">
                           <CardTitle
                             title={isRTL ? p.name : p.nameEn}
-                            className="text-[15px] font-bold text-[#0b1c30] truncate group-hover:text-[#00A2D2] transition-colors leading-snug"
+                            className="text-[15px] font-bold text-[#0b1c30] line-clamp-2 wrap-break-word group-hover:text-[#00A2D2] transition-colors leading-snug"
                           >
                             {isRTL ? p.name : p.nameEn}
                           </CardTitle>
@@ -1067,74 +1067,88 @@ export default function ProjectsForm({
                 </div>
 
                 {/* Card Footer Actions */}
-                <CardFooter className="px-5 py-3.5 border-t border-slate-100 bg-slate-50/40 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1.5">
-                    <Badge
-                      variant="outline"
-                      className={`text-[10px] ${
-                        isActive
-                          ? "bg-sky-50 text-sky-700 border-sky-200"
-                          : "bg-slate-100 text-slate-600 border-slate-200"
-                      }`}
-                    >
-                      {isActive
-                        ? isRTL
-                          ? "نشط"
-                          : "Active"
-                        : isRTL
-                          ? "مؤرشف"
-                          : "Archived"}
-                    </Badge>
-                    <span className="text-[10px] text-[#6d797f] hidden sm:inline">
-                      {p.lastUpdated}
-                    </span>
+                <CardFooter className="px-4 sm:px-5 py-3.5 border-t border-slate-100 bg-slate-50/40 flex flex-col items-stretch gap-2.5 w-full">
+                  <div className="flex items-center justify-between gap-2 flex-wrap w-full">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <Badge
+                        variant="outline"
+                        className={`text-[10px] shrink-0 ${
+                          isActive
+                            ? "bg-sky-50 text-sky-700 border-sky-200"
+                            : "bg-slate-100 text-slate-600 border-slate-200"
+                        }`}
+                      >
+                        {isActive
+                          ? isRTL
+                            ? "نشط"
+                            : "Active"
+                          : isRTL
+                            ? "مؤرشف"
+                            : "Archived"}
+                      </Badge>
+                      <span className="text-[11px] text-[#6d797f] whitespace-nowrap">
+                        {p.lastUpdated}
+                      </span>
+                    </div>
+
+                    {isAdmin && (
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingProject(p);
+                          }}
+                          className="h-7 px-2.5 text-[11px] font-medium text-slate-600 hover:text-[#00A2D2] hover:bg-sky-50 hover:border-sky-200 border-slate-200 bg-white cursor-pointer shrink-0"
+                          title={isRTL ? "تعديل المشروع" : "Edit Project"}
+                        >
+                          <Edit3 className="w-3.5 h-3.5 me-1 shrink-0" />
+                          <span>{isRTL ? "تعديل" : "Edit"}</span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setProjectToDelete(p);
+                          }}
+                          className="h-7 px-2.5 text-[11px] font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 hover:border-rose-300 border-rose-200 bg-white cursor-pointer shrink-0"
+                          title={isRTL ? "حذف المشروع" : "Delete Project"}
+                        >
+                          <Trash2 className="w-3.5 h-3.5 me-1 shrink-0" />
+                          <span>{isRTL ? "حذف" : "Delete"}</span>
+                        </Button>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="flex items-center gap-1.5">
+                  <div className="grid grid-cols-2 gap-2 w-full">
                     <Button
                       variant="outline"
                       size="sm"
-                      className="h-8 px-2.5 text-xs text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 border-emerald-200 cursor-pointer"
+                      className="w-full h-8 px-2.5 text-xs font-medium justify-center text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 border-emerald-200 bg-white cursor-pointer"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleOpenExportModal(p);
                       }}
                       title={isRTL ? "تصدير تقرير إكسيل (Excel)" : "Export Excel Report"}
                     >
-                      <FileSpreadsheet className="w-3.5 h-3.5 me-1" />
-                      <span>{isRTL ? "تصدير إكسيل" : "Export Excel"}</span>
+                      <FileSpreadsheet className="w-3.5 h-3.5 me-1.5 shrink-0" />
+                      <span className="truncate">{isRTL ? "تصدير إكسيل" : "Export Excel"}</span>
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={(e) => { e.stopPropagation(); setSelectedProject(p); }}
-                      className="h-8 px-2.5 text-xs text-[#00A2D2] hover:bg-[#eff4ff] border-slate-200 cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedProject(p);
+                      }}
+                      className="w-full h-8 px-2.5 text-xs font-medium justify-center text-[#00A2D2] hover:bg-[#eff4ff] border-slate-200 bg-white cursor-pointer"
                     >
-                      <Eye className="w-3.5 h-3.5 me-1" />
-                      <span>{isRTL ? "تفاصيل" : "View"}</span>
+                      <Eye className="w-3.5 h-3.5 me-1.5 shrink-0" />
+                      <span className="truncate">{isRTL ? "تفاصيل" : "View"}</span>
                     </Button>
-                    {isAdmin && (
-                      <>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => { e.stopPropagation(); setEditingProject(p); }}
-                          className="h-8 w-8 p-0 text-slate-500 hover:text-slate-800 hover:bg-slate-200/60 cursor-pointer"
-                          title={isRTL ? "تعديل" : "Edit"}
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => { e.stopPropagation(); setProjectToDelete(p); }}
-                          className="h-8 w-8 p-0 text-slate-500 hover:text-red-600 hover:bg-red-50 cursor-pointer"
-                          title={isRTL ? "حذف المشروع" : "Delete Project"}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
-                      </>
-                    )}
                   </div>
                 </CardFooter>
               </Card>
@@ -1326,7 +1340,7 @@ export default function ProjectsForm({
                         </TableCell>
 
                         {/* Actions */}
-                        <TableCell className="text-end">
+                        <TableCell className="text-end whitespace-nowrap">
                           <div className="flex items-center justify-end gap-1.5">
                             <Button
                               variant="outline"
@@ -1335,10 +1349,10 @@ export default function ProjectsForm({
                                 e.stopPropagation();
                                 handleOpenExportModal(p);
                               }}
-                              className="h-8 px-2.5 text-xs text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 border-emerald-200 cursor-pointer"
+                              className="h-8 px-2.5 text-xs text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 border-emerald-200 cursor-pointer shrink-0"
                               title={isRTL ? "تصدير تقرير إكسيل" : "Export Excel"}
                             >
-                              <FileSpreadsheet className="w-3.5 h-3.5 me-1" />
+                              <FileSpreadsheet className="w-3.5 h-3.5 me-1 shrink-0" />
                               <span>{isRTL ? "تصدير" : "Export"}</span>
                             </Button>
                             <Button
@@ -1348,36 +1362,38 @@ export default function ProjectsForm({
                                 e.stopPropagation();
                                 setSelectedProject(p);
                               }}
-                              className="h-8 px-2.5 text-xs text-[#00A2D2] hover:bg-[#eff4ff] border-slate-200 cursor-pointer"
+                              className="h-8 px-2.5 text-xs text-[#00A2D2] hover:bg-[#eff4ff] border-slate-200 cursor-pointer shrink-0"
                             >
-                              <Eye className="w-3.5 h-3.5 me-1" />
+                              <Eye className="w-3.5 h-3.5 me-1 shrink-0" />
                               <span>{isRTL ? "تفاصيل" : "View"}</span>
                             </Button>
                             {isAdmin && (
                               <>
                                 <Button
-                                  variant="ghost"
+                                  variant="outline"
                                   size="sm"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setEditingProject(p);
                                   }}
-                                  className="h-8 w-8 p-0 text-slate-500 hover:text-slate-800 hover:bg-slate-100 cursor-pointer"
+                                  className="h-8 px-2.5 text-xs text-slate-600 hover:text-[#00A2D2] hover:bg-sky-50 border-slate-200 cursor-pointer shrink-0"
                                   title={isRTL ? "تعديل" : "Edit"}
                                 >
-                                  <Edit3 className="w-3.5 h-3.5" />
+                                  <Edit3 className="w-3.5 h-3.5 me-1 shrink-0" />
+                                  <span>{isRTL ? "تعديل" : "Edit"}</span>
                                 </Button>
                                 <Button
-                                  variant="ghost"
+                                  variant="outline"
                                   size="sm"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setProjectToDelete(p);
                                   }}
-                                  className="h-8 w-8 p-0 text-slate-500 hover:text-red-600 hover:bg-red-50 cursor-pointer"
+                                  className="h-8 px-2.5 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200 cursor-pointer shrink-0"
                                   title={isRTL ? "حذف المشروع" : "Delete Project"}
                                 >
-                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <Trash2 className="w-3.5 h-3.5 me-1 shrink-0" />
+                                  <span>{isRTL ? "حذف" : "Delete"}</span>
                                 </Button>
                               </>
                             )}
