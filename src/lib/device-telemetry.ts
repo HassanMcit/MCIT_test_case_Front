@@ -89,9 +89,40 @@ export async function collectLoginTelemetry(): Promise<{
   let clientIp: string | undefined;
   let location: string | undefined;
 
+  if (typeof window !== "undefined") {
+    try {
+      clientIp = localStorage.getItem("mcit_client_ip") || undefined;
+      location = localStorage.getItem("mcit_client_location") || undefined;
+    } catch {}
+  }
+
+  // If already cached, return in 0ms and refresh silently in background
+  if (clientIp && location) {
+    fetch("https://ipwho.is/")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.success && data.ip) {
+          const parts = [data.city, data.region, data.country].filter(Boolean);
+          let loc = parts.join(", ");
+          if (data.connection?.isp) loc += ` (${data.connection.isp})`;
+          localStorage.setItem("mcit_client_ip", data.ip);
+          if (loc) localStorage.setItem("mcit_client_location", loc);
+        }
+      })
+      .catch(() => {});
+
+    return {
+      clientIp,
+      macAddress,
+      deviceInfo,
+      location,
+      userAgent,
+    };
+  }
+
   try {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 2000);
+    const timer = setTimeout(() => controller.abort(), 900);
     const res = await fetch("https://ipwho.is/", { signal: controller.signal });
     clearTimeout(timer);
     if (res.ok) {

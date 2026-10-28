@@ -2,6 +2,7 @@
 
 import { getUserToken } from "@/app/myUtil";
 import { revalidatePath, updateTag } from "next/cache";
+import { raceBackendFetch } from "@/lib/fast-read";
 
 export interface AppNotification {
   id: number;
@@ -47,7 +48,7 @@ export async function getMyNotifications(): Promise<NotificationsResponse> {
     const token = await getUserToken();
     if (!token) return { notifications: [], unreadCount: 0 };
 
-    const res = await fetch(
+    const fetchPromise = fetch(
       `${process.env.NEXT_PUBLIC_BASE_URL}/api/users/notifications`,
       {
         method: "GET",
@@ -58,6 +59,11 @@ export async function getMyNotifications(): Promise<NotificationsResponse> {
         next: { tags: ["notifications"] },
       }
     );
+
+    const res = await raceBackendFetch(fetchPromise, 2000);
+    if (!res) {
+      return { notifications: [], unreadCount: 0 };
+    }
 
     if (res.status === 401) {
       return { notifications: [], unreadCount: 0, unauthorized: true };

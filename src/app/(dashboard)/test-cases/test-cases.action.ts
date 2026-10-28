@@ -4,6 +4,7 @@ import { getUserToken, getCurrentUserSession } from "@/app/myUtil";
 import { revalidatePath, updateTag } from "next/cache";
 import type { TestCaseItem, TestCaseListResponse, TestCaseQueryParams } from "./test-cases.interface";
 import { recordSystemAuditLog } from "@/lib/audit";
+import { queryTestCasesFromDb, raceBackendFetch } from "@/lib/fast-read";
 
 export async function getTestCases(params?: TestCaseQueryParams): Promise<TestCaseListResponse> {
   try {
@@ -37,7 +38,7 @@ export async function getTestCases(params?: TestCaseQueryParams): Promise<TestCa
     }
     url.searchParams.set("cv", (params as any)?._cv || "20261019_v3");
 
-    const res = await fetch(url.toString(), {
+    const fetchPromise = fetch(url.toString(), {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -46,23 +47,23 @@ export async function getTestCases(params?: TestCaseQueryParams): Promise<TestCa
       next: { tags: ["test-cases", "dashboard"] },
     });
 
-    if (!res.ok) {
+    const res = await raceBackendFetch(fetchPromise, 2000);
+
+    if (res && res.ok) {
+      const json = await res.json();
       return {
-        data: [],
-        meta: { total: 0, page: 1, limit: 10, totalPages: 1 },
+        data: Array.isArray(json?.data) ? json.data : [],
+        meta: json?.meta || {
+          total: json?.data?.length || 0,
+          page: 1,
+          limit: 10,
+          totalPages: 1,
+        },
       };
     }
 
-    const json = await res.json();
-    return {
-      data: Array.isArray(json?.data) ? json.data : [],
-      meta: json?.meta || {
-        total: json?.data?.length || 0,
-        page: 1,
-        limit: 10,
-        totalPages: 1,
-      },
-    };
+    // Render Cold-Start Fallback: read directly from PostgreSQL pool (~80ms)
+    return await queryTestCasesFromDb(params, sessionUser);
   } catch (error) {
     console.error("Error in getTestCases:", error);
     return {

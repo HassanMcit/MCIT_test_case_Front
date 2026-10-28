@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Mail, Lock, Eye, EyeOff, Globe } from "lucide-react";
@@ -33,6 +33,12 @@ function LoginFormInner() {
   const [showPassword, setShowPassword] = useState(false);
   const { lang, setLanguage, dir, t } = useLanguage();
   const isRTL = dir === "rtl";
+
+  // Pre-warm Render backend & prefetch /dashboard skeleton while user types credentials
+  useEffect(() => {
+    fetch("/api/warmup", { cache: "no-store" }).catch(() => {});
+    router.prefetch("/dashboard");
+  }, [router]);
 
   const {
     handleSubmit,

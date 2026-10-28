@@ -3,33 +3,23 @@
 import { getUserToken } from "@/app/myUtil";
 import { revalidatePath, updateTag } from "next/cache";
 import { recordSystemAuditLog } from "@/lib/audit";
+import { getAllUsers } from "../users/user.action";
+import { getProjects } from "../projects/getProjects.action";
 
 export async function fetchAssignData() {
   try {
     const token = await getUserToken();
-    const headers = { Authorization: `Bearer ${token}` };
-
-    // Fetch users and projects in parallel
-    const [usersRes, projectsRes] = await Promise.all([
-      fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/users`, {
-        headers,
-        cache: "force-cache",
-        next: { tags: ["users", "dashboard"] },
-      }),
-      fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/projects`, {
-        headers,
-        cache: "force-cache",
-        next: { tags: ["projects", "dashboard"] },
-      }),
-    ]);
-
-    if (!usersRes.ok || !projectsRes.ok) {
-      throw new Error("Failed to fetch data");
+    if (!token) {
+      throw new Error("Unauthorized");
     }
 
-    const users = await usersRes.json();
-    const projects = await projectsRes.json();
-    return { success: true, users, projects };
+    // Fetch users and projects in parallel (with force-cache + instant PostgreSQL cold-start fallback)
+    const [users, projects] = await Promise.all([
+      getAllUsers(),
+      getProjects(),
+    ]);
+
+    return { success: true, users: users as any[], projects: projects as any[] };
   } catch (error: any) {
     return { success: false, error: error.message };
   }

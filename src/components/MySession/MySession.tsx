@@ -9,6 +9,16 @@ function SessionRevocationGuard({ children }: { children?: React.ReactNode }) {
   const pathname = usePathname();
   const isRevokedHandledRef = useRef(false);
 
+  // Periodic background warm-up ping (every 9 mins) to prevent Render backend Cold Starts
+  useEffect(() => {
+    const ping = () => {
+      fetch("/api/warmup", { cache: "no-store" }).catch(() => {});
+    };
+    ping();
+    const interval = setInterval(ping, 9 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   useEffect(() => {
     if (pathname === "/login" || pathname === "/forget-password" || pathname === "/forgot-password") {
       return;
@@ -29,7 +39,7 @@ function SessionRevocationGuard({ children }: { children?: React.ReactNode }) {
 
 function MySession({ children }: { children?: React.ReactNode }) {
   return (
-    <SessionProvider refetchInterval={3} refetchOnWindowFocus={true}>
+    <SessionProvider refetchInterval={30} refetchOnWindowFocus={true}>
       <SessionRevocationGuard>{children}</SessionRevocationGuard>
     </SessionProvider>
   );

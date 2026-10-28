@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/context/language-context";
@@ -37,7 +37,6 @@ import type { TestCaseItem } from "../test-cases/test-cases.interface";
 import { formatActionTimestamp } from "../test-cases/TestCasesTable";
 import { revalidateDashboardAction } from "./dashboard.action";
 import { toLocalDateKey } from "@/lib/utils";
-import ExecutionDashboard from './ExecutionDashboard';
 
 interface DashboardClientProps {
   data: DashboardDataPayload;
@@ -54,10 +53,30 @@ export default function DashboardClient({ data }: DashboardClientProps) {
   const [selectedProjectId, setSelectedProjectId] = useState<string>("all");
   const [selectedUserId, setSelectedUserId] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [severityFilter, setSeverityFilter] = useState<string>("all");
+  const [trendDays, setTrendDays] = useState<14 | 30>(() => {
+    const now = new Date();
+    const cutoff14 = toLocalDateKey(
+      new Date(now.getFullYear(), now.getMonth(), now.getDate() - 13)
+    );
+    const hasOlderFailed = (data.testCases || []).some((tc) => {
+      if (tc.status !== "failed") return false;
+      const k = toLocalDateKey(tc.executedAt || tc.createdAt);
+      return Boolean(k && cutoff14 && k < cutoff14);
+    });
+    return hasOlderFailed ? 30 : 14;
+  });
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [selectedDefect, setSelectedDefect] = useState<TestCaseItem | null>(null);
+  const tableSectionRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollToTable = () => {
+    setTimeout(() => {
+      tableSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 60);
+  };
 
   const [hoveredBar, setHoveredBar] = useState<{
     day: string;
@@ -162,8 +181,13 @@ export default function DashboardClient({ data }: DashboardClientProps) {
     totalTests > 0 ? ((pendingTests / totalTests) * 100).toFixed(1) : "0.0";
 
   // Dynamic Severity Breakdown from scopedTestCases
+  const failedCasesList = useMemo(
+    () => scopedTestCases.filter((c) => c.status === "failed"),
+    [scopedTestCases]
+  );
+
   const severityBreakdown = useMemo(() => {
-    const failedList = scopedTestCases.filter((c) => c.status === "failed");
+    const failedList = failedCasesList;
     const totalF = failedList.length;
     const countFor = (lvl: string) =>
       failedList.filter((c) => (c.severity || c.priority || "medium") === lvl)
@@ -193,16 +217,21 @@ export default function DashboardClient({ data }: DashboardClientProps) {
         percent: totalF > 0 ? ((low / totalF) * 100).toFixed(1) : "0.0",
       },
     };
-  }, [scopedTestCases]);
+  }, [failedCasesList]);
 
-  // Dynamic 14-Day Execution Trend Data
+  // Dynamic 14-Day / 30-Day Execution Trend Data
   const trendData = useMemo(() => {
-    const daysCount = 14;
+    const daysCount = trendDays;
+    const stepX = daysCount === 30 ? 23.2 : 50;
+    const barW = daysCount === 30 ? 13 : 22;
+    const startX = daysCount === 30 ? 46 : 52;
     const result: Array<{
       dateKey: string;
       day: string;
       dayAr: string;
       x: number;
+      barW: number;
+      showLabel: boolean;
       rawP: number;
       rawF: number;
       rawPe: number;
@@ -244,11 +273,15 @@ export default function DashboardClient({ data }: DashboardClientProps) {
       ).length;
 
       const idx = daysCount - 1 - i;
+      const showLabel =
+        daysCount === 14 || isToday || idx === 0 || idx % 3 === 0 || rawF > 0;
       result.push({
         dateKey,
         day: dayEn,
         dayAr,
-        x: 52 + idx * 50,
+        x: Math.round((startX + idx * stepX) * 10) / 10,
+        barW,
+        showLabel,
         rawP,
         rawF,
         rawPe,
@@ -275,11 +308,11 @@ export default function DashboardClient({ data }: DashboardClientProps) {
       return {
         ...r,
         p: Math.max(r.rawP > 0 ? 6 : 0, Math.round(r.rawP * scale)),
-        f: Math.max(r.rawF > 0 ? 6 : 0, Math.round(r.rawF * scale)),
+        f: Math.max(r.rawF > 0 ? 7 : 0, Math.round(r.rawF * scale)),
         pe: Math.max(r.rawPe > 0 ? 6 : 0, Math.round(r.rawPe * scale)),
       };
     });
-  }, [scopedTestCases]);
+  }, [scopedTestCases, trendDays]);
 
   const maxChartScale = useMemo(() => {
     return Math.max(
@@ -288,12 +321,16 @@ export default function DashboardClient({ data }: DashboardClientProps) {
     );
   }, [trendData]);
 
-  // Table Filtering (Search + Status filter on top of scopedTestCases)
+  // Table Filtering (Search + Status + Severity filter on top of scopedTestCases)
   const filteredTestCases = useMemo(() => {
     return scopedTestCases
       .filter((tc) => {
         if (statusFilter !== "all" && tc.status !== statusFilter) {
           return false;
+        }
+        if (severityFilter !== "all") {
+          const effSev = tc.severity || tc.priority || "medium";
+          if (effSev !== severityFilter) return false;
         }
         const q = searchQuery.toLowerCase().trim();
         if (!q) return true;
@@ -318,7 +355,7 @@ export default function DashboardClient({ data }: DashboardClientProps) {
         }
         return b.id - a.id;
       });
-  }, [scopedTestCases, statusFilter, searchQuery]);
+  }, [scopedTestCases, statusFilter, severityFilter, searchQuery]);
 
   // Pagination
   const totalPages = Math.max(1, Math.ceil(filteredTestCases.length / pageSize));
@@ -402,7 +439,6 @@ export default function DashboardClient({ data }: DashboardClientProps) {
 
   return (
     <div className="w-full p-4 sm:p-6 lg:p-8 flex flex-col gap-6 relative">
-      <ExecutionDashboard projects={data.projects} />
       {/* ── Ambient Background Glow Accents ──────────────────────── */}
       <div className="absolute -top-10 right-20 w-96 h-96 bg-[#00aee0]/8 rounded-full blur-3xl pointer-events-none -z-10" />
       <div className="absolute top-72 left-10 w-80 h-80 bg-[#08b77f]/8 rounded-full blur-3xl pointer-events-none -z-10" />
@@ -1076,37 +1112,101 @@ export default function DashboardClient({ data }: DashboardClientProps) {
             {/* Header + Legend */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3.5 gap-3 border-b border-slate-100">
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <LineChart className="w-5 h-5 text-[#00A2D2]" />
                   <h2 className="text-base font-bold text-[#0b1c30]">
                     {t("trend_title")}
                   </h2>
+                  <div className="inline-flex items-center rounded-lg bg-slate-100 p-0.5 border border-slate-200/70 ms-1">
+                    <button
+                      type="button"
+                      onClick={() => setTrendDays(14)}
+                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
+                        trendDays === 14
+                          ? "bg-white text-[#006685] shadow-2xs"
+                          : "text-slate-500 hover:text-slate-800"
+                      }`}
+                    >
+                      {isRTL ? "14 يوم" : "14D"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTrendDays(30)}
+                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
+                        trendDays === 30
+                          ? "bg-white text-[#006685] shadow-2xs"
+                          : "text-slate-500 hover:text-slate-800"
+                      }`}
+                    >
+                      {isRTL ? "30 يوم" : "30D"}
+                    </button>
+                  </div>
                 </div>
                 <p className="text-xs text-[#6d797f] mt-0.5">
-                  {t("trend_subtitle")}
+                  {trendDays === 30
+                    ? isRTL
+                      ? "تطور نتائج حالات الاختبار يومياً (آخر 30 يوماً)"
+                      : "Stacked test results daily progression (Past 30 Days)"
+                    : t("trend_subtitle")}
                 </p>
               </div>
 
               {/* Legend with counts */}
-              <div className="flex items-center gap-4 text-xs font-medium">
-                <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-3.5 text-xs font-medium flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStatusFilter(statusFilter === "passed" ? "all" : "passed");
+                    setSeverityFilter("all");
+                    setCurrentPage(1);
+                    scrollToTable();
+                  }}
+                  className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md transition-colors cursor-pointer ${
+                    statusFilter === "passed" ? "bg-emerald-50 ring-1 ring-emerald-200" : "hover:bg-slate-50"
+                  }`}
+                >
                   <span className="w-2.5 h-2.5 rounded-full bg-[#08b77f]" />
                   <span className="text-[#3d484f]">
                     {t("passed")} ({passedTests})
                   </span>
-                </div>
-                <div className="flex items-center gap-1.5">
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextStatus = statusFilter === "failed" ? "all" : "failed";
+                    setStatusFilter(nextStatus);
+                    setSeverityFilter("all");
+                    if (nextStatus === "failed") setTrendDays(30);
+                    setCurrentPage(1);
+                    scrollToTable();
+                  }}
+                  className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md transition-colors cursor-pointer ${
+                    statusFilter === "failed" ? "bg-rose-50 ring-1 ring-rose-200 font-bold" : "hover:bg-rose-50/60"
+                  }`}
+                  title={isRTL ? "اضغط لعرض حالات الفشل في الجدول" : "Click to view failed defects in table"}
+                >
                   <span className="w-2.5 h-2.5 rounded-full bg-[#ba1a1a]" />
                   <span className="text-[#3d484f]">
                     {t("failed")} ({failedTests})
                   </span>
-                </div>
-                <div className="flex items-center gap-1.5">
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStatusFilter(statusFilter === "pending" ? "all" : "pending");
+                    setSeverityFilter("all");
+                    setCurrentPage(1);
+                    scrollToTable();
+                  }}
+                  className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md transition-colors cursor-pointer ${
+                    statusFilter === "pending" ? "bg-slate-100 ring-1 ring-slate-200" : "hover:bg-slate-50"
+                  }`}
+                >
                   <span className="w-2.5 h-2.5 rounded-full bg-[#bec6e0]" />
                   <span className="text-[#3d484f]">
                     {t("pending")} ({pendingTests})
                   </span>
-                </div>
+                </button>
               </div>
             </div>
 
@@ -1238,7 +1338,7 @@ export default function DashboardClient({ data }: DashboardClientProps) {
                   0
                 </text>
 
-                {/* 14 Daily Stacked Bars */}
+                {/* Daily Stacked Bars (14D / 30D) */}
                 {trendData.map((bar) => {
                   const yBase = 185;
                   const yP = yBase - bar.p;
@@ -1263,13 +1363,21 @@ export default function DashboardClient({ data }: DashboardClientProps) {
                         })
                       }
                       onMouseLeave={() => setHoveredBar(null)}
+                      onClick={() => {
+                        if (bar.rawF > 0) {
+                          setStatusFilter("failed");
+                          setSeverityFilter("all");
+                          setCurrentPage(1);
+                          scrollToTable();
+                        }
+                      }}
                     >
                       {/* Background hover highlight pillar */}
                       {isHovered && (
                         <rect
-                          x={bar.x - 4}
+                          x={bar.x - 3}
                           y="15"
-                          width="30"
+                          width={bar.barW + 6}
                           height="170"
                           rx="4"
                           fill="#eff4ff"
@@ -1283,7 +1391,7 @@ export default function DashboardClient({ data }: DashboardClientProps) {
                           fill="#F1F5F9"
                           height="4"
                           rx="2"
-                          width="22"
+                          width={bar.barW}
                           x={bar.x}
                           y={yBase - 4}
                         />
@@ -1295,7 +1403,7 @@ export default function DashboardClient({ data }: DashboardClientProps) {
                           fill="#08B77F"
                           height={bar.p}
                           rx="3"
-                          width="22"
+                          width={bar.barW}
                           x={bar.x}
                           y={yP}
                           className="transition-opacity"
@@ -1307,7 +1415,7 @@ export default function DashboardClient({ data }: DashboardClientProps) {
                           fill="#BA1A1A"
                           height={bar.f}
                           rx="2"
-                          width="22"
+                          width={bar.barW}
                           x={bar.x}
                           y={yF}
                           className="transition-opacity"
@@ -1319,7 +1427,7 @@ export default function DashboardClient({ data }: DashboardClientProps) {
                           fill="#BEC6E0"
                           height={bar.pe}
                           rx="2"
-                          width="22"
+                          width={bar.barW}
                           x={bar.x}
                           y={yPe}
                           className="transition-opacity"
@@ -1328,22 +1436,26 @@ export default function DashboardClient({ data }: DashboardClientProps) {
                       )}
 
                       {/* X-Axis day label */}
-                      <text
-                        className={`text-[10px] font-mono ${
-                          bar.isToday || isHovered ? "font-bold" : ""
-                        }`}
-                        fill={
-                          bar.isToday
-                            ? "#00A2D2"
-                            : isHovered
-                            ? "#0b1c30"
-                            : "#64748B"
-                        }
-                        x={bar.x - 2}
-                        y="200"
-                      >
-                        {isRTL ? bar.dayAr : bar.day}
-                      </text>
+                      {(bar.showLabel || isHovered) && (
+                        <text
+                          className={`text-[9.5px] font-mono ${
+                            bar.isToday || isHovered || bar.rawF > 0 ? "font-bold" : ""
+                          }`}
+                          fill={
+                            bar.rawF > 0
+                              ? "#BA1A1A"
+                              : bar.isToday
+                              ? "#00A2D2"
+                              : isHovered
+                              ? "#0b1c30"
+                              : "#64748B"
+                          }
+                          x={bar.x - 2}
+                          y="200"
+                        >
+                          {isRTL ? bar.dayAr : bar.day}
+                        </text>
+                      )}
                     </g>
                   );
                 })}
@@ -1378,19 +1490,41 @@ export default function DashboardClient({ data }: DashboardClientProps) {
                   {t("defect_title")}
                 </h2>
               </div>
-              <span className="px-2.5 py-0.5 rounded-full text-xs bg-rose-50 font-bold text-[#ba1a1a] border border-rose-200/60">
+              <button
+                type="button"
+                onClick={() => {
+                  setStatusFilter("failed");
+                  setSeverityFilter("all");
+                  setCurrentPage(1);
+                  scrollToTable();
+                }}
+                className="px-2.5 py-0.5 rounded-full text-xs bg-rose-50 hover:bg-rose-100 font-bold text-[#ba1a1a] border border-rose-200/60 transition-colors cursor-pointer"
+              >
                 {severityBreakdown.totalFailed}{" "}
                 {isRTL ? "خلل مفتوح" : "Defects"}
-              </span>
+              </button>
             </div>
-            <p className="text-xs text-[#6d797f] mt-2 mb-4">
+            <p className="text-xs text-[#6d797f] mt-2 mb-3.5">
               {t("defect_subtitle")}
             </p>
 
             {/* Severity Bars List */}
-            <div className="flex flex-col gap-3.5">
+            <div className="flex flex-col gap-2.5">
               {/* 1. Critical */}
-              <div className="p-2.5 rounded-xl bg-slate-50/60 border border-slate-100 hover:border-rose-200 transition-colors">
+              <div
+                onClick={() => {
+                  const active = statusFilter === "failed" && severityFilter === "critical";
+                  setStatusFilter(active ? "all" : "failed");
+                  setSeverityFilter(active ? "all" : "critical");
+                  setCurrentPage(1);
+                  scrollToTable();
+                }}
+                className={`p-2.5 rounded-xl border transition-colors cursor-pointer ${
+                  statusFilter === "failed" && severityFilter === "critical"
+                    ? "bg-rose-50/70 border-rose-300"
+                    : "bg-slate-50/60 border-slate-100 hover:border-rose-200"
+                }`}
+              >
                 <div className="flex items-center justify-between mb-1.5 text-xs">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-[#ba1a1a]" />
@@ -1416,7 +1550,20 @@ export default function DashboardClient({ data }: DashboardClientProps) {
               </div>
 
               {/* 2. High */}
-              <div className="p-2.5 rounded-xl bg-slate-50/60 border border-slate-100 hover:border-sky-200 transition-colors">
+              <div
+                onClick={() => {
+                  const active = statusFilter === "failed" && severityFilter === "high";
+                  setStatusFilter(active ? "all" : "failed");
+                  setSeverityFilter(active ? "all" : "high");
+                  setCurrentPage(1);
+                  scrollToTable();
+                }}
+                className={`p-2.5 rounded-xl border transition-colors cursor-pointer ${
+                  statusFilter === "failed" && severityFilter === "high"
+                    ? "bg-sky-50/70 border-sky-300"
+                    : "bg-slate-50/60 border-slate-100 hover:border-sky-200"
+                }`}
+              >
                 <div className="flex items-center justify-between mb-1.5 text-xs">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-[#00aee0]" />
@@ -1440,7 +1587,20 @@ export default function DashboardClient({ data }: DashboardClientProps) {
               </div>
 
               {/* 3. Medium */}
-              <div className="p-2.5 rounded-xl bg-slate-50/60 border border-slate-100 hover:border-slate-300 transition-colors">
+              <div
+                onClick={() => {
+                  const active = statusFilter === "failed" && severityFilter === "medium";
+                  setStatusFilter(active ? "all" : "failed");
+                  setSeverityFilter(active ? "all" : "medium");
+                  setCurrentPage(1);
+                  scrollToTable();
+                }}
+                className={`p-2.5 rounded-xl border transition-colors cursor-pointer ${
+                  statusFilter === "failed" && severityFilter === "medium"
+                    ? "bg-slate-100 border-slate-400"
+                    : "bg-slate-50/60 border-slate-100 hover:border-slate-300"
+                }`}
+              >
                 <div className="flex items-center justify-between mb-1.5 text-xs">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-[#565e74]" />
@@ -1466,7 +1626,20 @@ export default function DashboardClient({ data }: DashboardClientProps) {
               </div>
 
               {/* 4. Low */}
-              <div className="p-2.5 rounded-xl bg-slate-50/60 border border-slate-100 hover:border-slate-300 transition-colors">
+              <div
+                onClick={() => {
+                  const active = statusFilter === "failed" && severityFilter === "low";
+                  setStatusFilter(active ? "all" : "failed");
+                  setSeverityFilter(active ? "all" : "low");
+                  setCurrentPage(1);
+                  scrollToTable();
+                }}
+                className={`p-2.5 rounded-xl border transition-colors cursor-pointer ${
+                  statusFilter === "failed" && severityFilter === "low"
+                    ? "bg-slate-100 border-slate-400"
+                    : "bg-slate-50/60 border-slate-100 hover:border-slate-300"
+                }`}
+              >
                 <div className="flex items-center justify-between mb-1.5 text-xs">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-[#6d797f]" />
@@ -1489,16 +1662,75 @@ export default function DashboardClient({ data }: DashboardClientProps) {
                 </div>
               </div>
             </div>
+
+            {/* Direct Active Defects List (Quick Inspect) */}
+            {failedCasesList.length > 0 && (
+              <div className="mt-3.5 pt-3 border-t border-slate-100 space-y-1.5">
+                <span className="text-[11px] font-bold text-[#565e74] block">
+                  {isRTL ? "الأخطاء المسجلة (اضغط للتفاصيل):" : "Active Defects (Click to inspect):"}
+                </span>
+                <div className="max-h-28 overflow-y-auto space-y-1.5 pr-0.5">
+                  {failedCasesList.map((bug) => {
+                    const bugId = bug.testId?.startsWith("TC-")
+                      ? bug.testId.replace(/^TC-/, "BUG-")
+                      : bug.testId;
+                    const bugDate =
+                      bug.executedAt || bug.createdAt
+                        ? new Date(bug.executedAt || bug.createdAt).toLocaleDateString(
+                            isRTL ? "ar-EG" : "en-US",
+                            { month: "short", day: "numeric" }
+                          )
+                        : "";
+                    const sev = bug.severity || bug.priority || "medium";
+                    return (
+                      <button
+                        key={bug.id}
+                        type="button"
+                        onClick={() => setSelectedDefect(bug)}
+                        className="w-full text-start p-2 rounded-xl bg-rose-50/50 hover:bg-rose-50 border border-rose-200/70 transition-all flex items-center justify-between gap-2 cursor-pointer"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-mono text-[11px] font-extrabold text-[#ba1a1a] shrink-0">
+                              {bugId}
+                            </span>
+                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-white text-slate-700 border border-slate-200 truncate">
+                              {bug.module || bug.project?.name}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-[#0b1c30] font-medium truncate mt-0.5">
+                            {bug.pageName ? `${bug.pageName} — ` : ""}
+                            {bug.scenario}
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-end shrink-0 gap-0.5">
+                          <span className="text-[10px] font-mono text-slate-500">
+                            {bugDate}
+                          </span>
+                          <span className="text-[9.5px] font-bold uppercase text-rose-700">
+                            {sev}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Filter Failed Cases CTA Button */}
           <button
             type="button"
             onClick={() => {
-              setStatusFilter(statusFilter === "failed" ? "all" : "failed");
+              const nextStatus = statusFilter === "failed" ? "all" : "failed";
+              setStatusFilter(nextStatus);
+              setSeverityFilter("all");
+              if (nextStatus === "failed") setTrendDays(30);
               setCurrentPage(1);
+              scrollToTable();
             }}
-            className="w-full mt-4 py-2.5 px-3 rounded-xl bg-[#eff4ff] text-[#006685] hover:bg-[#dce9ff] text-xs font-bold flex items-center justify-center gap-2 border border-[#00aee0]/20 hover:border-[#00aee0]/40 transition-all active:scale-[0.98] cursor-pointer"
+            className="w-full mt-3.5 py-2.5 px-3 rounded-xl bg-[#eff4ff] text-[#006685] hover:bg-[#dce9ff] text-xs font-bold flex items-center justify-center gap-2 border border-[#00aee0]/20 hover:border-[#00aee0]/40 transition-all active:scale-[0.98] cursor-pointer"
           >
             <Filter className="w-3.5 h-3.5" />
             <span>
@@ -1515,7 +1747,10 @@ export default function DashboardClient({ data }: DashboardClientProps) {
       </div>
 
       {/* ── Section 4: High-Density Test Cases Data Table ────────── */}
-      <div className="bg-white rounded-2xl shadow-xs overflow-hidden flex flex-col border border-slate-200/70">
+      <div
+        ref={tableSectionRef}
+        className="scroll-mt-6 bg-white rounded-2xl shadow-xs overflow-hidden flex flex-col border border-slate-200/70"
+      >
         {/* Table Toolbar */}
         <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-3.5 bg-white border-b border-slate-100">
           <div className="flex flex-wrap items-center gap-3 flex-1">
@@ -1656,7 +1891,8 @@ export default function DashboardClient({ data }: DashboardClientProps) {
                       {(searchQuery ||
                         selectedProjectId !== "all" ||
                         selectedUserId !== "all" ||
-                        statusFilter !== "all") && (
+                        statusFilter !== "all" ||
+                        severityFilter !== "all") && (
                         <button
                           type="button"
                           onClick={() => {
@@ -1664,6 +1900,7 @@ export default function DashboardClient({ data }: DashboardClientProps) {
                             setSelectedProjectId("all");
                             setSelectedUserId("all");
                             setStatusFilter("all");
+                            setSeverityFilter("all");
                             setCurrentPage(1);
                           }}
                           className="text-xs text-[#00A2D2] font-bold hover:underline cursor-pointer"

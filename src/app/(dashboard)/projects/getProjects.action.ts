@@ -1,6 +1,7 @@
 "use server";
 
 import { getUserToken, getCurrentUserSession } from "@/app/myUtil";
+import { queryProjectsFromDb, raceBackendFetch } from "@/lib/fast-read";
 
 export interface ProjectApiItem {
   id: number;
@@ -64,7 +65,7 @@ export async function getProjects(params?: {
     }
 
     const qs = query.toString() ? `?${query.toString()}` : "";
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/projects${qs}`, {
+    const fetchPromise = fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/projects${qs}`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -73,12 +74,22 @@ export async function getProjects(params?: {
       cache: "force-cache",
     });
 
-    if (!res.ok) {
-      return [];
+    const res = await raceBackendFetch(fetchPromise, 2000);
+
+    if (res && res.ok) {
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
     }
 
-    const data = await res.json();
-    return Array.isArray(data) ? data : [];
+    // Render Cold-Start Fallback: read directly from PostgreSQL pool (~80ms)
+    return await queryProjectsFromDb({
+      environment: params?.environment,
+      status: params?.status,
+      search: params?.search,
+      shouldFilterToMe: Boolean(shouldFilterToMe),
+      currentUserId: sessionUser?.id ? Number(sessionUser.id) : undefined,
+      assignedToUserId: params?.assignedToUserId,
+    });
   } catch (error) {
     if (error && typeof error === 'object' && 'digest' in error && String(error.digest).startsWith('DYNAMIC_SERVER_USAGE')) throw error;
     console.error("Error fetching projects:", error);

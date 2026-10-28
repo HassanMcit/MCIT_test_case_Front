@@ -49,50 +49,13 @@ export async function getDashboardFullData(): Promise<DashboardDataPayload> {
   }
 
   const isAdmin = sessionUser?.role === "admin";
-  const cacheParam = sessionUser?.id
-    ? `cacheUser=${sessionUser.role}_${sessionUser.id}_20261019_v2`
-    : "cv=20261019_v2";
 
-  // Fetch Projects, Test Cases, Stats, Chart, Severity, and Users (if Admin) in parallel
-  const [projects, testCasesRes, rawUsers, statsRes, chartRes, severityRes] =
-    await Promise.all([
-      getProjects(),
-      getTestCases({ limit: 500 }),
-      isAdmin ? getAllUsers() : Promise.resolve([]),
-      fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/dashboard/stats${
-          cacheParam ? `?${cacheParam}` : ""
-        }`,
-        {
-          method: "GET",
-          headers: { Authorization: `Bearer ${token}` },
-          cache: "force-cache",
-          next: { tags: ["dashboard", "dashboard-stats", "test-cases", "projects"] },
-        }
-      ).catch(() => null),
-      fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/dashboard/chart?days=14${
-          cacheParam ? `&${cacheParam}` : ""
-        }`,
-        {
-          method: "GET",
-          headers: { Authorization: `Bearer ${token}` },
-          cache: "force-cache",
-          next: { tags: ["dashboard", "test-cases"] },
-        }
-      ).catch(() => null),
-      fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/dashboard/severity${
-          cacheParam ? `?${cacheParam}` : ""
-        }`,
-        {
-          method: "GET",
-          headers: { Authorization: `Bearer ${token}` },
-          cache: "force-cache",
-          next: { tags: ["dashboard", "test-cases"] },
-        }
-      ).catch(() => null),
-    ]);
+  // Fetch Projects, Test Cases, and Users (if Admin) in parallel (backed by force-cache + fast PostgreSQL fallback)
+  const [projects, testCasesRes, rawUsers] = await Promise.all([
+    getProjects(),
+    getTestCases({ limit: 500 }),
+    isAdmin ? getAllUsers() : Promise.resolve([]),
+  ]);
 
   const allTestCases = testCasesRes?.data || [];
 
@@ -170,30 +133,13 @@ export async function getDashboardFullData(): Promise<DashboardDataPayload> {
       passRate,
       totalProjects: enrichedProjects.length,
     };
-  } else if (statsRes && statsRes.ok) {
-    const sData = await statsRes.json();
-    stats = {
-      total: Number(sData.total) || 0,
-      passed: Number(sData.passed) || 0,
-      failed: Number(sData.failed) || 0,
-      pending: Number(sData.pending) || 0,
-      passRate: Number(sData.passRate) || 0,
-      totalProjects: enrichedProjects.length || Number(sData.totalProjects) || 0,
-    };
   } else {
     stats.totalProjects = enrichedProjects.length;
   }
 
-  // Parse or compute 14-day chart data
-  let chartData: DashboardChartItem[] = [];
-  if (chartRes && chartRes.ok) {
-    const cJson = await chartRes.json();
-    if (Array.isArray(cJson?.data)) {
-      chartData = cJson.data;
-    }
-  }
+  const chartData: DashboardChartItem[] = [];
 
-  // Compute severity breakdown from scopedTestCases (or backend fallback)
+  // Compute severity breakdown from scopedTestCases
   let severityData: DashboardSeverityBreakdown = defaultSeverity;
   const failedCases = scopedTestCases.filter((c) => c.status === "failed");
   if (failedCases.length > 0) {
@@ -218,11 +164,6 @@ export async function getDashboardFullData(): Promise<DashboardDataPayload> {
         };
       }),
     };
-  } else if (severityRes && severityRes.ok) {
-    const sevJson = await severityRes.json();
-    if (sevJson && Array.isArray(sevJson.breakdown)) {
-      severityData = sevJson;
-    }
   }
 
   // Build Users & Assigned Projects overview for Admin

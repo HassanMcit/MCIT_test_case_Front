@@ -4,27 +4,33 @@ import { getUserToken } from "@/app/myUtil";
 import { GetAllUsersResponse } from "./user.interface";
 import { updateTag, revalidatePath } from "next/cache";
 import { recordSystemAuditLog } from "@/lib/audit";
+import { queryAllUsersFromDb, raceBackendFetch } from "@/lib/fast-read";
 
 export async function getAllUsers() {
   try {
-    const response = await fetch(
+    const token = await getUserToken();
+    if (!token) return [];
+
+    const fetchPromise = fetch(
       `${process.env.NEXT_PUBLIC_BASE_URL}/api/users`,
       {
         method: "GET",
         headers: {
-          Authorization: `Bearer ${await getUserToken()}`,
+          Authorization: `Bearer ${token}`,
         },
         next: { tags: ["users"] },
-        cache: "force-cache"
+        cache: "force-cache",
       },
     );
 
-    if (!response.ok) {
-      return [];
+    const response = await raceBackendFetch(fetchPromise, 2000);
+    if (response && response.ok) {
+      const resData = await response.json();
+      return Array.isArray(resData) ? resData : [];
     }
 
-    const resData = await response.json();
-    return Array.isArray(resData) ? resData : [];
+    // Render Cold-Start Fallback: read directly from PostgreSQL pool (~80ms)
+    return await queryAllUsersFromDb();
   } catch (error) {
     return [];
   }
