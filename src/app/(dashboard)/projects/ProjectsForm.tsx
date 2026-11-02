@@ -1500,11 +1500,11 @@ export default function ProjectsForm({
                 )}
               </div>
 
-              {/* Application (المنظومة / التطبيق) */}
+              {/* Application / Module (التطبيق / الموديول) */}
               <div className="space-y-1.5 min-w-0">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs font-bold text-slate-700">
-                    {isRTL ? "اسم التطبيق / المنظومة" : "Application"}
+                    {isRTL ? "التطبيق / الموديول (Application / Module)" : "Application / Module"}
                   </Label>
                   <button
                     type="button"
@@ -1516,7 +1516,7 @@ export default function ProjectsForm({
                   >
                     {addCustomApp
                       ? (isRTL ? "اختر من القائمة" : "Select from list")
-                      : (isRTL ? "أو اكتب تطبيق مخصص" : "Or type custom")}
+                      : (isRTL ? "أو اكتب مخصص" : "Or type custom")}
                   </button>
                 </div>
 
@@ -1524,8 +1524,8 @@ export default function ProjectsForm({
                   <Input
                     placeholder={
                       isRTL
-                        ? "اكتب اسم التطبيق (مثال: بوابة الموظفين)"
-                        : "Type app name (e.g. Employee Portal)"
+                        ? "اكتب اسم التطبيق / الموديول (مثال: بوابة الموظفين)"
+                        : "Type Application / Module name"
                     }
                     {...register("application")}
                     className="h-10 text-sm"
@@ -1549,10 +1549,10 @@ export default function ProjectsForm({
                         <SelectTrigger className="h-10 text-xs">
                           <SelectValue
                             placeholder={
-                              isRTL ? "اختر التطبيق (اختياري)" : "Select Application (Optional)"
+                              isRTL ? "اختر التطبيق / الموديول (اختياري)" : "Select Application / Module (Optional)"
                             }
                           >
-                            {field.value || (isRTL ? "اختر التطبيق (اختياري)" : "Select Application (Optional)")}
+                            {field.value || (isRTL ? "اختر التطبيق / الموديول (اختياري)" : "Select Application / Module (Optional)")}
                           </SelectValue>
                         </SelectTrigger>
                         <SelectContent className="w-(--anchor-width) min-w-[260px] max-w-[90vw] p-1">
@@ -1567,7 +1567,7 @@ export default function ProjectsForm({
                             value="__custom__"
                             className="text-indigo-600 font-semibold border-t border-slate-100 mt-1"
                           >
-                            {isRTL ? "+ كتابة اسم تطبيق آخر..." : "+ Enter custom application..."}
+                            {isRTL ? "+ كتابة تطبيق / موديول آخر..." : "+ Enter custom Application / Module..."}
                           </SelectItem>
                         </SelectContent>
                       </Select>
@@ -1995,6 +1995,7 @@ export default function ProjectsForm({
         projectId={exportModalProject?.id || null}
         projectName={exportModalProject?.name}
         projectApplication={exportModalProject?.application}
+        allApplications={allApplications}
         lockProject={true}
       />
 
@@ -2044,11 +2045,11 @@ export default function ProjectsForm({
                 />
               </div>
 
-              {/* Application (المنظومة / التطبيق) */}
+              {/* Application / Module (التطبيق / الموديول) */}
               <div className="space-y-1.5 min-w-0">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs font-bold text-slate-700">
-                    {isRTL ? "اسم التطبيق / المنظومة" : "Application"}
+                    {isRTL ? "التطبيق / الموديول (Application / Module)" : "Application / Module"}
                   </Label>
                   <button
                     type="button"
@@ -2060,7 +2061,7 @@ export default function ProjectsForm({
                   >
                     {editCustomApp
                       ? (isRTL ? "اختر من القائمة" : "Select from list")
-                      : (isRTL ? "أو اكتب تطبيق مخصص" : "Or type custom")}
+                      : (isRTL ? "أو اكتب مخصص" : "Or type custom")}
                   </button>
                 </div>
 
@@ -2070,8 +2071,8 @@ export default function ProjectsForm({
                     onChange={(e) => setEditApp(e.target.value)}
                     placeholder={
                       isRTL
-                        ? "اكتب اسم التطبيق (مثال: بوابة الموظفين)"
-                        : "Type app name (e.g. Employee Portal)"
+                        ? "اكتب اسم التطبيق / الموديول (مثال: بوابة الموظفين)"
+                        : "Type Application / Module name"
                     }
                     className="h-10 text-sm"
                     disabled={isUpdatingProject}
@@ -2092,10 +2093,10 @@ export default function ProjectsForm({
                     <SelectTrigger className="h-10 text-xs">
                       <SelectValue
                         placeholder={
-                          isRTL ? "اختر التطبيق (اختياري)" : "Select Application (Optional)"
+                          isRTL ? "اختر التطبيق / الموديول (اختياري)" : "Select Application / Module (Optional)"
                         }
                       >
-                        {editApp || (isRTL ? "اختر التطبيق (اختياري)" : "Select Application (Optional)")}
+                        {editApp || (isRTL ? "اختر التطبيق / الموديول (اختياري)" : "Select Application / Module (Optional)")}
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent className="w-(--anchor-width) min-w-[260px] max-w-[90vw] p-1">
@@ -2110,7 +2111,7 @@ export default function ProjectsForm({
                         value="__custom__"
                         className="text-indigo-600 font-semibold border-t border-slate-100 mt-1"
                       >
-                        {isRTL ? "+ كتابة اسم تطبيق آخر..." : "+ Enter custom application..."}
+                        {isRTL ? "+ كتابة تطبيق / موديول آخر..." : "+ Enter custom Application / Module..."}
                       </SelectItem>
                     </SelectContent>
                   </Select>

@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Plus, Minus, Save, RotateCcw } from "lucide-react";
+import { Plus, Minus, Save, RotateCcw, Clock, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,7 +24,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { getTestCaseSchema } from "./test-case.zod";
 import { addNewTestCase, getNextTestCaseId } from "./test-case.action";
 import toast from "react-hot-toast";
-import { cn, toLocalDateKey } from "@/lib/utils";
+import { cn, formatActionTimestamp } from "@/lib/utils";
 import type { QualityApplication } from "../quality/quality.interface";
 
 interface Step {
@@ -61,9 +60,31 @@ export default function AddTestCasePage({
     allProjects[0] ? String(allProjects[0].id) : ""
   );
   const [isCustomApp, setIsCustomApp] = useState(false);
-  const [executionDateKey, setExecutionDateKey] = useState<string>(
-    () => toLocalDateKey(new Date()) || ""
+  const [liveTimestamp, setLiveTimestamp] = useState<string>(() =>
+    new Date().toISOString()
   );
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setLiveTimestamp(new Date().toISOString());
+    }, 10000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const availableAppOptions = useMemo(() => {
+    const map = new Map<string, { name: string; nameAr?: string }>();
+    allApplications.forEach((app) => {
+      if (app.name && !map.has(app.name)) {
+        map.set(app.name, { name: app.name, nameAr: app.nameAr });
+      }
+    });
+    allProjects.forEach((proj) => {
+      if (proj.application && !map.has(proj.application)) {
+        map.set(proj.application, { name: proj.application });
+      }
+    });
+    return Array.from(map.values());
+  }, [allApplications, allProjects]);
 
   const {
     handleSubmit,
@@ -142,25 +163,8 @@ export default function AddTestCasePage({
       .filter((e) => e.value.trim() !== "")
       .map((e) => e.value);
 
-    const now = new Date();
-    let executedIso = now.toISOString();
-    if (executionDateKey) {
-      const [y, m, d] = executionDateKey.split("-").map(Number);
-      if (y && m && d) {
-        const chosenLocal = new Date(
-          y,
-          m - 1,
-          d,
-          now.getHours(),
-          now.getMinutes(),
-          now.getSeconds(),
-          now.getMilliseconds()
-        );
-        if (!isNaN(chosenLocal.getTime())) {
-          executedIso = chosenLocal.toISOString();
-        }
-      }
-    }
+    const executedIso = new Date().toISOString();
+    setLiveTimestamp(executedIso);
 
     const updateUserdata: TestCaseFormValues = {
       ...userData,
@@ -318,8 +322,18 @@ export default function AddTestCasePage({
                         );
                         if (matchedProj) {
                           field.onChange(matchedProj.id);
+                          const currentMod = watch("module");
+                          const nextMod =
+                            !currentMod && matchedProj.application
+                              ? matchedProj.application
+                              : currentMod;
+                          if (!currentMod && matchedProj.application) {
+                            setValue("module", matchedProj.application, {
+                              shouldValidate: true,
+                            });
+                          }
                           const nextId = await getNextTestCaseId(
-                            watch("module") || matchedProj.name,
+                            nextMod || matchedProj.name,
                             matchedProj.id
                           );
                           const finalId =
@@ -370,11 +384,13 @@ export default function AddTestCasePage({
                 )}
               </div>
 
-              {/* Application (اسم التطبيق / المنظومة) */}
+              {/* Application / Module (التطبيق / الموديول) */}
               <div className="space-y-1.5 min-w-0">
                 <div className="flex items-center justify-between">
                   <Label className="text-[13px] font-semibold text-[#0b1c30]">
-                    {isRTL ? "اسم التطبيق" : "Application"}
+                    {isRTL
+                      ? "التطبيق / الموديول (Application / Module) *"
+                      : "Application / Module *"}
                   </Label>
                   <button
                     type="button"
@@ -388,7 +404,7 @@ export default function AddTestCasePage({
                   >
                     {isCustomApp
                       ? (isRTL ? "اختر من القائمة" : "Select from list")
-                      : (isRTL ? "أو اكتب تطبيق مخصص" : "Or type custom")}
+                      : (isRTL ? "أو اكتب مخصص" : "Or type custom")}
                   </button>
                 </div>
 
@@ -396,8 +412,8 @@ export default function AddTestCasePage({
                   <Input
                     placeholder={
                       isRTL
-                        ? "اكتب اسم التطبيق (مثال: بوابة الموظفين)"
-                        : "Type app name (e.g. Employee Portal)"
+                        ? "اكتب اسم التطبيق أو الموديول (مثال: بوابة الموظفين)"
+                        : "Type Application / Module name"
                     }
                     {...register("module")}
                     className={cn(
@@ -440,15 +456,20 @@ export default function AddTestCasePage({
                         >
                           <SelectValue
                             placeholder={
-                              isRTL ? "اختر التطبيق" : "Select Application"
+                              isRTL
+                                ? "اختر التطبيق / الموديول"
+                                : "Select Application / Module"
                             }
                           >
-                            {field.value || (isRTL ? "اختر التطبيق" : "Select Application")}
+                            {field.value ||
+                              (isRTL
+                                ? "اختر التطبيق / الموديول"
+                                : "Select Application / Module")}
                           </SelectValue>
                         </SelectTrigger>
                         <SelectContent className="w-(--anchor-width) min-w-[260px] max-w-[90vw] p-1">
-                          {allApplications.map((app) => (
-                            <SelectItem key={app.id} value={app.name}>
+                          {availableAppOptions.map((app) => (
+                            <SelectItem key={app.name} value={app.name}>
                               {isRTL && app.nameAr
                                 ? `${app.nameAr} (${app.name})`
                                 : app.name}
@@ -458,7 +479,9 @@ export default function AddTestCasePage({
                             value="__custom__"
                             className="text-indigo-600 font-semibold border-t border-slate-100 mt-1"
                           >
-                            {isRTL ? "+ كتابة اسم تطبيق آخر..." : "+ Enter custom application..."}
+                            {isRTL
+                              ? "+ كتابة تطبيق / موديول آخر..."
+                              : "+ Enter custom Application / Module..."}
                           </SelectItem>
                         </SelectContent>
                       </Select>
@@ -886,21 +909,26 @@ export default function AddTestCasePage({
                 />
               </div>
 
-              {/* Execution Date (shadcn/ui Date Picker) */}
+              {/* Execution Date & Time (Today's Date & Time - Uneditable) */}
               <div className="space-y-1.5">
-                <Label className="text-[13px] text-[#0b1c30]">
-                  {isRTL ? "تاريخ التنفيذ" : "Execution Date"}
+                <Label className="text-[13px] text-[#0b1c30] flex items-center justify-between">
+                  <span>
+                    {isRTL ? "تاريخ ووقت التنفيذ" : "Execution Date & Time"}
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-md">
+                    <Lock className="w-2.5 h-2.5" />
+                    {isRTL ? "تلقائي" : "Auto"}
+                  </span>
                 </Label>
-                <DatePicker
-                  value={executionDateKey}
-                  onChange={(val) =>
-                    setExecutionDateKey(val || toLocalDateKey(new Date()) || "")
-                  }
-                  allowClear={false}
-                  locale={isRTL ? "ar" : "en"}
-                  placeholder={isRTL ? "اختر تاريخ التنفيذ" : "Pick execution date"}
-                  className="h-9 text-[13px] bg-[#f8f9ff] border-[#bcc8d0]"
-                />
+                <div className="relative flex items-center">
+                  <Clock className="w-4 h-4 text-[#006685] absolute start-3 pointer-events-none" />
+                  <Input
+                    readOnly
+                    disabled
+                    value={formatActionTimestamp(liveTimestamp, lang)}
+                    className="rounded-xl text-[13px] font-mono bg-slate-100/80 text-slate-700 border-[#bcc8d0] ps-9 cursor-not-allowed opacity-100"
+                  />
+                </div>
               </div>
             </div>
 

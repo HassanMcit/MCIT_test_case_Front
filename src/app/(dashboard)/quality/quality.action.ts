@@ -323,6 +323,10 @@ export async function submitQualityAssessment(payload: {
   updateTag(`quality-app-${appId}`);
   revalidatePath("/quality");
   revalidatePath(`/quality/${appId}`);
+  revalidatePath("/add");
+  revalidatePath("/projects");
+  revalidatePath("/test-cases");
+  revalidatePath("/dashboard");
 
   recordSystemAuditLog({
     action: "فحص جودة تطبيق",
@@ -378,6 +382,10 @@ export async function registerQualityApplication(dto: CreateQualityAppDto) {
 
   updateTag("quality-apps");
   revalidatePath("/quality");
+  revalidatePath("/add");
+  revalidatePath("/projects");
+  revalidatePath("/test-cases");
+  revalidatePath("/dashboard");
 
   recordSystemAuditLog({
     action: "إضافة تطبيق جودة جديد",
@@ -475,6 +483,10 @@ export async function updateQualityApplication(
   updateTag(`quality-app-${id}`);
   revalidatePath("/quality");
   revalidatePath(`/quality/${id}`);
+  revalidatePath("/add");
+  revalidatePath("/projects");
+  revalidatePath("/test-cases");
+  revalidatePath("/dashboard");
 
   recordSystemAuditLog({
     action: "تعديل تطبيق جودة",
@@ -504,6 +516,10 @@ export async function deleteQualityApplication(id: number) {
 
   updateTag("quality-apps");
   revalidatePath("/quality");
+  revalidatePath("/add");
+  revalidatePath("/projects");
+  revalidatePath("/test-cases");
+  revalidatePath("/dashboard");
 
   recordSystemAuditLog({
     action: "حذف تطبيق جودة",

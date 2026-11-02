@@ -48,6 +48,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useLanguage } from "@/context/language-context";
 import type { TestCaseItem, TestCaseListResponse } from "./test-cases.interface";
 import type { ProjectApiItem } from "../projects/getProjects.action";
+import type { QualityApplication } from "../quality/quality.interface";
 import { deleteTestCase, getTestCases, updateTestCase } from "./test-cases.action";
 import toast from "react-hot-toast";
 import { toLocalDateKey } from "@/lib/utils";
@@ -57,6 +58,7 @@ import ExportReportModal from "@/components/ExportReportModal";
 interface TestCasesTableProps {
   initialData: TestCaseListResponse;
   allProjects: ProjectApiItem[];
+  allApplications?: QualityApplication[];
   initialProjectId?: number;
   autoOpenExport?: boolean;
 }
@@ -104,6 +106,7 @@ export function formatActionTimestamp(
 export default function TestCasesTable({
   initialData,
   allProjects,
+  allApplications = [],
   initialProjectId,
   autoOpenExport = false,
 }: TestCasesTableProps) {
@@ -169,7 +172,28 @@ export default function TestCasesTable({
   const [editingItem, setEditingItem] = useState<TestCaseItem | null>(null);
   const [editFormData, setEditFormData] = useState<Partial<TestCaseItem>>({});
   const [editSteps, setEditSteps] = useState<string[]>([]);
+  const [editCustomApp, setEditCustomApp] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+
+  const availableAppOptions = useMemo(() => {
+    const map = new Map<string, { name: string; nameAr?: string }>();
+    allApplications.forEach((app) => {
+      if (app.name && !map.has(app.name)) {
+        map.set(app.name, { name: app.name, nameAr: app.nameAr });
+      }
+    });
+    allProjects.forEach((proj) => {
+      if (proj.application && !map.has(proj.application)) {
+        map.set(proj.application, { name: proj.application });
+      }
+    });
+    items.forEach((tc) => {
+      if (tc.module && !map.has(tc.module)) {
+        map.set(tc.module, { name: tc.module });
+      }
+    });
+    return Array.from(map.values());
+  }, [allApplications, allProjects, items]);
 
   const [, startTransition] = useTransition();
 
@@ -828,7 +852,7 @@ export default function TestCasesTable({
                 {(isRTL
                   ? [
                       "معرف الحالة",
-                      "المشروع / الصفحة",
+                      "المشروع & التطبيق / الموديول",
                       "سيناريو الاختبار",
                       "الخطوات",
                       "النتيجة المتوقعة",
@@ -839,7 +863,7 @@ export default function TestCasesTable({
                     ]
                   : [
                       "Case ID",
-                      "Module / Project",
+                      "Project & Application / Module",
                       "Scenario",
                       "Steps",
                       "Expected Result",
@@ -935,23 +959,32 @@ export default function TestCasesTable({
                         </Link>
                       </td>
 
-                      {/* 2. Module & Page */}
-                      <td className={`px-3.5 py-3 max-w-[210px] ${isRTL ? "text-right" : "text-left"}`}>
+                      {/* 2. Project & Application / Module & Page */}
+                      <td className={`px-3.5 py-3 max-w-[230px] ${isRTL ? "text-right" : "text-left"}`}>
                         <div className="flex flex-col gap-1">
                           <span
                             className="inline-flex items-center gap-1.5 font-bold text-[12px] text-[#006685] bg-[#eff4ff]/80 border border-[#00aee0]/25 px-2 py-0.5 rounded-md w-fit max-w-full truncate"
-                            title={row.project?.name || row.module || "-"}
+                            title={
+                              row.project?.name ||
+                              allProjects.find((p) => p.id === row.projectId)?.name ||
+                              row.module ||
+                              "-"
+                            }
                           >
                             <FolderGit2 className="w-3 h-3 shrink-0 text-[#006685]" />
                             <span className="truncate">
-                              {row.project?.name || row.module || "-"}
+                              {row.project?.name ||
+                                allProjects.find((p) => p.id === row.projectId)?.name ||
+                                row.module ||
+                                "-"}
                             </span>
                           </span>
-                          {row.module && row.project?.name && row.module !== row.project.name && (
+                          {row.module && (
                             <span
-                              className="text-[10.5px] font-semibold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded w-fit max-w-full truncate"
+                              className="text-[10.5px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200/60 px-1.5 py-0.5 rounded w-fit max-w-full truncate"
                               title={row.module}
                             >
+                              {isRTL ? "التطبيق / الموديول: " : "App / Module: "}
                               {row.module}
                             </span>
                           )}
@@ -1364,19 +1397,37 @@ export default function TestCasesTable({
               </div>
             </div>
 
-            {/* 3. Module */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[#565e74] flex items-center gap-1.5">
-                <FolderGit2 className="w-4 h-4 text-[#006685]" />
-                <span>{isRTL ? "الوحدة البرمجية / المشروع (Module):" : "Module:"}</span>
-              </label>
-              <div className="p-3 bg-white rounded-xl text-xs font-bold text-[#0b1c30] border border-slate-200 flex items-center justify-between">
-                <span>{selectedItem.module || selectedItem.project?.name || "-"}</span>
-                {selectedItem.pageName && (
-                  <span className="text-[11px] text-[#6d797f] font-normal">
-                    {isRTL ? "الصفحة: " : "Page: "}{selectedItem.pageName}
+            {/* 3. Project & Application / Module */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#565e74] flex items-center gap-1.5">
+                  <FolderGit2 className="w-4 h-4 text-[#006685]" />
+                  <span>{isRTL ? "المشروع (Project):" : "Project:"}</span>
+                </label>
+                <div className="p-3 bg-white rounded-xl text-xs font-bold text-[#0b1c30] border border-slate-200">
+                  {selectedItem.project?.name ||
+                    allProjects.find((p) => p.id === selectedItem.projectId)?.name ||
+                    "-"}
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#565e74] flex items-center gap-1.5">
+                  <FolderGit2 className="w-4 h-4 text-indigo-600" />
+                  <span>
+                    {isRTL
+                      ? "التطبيق / الموديول (Application / Module):"
+                      : "Application / Module:"}
                   </span>
-                )}
+                </label>
+                <div className="p-3 bg-white rounded-xl text-xs font-bold text-[#0b1c30] border border-slate-200 flex items-center justify-between">
+                  <span>{selectedItem.module || "-"}</span>
+                  {selectedItem.pageName && (
+                    <span className="text-[11px] text-[#6d797f] font-normal">
+                      {isRTL ? "الصفحة: " : "Page: "}
+                      {selectedItem.pageName}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -1668,20 +1719,84 @@ export default function TestCasesTable({
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-[#0b1c30]">
-                    {isRTL ? "اسم التطبيق (Application)" : "Application"}
-                  </label>
-                  <Input
-                    value={editFormData.module || ""}
-                    onChange={(e) =>
-                      setEditFormData((prev) => ({
-                        ...prev,
-                        module: e.target.value,
-                      }))
-                    }
-                    placeholder={isRTL ? "اسم التطبيق / المنظومة" : "Application name"}
-                    className="h-10 text-[13px] bg-[#f8f9ff] border-slate-200 rounded-xl"
-                  />
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-[#0b1c30]">
+                      {isRTL
+                        ? "التطبيق / الموديول (Application / Module)"
+                        : "Application / Module"}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setEditCustomApp((v) => !v)}
+                      className="text-[10px] text-indigo-600 hover:text-indigo-800 font-semibold underline cursor-pointer"
+                    >
+                      {editCustomApp
+                        ? isRTL
+                          ? "اختر من القائمة"
+                          : "Select from list"
+                        : isRTL
+                        ? "أو اكتب مخصص"
+                        : "Or type custom"}
+                    </button>
+                  </div>
+                  {editCustomApp ? (
+                    <Input
+                      value={editFormData.module || ""}
+                      onChange={(e) =>
+                        setEditFormData((prev) => ({
+                          ...prev,
+                          module: e.target.value,
+                        }))
+                      }
+                      placeholder={
+                        isRTL
+                          ? "اسم التطبيق / الموديول"
+                          : "Application / Module name"
+                      }
+                      className="h-10 text-[13px] bg-[#f8f9ff] border-slate-200 rounded-xl"
+                    />
+                  ) : (
+                    <Select
+                      value={editFormData.module || ""}
+                      onValueChange={(val) => {
+                        if (val === "__custom__") {
+                          setEditCustomApp(true);
+                          setEditFormData((prev) => ({ ...prev, module: "" }));
+                        } else {
+                          setEditFormData((prev) => ({
+                            ...prev,
+                            module: val || "",
+                          }));
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="h-10 text-[13px] bg-[#f8f9ff] border-slate-200 rounded-xl">
+                        <SelectValue>
+                          {editFormData.module ||
+                            (isRTL
+                              ? "اختر التطبيق / الموديول"
+                              : "Select Application / Module")}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl max-h-60">
+                        {availableAppOptions.map((app) => (
+                          <SelectItem key={app.name} value={app.name}>
+                            {isRTL && app.nameAr
+                              ? `${app.nameAr} (${app.name})`
+                              : app.name}
+                          </SelectItem>
+                        ))}
+                        <SelectItem
+                          value="__custom__"
+                          className="text-indigo-600 font-semibold border-t border-slate-100 mt-1"
+                        >
+                          {isRTL
+                            ? "+ كتابة تطبيق / موديول آخر..."
+                            : "+ Enter custom Application / Module..."}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">
@@ -2020,6 +2135,7 @@ export default function TestCasesTable({
         projectName={selectedProjectObj?.name}
         projectApplication={selectedProjectObj?.application || undefined}
         allProjects={allProjects}
+        allApplications={allApplications}
         lockProject={Boolean(selectedProjectObj && initialProjectId)}
         initialFromDate={fromDateFilter !== "all" ? fromDateFilter : ""}
         initialToDate={toDateFilter !== "all" ? toDateFilter : ""}

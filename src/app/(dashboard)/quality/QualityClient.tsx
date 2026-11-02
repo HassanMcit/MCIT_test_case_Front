@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useMemo } from "react";
+import { useState, useEffect, useTransition, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/context/language-context";
@@ -99,6 +99,10 @@ export default function QualityClient({
   const isAdmin = session?.user?.role === "admin";
 
   const [apps, setApps] = useState<QualityApplication[]>(initialData.applications || []);
+
+  useEffect(() => {
+    setApps(initialData.applications || []);
+  }, [initialData.applications]);
   const [selectedCategory, setSelectedCategory] = useState<QualityAppCategory>(
     (initialCategory as QualityAppCategory) || "All"
   );
@@ -280,7 +284,7 @@ export default function QualityClient({
     }
   };
 
-  // ── Exact QA Applications Excel / CSV Exporter ─────────────────────
+  // ── Exact Live QA Applications Excel / CSV Exporter ─────────────────
   const generateExportData = () => {
     const aoa: (string | number)[][] = [
       ["QA Report  For Applications", "", "", "", "", ""],
@@ -295,49 +299,19 @@ export default function QualityClient({
       ["", "", "pass/ fail", "", "bugs number", "%"],
     ];
 
-    const templateApps = [
-      { key: "appraisal", name: "Appraisal", url: "https://xcta-appraisal.mcit.gov.eg", tests: 50, issues: 5, stability: 0.9 },
-      { key: "visitors", name: "Visitors", url: "https/mcitvisitors.mcit.gov.eg" },
-      { key: "meeting", name: "Meeting Management", url: "https://meetingmanagement.mcit.gov.eg" },
-      { key: "taskati", name: "taskati", url: "https//taskati.mcit.gov.eg" },
-      { key: "business card", name: "Business Card For IR", url: "https://BusinessCard-IR.mcit.gov.eg" },
-      { key: "takaful", name: "takaful", url: "https://takaful-core.mcit.gov.eg/" },
-      { key: "dtu announcement", name: "dtu announcement", url: "https://dtuannouncement.mcit.gov.eg/" },
-      { key: "citizens services", name: "citizens services", url: "https//citizensservices.mcit.gov.eg" },
-      { key: "scounsil", name: "scounsil", url: "scouncil2026-2030.mcit.gov.eg" },
-      { key: "user profile", name: "User Profile", url: "https/userprofile.mcit.gov.eg" },
-      { key: "vaccine", name: "Vaccine", url: "https/mcitvaccine.mcit.gov.eg" },
-      { key: "survey", name: "Survey", url: "https/survey.mcit.gov.eg" },
-      { key: "github", name: "Github", url: "https://git.mcit.gov.eg" },
-      { key: "reporting", name: "reporting", url: "https//powerbi.mcit.gov.eg" },
-      { key: "transportaion", name: "Transportaion ", url: "" },
-      { key: "hr", name: "HR", url: "https//hr.mcit.gov.eg" },
-      { key: "inventory", name: "", url: "+ Inventory amac", isSpecialInventory: true },
-      { key: "arabdox", name: "Arabdox", url: "http://10.210.52.21:8080/Explorer/Repository/Repository.asp" },
-    ];
-
-    templateApps.forEach((t) => {
-      const match = apps.find((a) => {
-        const lower = a.name.toLowerCase();
-        if (t.key === "inventory") return lower.includes("inventory") || lower.includes("amac");
-        return lower.includes(t.key);
-      });
-
-      const appName = t.isSpecialInventory ? "" : (match?.name || t.name);
-      const appUrl = t.isSpecialInventory ? t.url : (match?.url || t.url);
-
-      let upAndRunning = "";
-      let totalTests: string | number = t.tests !== undefined ? t.tests : "";
-      let bugs: string | number = t.issues !== undefined ? t.issues : "";
-      let stability: string | number = t.stability !== undefined ? t.stability : "";
-
-      // If user has conducted real assessments or customized the app, reflect live values
-      if (match && t.tests === undefined && match.lastCheck && match.lastCheck !== "Recently") {
-        upAndRunning = match.status === "Healthy" || match.status === "Operational" ? "pass" : "fail";
-        totalTests = match.suitesCount || "";
-        bugs = match.bugsCount || 0;
-        stability = match.passRate ? parseFloat((match.passRate / 100).toFixed(2)) : "";
-      }
+    filteredApps.forEach((app) => {
+      const appName = app.name || app.nameAr || "";
+      const appUrl = app.url || "";
+      const upAndRunning =
+        app.status === "Healthy" || app.status === "Operational"
+          ? "pass"
+          : "fail";
+      const totalTests: number = app.suitesCount ?? 0;
+      const bugs: number = app.bugsCount ?? 0;
+      const stability: number | string =
+        typeof app.passRate === "number"
+          ? parseFloat((app.passRate / 100).toFixed(2))
+          : "";
 
       aoa.push([appName, appUrl, upAndRunning, totalTests, bugs, stability]);
     });

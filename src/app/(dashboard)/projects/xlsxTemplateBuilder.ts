@@ -86,7 +86,7 @@ class SharedStringsTable {
   }
 }
 
-const COL_LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
+const COL_LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O"];
 
 function strCell(colIdx: number, rowNum: number, styleIdx: number, text: string | null | undefined, sst: SharedStringsTable): string {
   const ref = `${COL_LETTERS[colIdx]}${rowNum}`;
@@ -293,8 +293,9 @@ export function buildOfficialQaXlsxBuffer(
 
   interface BugRow {
     defectId: string;
-    title: string;
+    project: string;
     module: string;
+    title: string;
     description: string;
     severity: string;
     priority: string;
@@ -309,7 +310,8 @@ export function buildOfficialQaXlsxBuffer(
   // ── Sheet 1: Test Cases ────────────────────────────────────────────────────
   const tcHeaders = [
     "Test Case ID",
-    "Module",
+    "Project",
+    "Application / Module",
     "Test Scenario",
     "Pre-Conditions",
     "Test Steps",
@@ -325,9 +327,9 @@ export function buildOfficialQaXlsxBuffer(
 
   // Header row (r=1)
   const tcHeaderCells = tcHeaders
-    .map((h, colIdx) => strCell(colIdx, 1, colIdx === 4 || colIdx === 5 ? 12 : 8, h, sst))
+    .map((h, colIdx) => strCell(colIdx, 1, colIdx === 5 || colIdx === 6 ? 12 : 8, h, sst))
     .join("");
-  tcSheetRowsXml.push(`<row r="1" spans="1:11" ht="22.8" customHeight="1">${tcHeaderCells}</row>`);
+  tcSheetRowsXml.push(`<row r="1" spans="1:12" ht="22.8" customHeight="1">${tcHeaderCells}</row>`);
 
   // Data rows (r=2..N+1)
   testCases.forEach((tc, idx) => {
@@ -349,13 +351,18 @@ export function buildOfficialQaXlsxBuffer(
       blockedCount++;
     }
 
-    const tcDisplayId = `TC_${String(idx + 1).padStart(3, "0")}`;
-    const moduleVal =
-      (tc.pageName && tc.pageName.trim()) ||
-      (tc.module && tc.module.trim()) ||
-      reportData.projectApp ||
-      reportData.projectName ||
+    const tcDisplayId =
+      tc.testId && tc.testId.trim()
+        ? tc.testId.trim()
+        : `TC_${String(idx + 1).padStart(3, "0")}`;
+    const projectVal =
+      (tc.projectName && tc.projectName.trim()) ||
+      (reportData.projectName && reportData.projectName.trim()) ||
       "General";
+    const moduleVal =
+      (tc.module && tc.module.trim()) ||
+      (reportData.projectApp && reportData.projectApp.trim()) ||
+      projectVal;
 
     const scenarioVal = (tc.scenario || "").replace(/\t+/g, "").trim();
     const preCondVal = (tc.preConditions || "").trim();
@@ -368,7 +375,10 @@ export function buildOfficialQaXlsxBuffer(
 
     let defectId: string | null = null;
     if (isFail) {
-      defectId = `BUG_${String(bugCounter).padStart(3, "0")}`;
+      defectId =
+        tc.testId && /^BUG[-_]/i.test(tc.testId.trim())
+          ? tc.testId.trim()
+          : `BUG_${String(bugCounter).padStart(3, "0")}`;
       bugCounter++;
 
       const firstScenarioLine = scenarioVal.split(/\r?\n/)[0]?.trim() || "";
@@ -386,8 +396,9 @@ export function buildOfficialQaXlsxBuffer(
 
       bugs.push({
         defectId,
-        title: bugTitle,
+        project: projectVal,
         module: moduleVal,
+        title: bugTitle,
         description: bugDesc,
         severity: normalizeSeverity(tc.severity),
         priority: normalizePriority(tc.priority),
@@ -404,6 +415,7 @@ export function buildOfficialQaXlsxBuffer(
 
     const rowHeight = estimateRowHeight([
       tcDisplayId,
+      projectVal,
       moduleVal,
       scenarioVal,
       preCondVal,
@@ -414,30 +426,32 @@ export function buildOfficialQaXlsxBuffer(
 
     const cells = [
       strCell(0, rowNum, 3, tcDisplayId, sst),
-      strCell(1, rowNum, 3, moduleVal, sst),
-      strCell(2, rowNum, 3, scenarioVal, sst),
-      strCell(3, rowNum, 3, preCondVal, sst),
-      strCell(4, rowNum, 4, stepsVal, sst), // s=4 has RTL readingOrder=2
-      strCell(5, rowNum, 3, expectedVal, sst),
-      strCell(6, rowNum, 3, actualVal, sst),
-      strCell(7, rowNum, 3, statusLabel, sst),
-      strCell(8, rowNum, 3, defectId, sst),
-      strCell(9, rowNum, 3, testerVal, sst),
-      strCell(10, rowNum, 3, execDateVal, sst),
+      strCell(1, rowNum, 3, projectVal, sst),
+      strCell(2, rowNum, 3, moduleVal, sst),
+      strCell(3, rowNum, 3, scenarioVal, sst),
+      strCell(4, rowNum, 3, preCondVal, sst),
+      strCell(5, rowNum, 4, stepsVal, sst), // s=4 has RTL readingOrder=2
+      strCell(6, rowNum, 3, expectedVal, sst),
+      strCell(7, rowNum, 3, actualVal, sst),
+      strCell(8, rowNum, 3, statusLabel, sst),
+      strCell(9, rowNum, 3, defectId, sst),
+      strCell(10, rowNum, 3, testerVal, sst),
+      strCell(11, rowNum, 3, execDateVal, sst),
     ].join("");
 
-    tcSheetRowsXml.push(`<row r="${rowNum}" spans="1:11" ht="${rowHeight}" customHeight="1">${cells}</row>`);
+    tcSheetRowsXml.push(`<row r="${rowNum}" spans="1:12" ht="${rowHeight}" customHeight="1">${cells}</row>`);
   });
 
   const lastTcRow = Math.max(1, testCases.length + 1);
   const sheet1Xml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><dimension ref="A1:K${lastTcRow}"/><sheetViews><sheetView tabSelected="1" workbookViewId="0"><selection activeCell="A2" sqref="A2"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="14.4"/><cols><col min="1" max="2" width="22" style="2" customWidth="1"/><col min="3" max="3" width="33" style="2" customWidth="1"/><col min="4" max="4" width="24.5546875" style="2" customWidth="1"/><col min="5" max="5" width="22" style="5" customWidth="1"/><col min="6" max="6" width="27.88671875" style="5" customWidth="1"/><col min="7" max="7" width="29.77734375" style="2" customWidth="1"/><col min="8" max="11" width="22" style="2" customWidth="1"/></cols><sheetData>${tcSheetRowsXml.join("")}</sheetData><autoFilter ref="A1:K${lastTcRow}"/><pageMargins left="0.75" right="0.75" top="1" bottom="1" header="0.5" footer="0.5"/></worksheet>`;
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><dimension ref="A1:L${lastTcRow}"/><sheetViews><sheetView tabSelected="1" workbookViewId="0"><selection activeCell="A2" sqref="A2"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="14.4"/><cols><col min="1" max="3" width="22" style="2" customWidth="1"/><col min="4" max="4" width="33" style="2" customWidth="1"/><col min="5" max="5" width="24.5546875" style="2" customWidth="1"/><col min="6" max="6" width="22" style="5" customWidth="1"/><col min="7" max="7" width="27.88671875" style="5" customWidth="1"/><col min="8" max="8" width="29.77734375" style="2" customWidth="1"/><col min="9" max="12" width="22" style="2" customWidth="1"/></cols><sheetData>${tcSheetRowsXml.join("")}</sheetData><autoFilter ref="A1:L${lastTcRow}"/><pageMargins left="0.75" right="0.75" top="1" bottom="1" header="0.5" footer="0.5"/></worksheet>`;
 
   // ── Sheet 2: Defect Log (Bugs Tab) ─────────────────────────────────────────
   const bugHeaders = [
     "Defect ID",
+    "Project",
+    "Application / Module",
     "Title",
-    "Module",
     "Description",
     "Severity",
     "Priority",
@@ -451,43 +465,44 @@ export function buildOfficialQaXlsxBuffer(
 
   const bugSheetRowsXml: string[] = [];
   const bugHeaderCells = bugHeaders.map((h, colIdx) => strCell(colIdx, 1, 8, h, sst)).join("");
-  bugSheetRowsXml.push(`<row r="1" spans="1:12" ht="24.6" customHeight="1">${bugHeaderCells}</row>`);
+  bugSheetRowsXml.push(`<row r="1" spans="1:13" ht="24.6" customHeight="1">${bugHeaderCells}</row>`);
 
   bugs.forEach((b, idx) => {
     const rowNum = idx + 2;
-    const ht = estimateRowHeight([b.defectId, b.title, b.module, b.description], 43.2);
+    const ht = estimateRowHeight([b.defectId, b.project, b.module, b.title, b.description], 43.2);
     const cells = [
       strCell(0, rowNum, 3, b.defectId, sst),
-      strCell(1, rowNum, 3, b.title, sst),
+      strCell(1, rowNum, 3, b.project, sst),
       strCell(2, rowNum, 3, b.module, sst),
-      strCell(3, rowNum, 3, b.description, sst),
-      strCell(4, rowNum, 7, b.severity, sst),
-      strCell(5, rowNum, 7, b.priority, sst),
-      strCell(6, rowNum, 7, b.status, sst),
-      strCell(7, rowNum, 7, b.reportedBy, sst),
-      strCell(8, rowNum, 7, b.assignedTo, sst),
-      numCell(9, rowNum, 6, b.excelDateSerial), // s=6 -> numFmtId=14 (Excel Date)
-      `<c r="K${rowNum}" s="9"/>`,
-      b.comments ? strCell(11, rowNum, 3, b.comments, sst) : `<c r="L${rowNum}" s="9"/>`,
+      strCell(3, rowNum, 3, b.title, sst),
+      strCell(4, rowNum, 3, b.description, sst),
+      strCell(5, rowNum, 7, b.severity, sst),
+      strCell(6, rowNum, 7, b.priority, sst),
+      strCell(7, rowNum, 7, b.status, sst),
+      strCell(8, rowNum, 7, b.reportedBy, sst),
+      strCell(9, rowNum, 7, b.assignedTo, sst),
+      numCell(10, rowNum, 6, b.excelDateSerial), // s=6 -> numFmtId=14 (Excel Date)
+      `<c r="L${rowNum}" s="9"/>`,
+      b.comments ? strCell(12, rowNum, 3, b.comments, sst) : `<c r="M${rowNum}" s="9"/>`,
     ].join("");
-    bugSheetRowsXml.push(`<row r="${rowNum}" spans="1:12" ht="${ht}" customHeight="1">${cells}</row>`);
+    bugSheetRowsXml.push(`<row r="${rowNum}" spans="1:13" ht="${ht}" customHeight="1">${cells}</row>`);
   });
 
   const lastBugRow = Math.max(1, bugs.length + 1);
   const dvEnd = Math.max(309, lastBugRow + 50);
   const sheet2Xml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><dimension ref="A1:L${lastBugRow}"/><sheetViews><sheetView workbookViewId="0"><selection activeCell="A2" sqref="A2"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="14.4"/><cols><col min="1" max="12" width="24" customWidth="1"/></cols><sheetData>${bugSheetRowsXml.join("")}</sheetData><dataValidations count="3"><dataValidation type="list" allowBlank="1" showInputMessage="1" showErrorMessage="1" sqref="E2:E${dvEnd}"><formula1>"Critical,High,Medium,Low"</formula1></dataValidation><dataValidation type="list" allowBlank="1" showInputMessage="1" showErrorMessage="1" sqref="F2:F${dvEnd}"><formula1>"High,Medium,Low"</formula1></dataValidation><dataValidation type="list" allowBlank="1" showInputMessage="1" showErrorMessage="1" sqref="G2:G${dvEnd}"><formula1>"Open,In Progress,Fixed,Retest,Closed,Reopened,Rejected/Invalid,Deferred"</formula1></dataValidation></dataValidations><pageMargins left="0.75" right="0.75" top="1" bottom="1" header="0.5" footer="0.5"/></worksheet>`;
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><dimension ref="A1:M${lastBugRow}"/><sheetViews><sheetView workbookViewId="0"><selection activeCell="A2" sqref="A2"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="14.4"/><cols><col min="1" max="13" width="24" customWidth="1"/></cols><sheetData>${bugSheetRowsXml.join("")}</sheetData><dataValidations count="3"><dataValidation type="list" allowBlank="1" showInputMessage="1" showErrorMessage="1" sqref="F2:F${dvEnd}"><formula1>"Critical,High,Medium,Low"</formula1></dataValidation><dataValidation type="list" allowBlank="1" showInputMessage="1" showErrorMessage="1" sqref="G2:G${dvEnd}"><formula1>"High,Medium,Low"</formula1></dataValidation><dataValidation type="list" allowBlank="1" showInputMessage="1" showErrorMessage="1" sqref="H2:H${dvEnd}"><formula1>"Open,In Progress,Fixed,Retest,Closed,Reopened,Rejected/Invalid,Deferred"</formula1></dataValidation></dataValidations><pageMargins left="0.75" right="0.75" top="1" bottom="1" header="0.5" footer="0.5"/></worksheet>`;
 
   // ── Sheet 3: Execution Summary ─────────────────────────────────────────────
   const totalCount = testCases.length;
   const formulaEndRow = Math.max(1009, lastTcRow + 100);
 
   const sheet3Xml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><dimension ref="A1:B5"/><sheetViews><sheetView workbookViewId="0"><selection activeCell="B5" sqref="B5"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="14.4"/><cols><col min="1" max="1" width="30.44140625" customWidth="1"/><col min="2" max="2" width="29.5546875" customWidth="1"/></cols><sheetData><row r="1" spans="1:2" ht="20" customHeight="1">${strCell(0, 1, 10, "Metric", sst)}${strCell(1, 1, 10, "Value", sst)}</row><row r="2" spans="1:2" ht="20" customHeight="1">${strCell(0, 2, 11, "Total Test Cases", sst)}<c r="B2" s="11"><f>COUNTA('Test Cases'!A2:A${formulaEndRow})</f><v>${totalCount}</v></c></row><row r="3" spans="1:2" ht="20" customHeight="1">${strCell(0, 3, 11, "Passed", sst)}<c r="B3" s="11"><f>COUNTIF('Test Cases'!H2:H${formulaEndRow},"Pass")</f><v>${passedCount}</v></c></row><row r="4" spans="1:2" ht="20" customHeight="1">${strCell(0, 4, 11, "Failed", sst)}<c r="B4" s="11"><f>COUNTIF('Test Cases'!H2:H${formulaEndRow},"Fail")</f><v>${failedCount}</v></c></row><row r="5" spans="1:2" ht="20" customHeight="1">${strCell(0, 5, 11, "Blocked", sst)}<c r="B5" s="11"><f>COUNTIF('Test Cases'!H2:H${formulaEndRow},"Blocked")</f><v>${blockedCount}</v></c></row></sheetData><pageMargins left="0.75" right="0.75" top="1" bottom="1" header="0.5" footer="0.5"/></worksheet>`;
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><dimension ref="A1:B5"/><sheetViews><sheetView workbookViewId="0"><selection activeCell="B5" sqref="B5"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="14.4"/><cols><col min="1" max="1" width="30.44140625" customWidth="1"/><col min="2" max="2" width="29.5546875" customWidth="1"/></cols><sheetData><row r="1" spans="1:2" ht="20" customHeight="1">${strCell(0, 1, 10, "Metric", sst)}${strCell(1, 1, 10, "Value", sst)}</row><row r="2" spans="1:2" ht="20" customHeight="1">${strCell(0, 2, 11, "Total Test Cases", sst)}<c r="B2" s="11"><f>COUNTA('Test Cases'!A2:A${formulaEndRow})</f><v>${totalCount}</v></c></row><row r="3" spans="1:2" ht="20" customHeight="1">${strCell(0, 3, 11, "Passed", sst)}<c r="B3" s="11"><f>COUNTIF('Test Cases'!I2:I${formulaEndRow},"Pass")</f><v>${passedCount}</v></c></row><row r="4" spans="1:2" ht="20" customHeight="1">${strCell(0, 4, 11, "Failed", sst)}<c r="B4" s="11"><f>COUNTIF('Test Cases'!I2:I${formulaEndRow},"Fail")</f><v>${failedCount}</v></c></row><row r="5" spans="1:2" ht="20" customHeight="1">${strCell(0, 5, 11, "Blocked", sst)}<c r="B5" s="11"><f>COUNTIF('Test Cases'!I2:I${formulaEndRow},"Blocked")</f><v>${blockedCount}</v></c></row></sheetData><pageMargins left="0.75" right="0.75" top="1" bottom="1" header="0.5" footer="0.5"/></worksheet>`;
 
   // ── Sheet 4: Dashboard (with Chart!) ───────────────────────────────────────
   const sheet4Xml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><dimension ref="A1:B4"/><sheetViews><sheetView showGridLines="0" workbookViewId="0"><selection sqref="A1:B4"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="14.4"/><cols><col min="1" max="1" width="20" customWidth="1"/><col min="2" max="2" width="20.33203125" customWidth="1"/></cols><sheetData><row r="1" spans="1:2" ht="20" customHeight="1">${strCell(0, 1, 10, "Status", sst)}${strCell(1, 1, 10, "Count", sst)}</row><row r="2" spans="1:2" ht="20" customHeight="1">${strCell(0, 2, 11, "Passed", sst)}<c r="B2" s="11"><f>COUNTIF('Test Cases'!H2:H${formulaEndRow},"Pass")</f><v>${passedCount}</v></c></row><row r="3" spans="1:2" ht="20" customHeight="1">${strCell(0, 3, 11, "Failed", sst)}<c r="B3" s="11"><f>COUNTIF('Test Cases'!H2:H${formulaEndRow},"Fail")</f><v>${failedCount}</v></c></row><row r="4" spans="1:2" ht="20" customHeight="1">${strCell(0, 4, 11, "Blocked", sst)}<c r="B4" s="11"><f>COUNTIF('Test Cases'!H2:H${formulaEndRow},"Blocked")</f><v>${blockedCount}</v></c></row></sheetData><pageMargins left="0.75" right="0.75" top="1" bottom="1" header="0.5" footer="0.5"/><drawing r:id="rId1"/></worksheet>`;
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><dimension ref="A1:B4"/><sheetViews><sheetView showGridLines="0" workbookViewId="0"><selection sqref="A1:B4"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="14.4"/><cols><col min="1" max="1" width="20" customWidth="1"/><col min="2" max="2" width="20.33203125" customWidth="1"/></cols><sheetData><row r="1" spans="1:2" ht="20" customHeight="1">${strCell(0, 1, 10, "Status", sst)}${strCell(1, 1, 10, "Count", sst)}</row><row r="2" spans="1:2" ht="20" customHeight="1">${strCell(0, 2, 11, "Passed", sst)}<c r="B2" s="11"><f>COUNTIF('Test Cases'!I2:I${formulaEndRow},"Pass")</f><v>${passedCount}</v></c></row><row r="3" spans="1:2" ht="20" customHeight="1">${strCell(0, 3, 11, "Failed", sst)}<c r="B3" s="11"><f>COUNTIF('Test Cases'!I2:I${formulaEndRow},"Fail")</f><v>${failedCount}</v></c></row><row r="4" spans="1:2" ht="20" customHeight="1">${strCell(0, 4, 11, "Blocked", sst)}<c r="B4" s="11"><f>COUNTIF('Test Cases'!I2:I${formulaEndRow},"Blocked")</f><v>${blockedCount}</v></c></row></sheetData><pageMargins left="0.75" right="0.75" top="1" bottom="1" header="0.5" footer="0.5"/><drawing r:id="rId1"/></worksheet>`;
 
   // ── Sheet 5: Test Environment ──────────────────────────────────────────────
   const envItems = [
@@ -509,7 +524,7 @@ export function buildOfficialQaXlsxBuffer(
 
   // ── Workbook & Core Props ──────────────────────────────────────────────────
   const workbookXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><fileVersion appName="xl" lastEdited="7" lowestEdited="7" rupBuild="20417"/><workbookPr/><bookViews><workbookView xWindow="0" yWindow="0" windowWidth="23040" windowHeight="8940"/></bookViews><sheets><sheet name="Test Cases" sheetId="1" r:id="rId1"/><sheet name="Defect Log" sheetId="2" r:id="rId2"/><sheet name="Execution Summary" sheetId="3" r:id="rId3"/><sheet name="Dashboard" sheetId="4" r:id="rId4"/><sheet name="Test Environment" sheetId="5" r:id="rId5"/></sheets><definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="0" hidden="1">'Test Cases'!$A$1:$K$${lastTcRow}</definedName></definedNames><calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>`;
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><fileVersion appName="xl" lastEdited="7" lowestEdited="7" rupBuild="20417"/><workbookPr/><bookViews><workbookView xWindow="0" yWindow="0" windowWidth="23040" windowHeight="8940"/></bookViews><sheets><sheet name="Test Cases" sheetId="1" r:id="rId1"/><sheet name="Defect Log" sheetId="2" r:id="rId2"/><sheet name="Execution Summary" sheetId="3" r:id="rId3"/><sheet name="Dashboard" sheetId="4" r:id="rId4"/><sheet name="Test Environment" sheetId="5" r:id="rId5"/></sheets><definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="0" hidden="1">'Test Cases'!$A$1:$L$${lastTcRow}</definedName></definedNames><calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>`;
 
   const nowIso = new Date().toISOString().replace(/\.\d+Z$/, "Z");
   const corePropsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>

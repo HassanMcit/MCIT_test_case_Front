@@ -13,7 +13,7 @@ export async function addNewTestCase(data: TestCaseFormValues) {
     }
 
     const nowIso = new Date().toISOString();
-    const resolvedExecutedAt = data.executedAt || nowIso;
+    const resolvedExecutedAt = nowIso;
     const safePayload = {
       ...data,
       module: (data.module || "").slice(0, 50).trim(),

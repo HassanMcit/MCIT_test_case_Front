@@ -1,4 +1,5 @@
 import { getProjects } from "../projects/getProjects.action";
+import { getQualityApplications } from "../quality/quality.action";
 import { getTestCases } from "./test-cases.action";
 import TestCasesTable from "./TestCasesTable";
 
@@ -21,9 +22,10 @@ export default async function TestCasesPage({ searchParams }: PageProps) {
     ? Number(resolvedSearchParams.projectId)
     : undefined;
 
-  // جلب المشاريع وحالات الاختبار في نفس الوقت
-  const [allProjects, initialData] = await Promise.all([
+  // جلب المشاريع والتطبيقات وحالات الاختبار في نفس الوقت
+  const [allProjects, qualityData, initialData] = await Promise.all([
     getProjects(),
+    getQualityApplications(),
     getTestCases({
       projectId: parsedProjectId,
       status: resolvedSearchParams?.status,
@@ -32,11 +34,13 @@ export default async function TestCasesPage({ searchParams }: PageProps) {
       limit: 1000,
     }),
   ]);
+  const allApplications = qualityData?.applications || [];
 
   return (
     <TestCasesTable
       initialData={initialData}
       allProjects={allProjects}
+      allApplications={allApplications}
       initialProjectId={parsedProjectId}
       autoOpenExport={resolvedSearchParams?.export === "1"}
     />

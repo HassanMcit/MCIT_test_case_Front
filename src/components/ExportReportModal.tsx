@@ -42,6 +42,12 @@ export interface ExportProjectOption {
   application?: string | null;
 }
 
+export interface ExportAppOption {
+  id?: number;
+  name: string;
+  nameAr?: string;
+}
+
 interface ExportReportModalProps {
   open: boolean;
   onClose: () => void;
@@ -49,6 +55,7 @@ interface ExportReportModalProps {
   projectName?: string;
   projectApplication?: string;
   allProjects?: ExportProjectOption[];
+  allApplications?: ExportAppOption[];
   lockProject?: boolean;
   initialFromDate?: string;
   initialToDate?: string;
@@ -61,6 +68,7 @@ export default function ExportReportModal({
   projectName,
   projectApplication,
   allProjects = [],
+  allApplications = [],
   lockProject = false,
   initialFromDate = "",
   initialToDate = "",
@@ -71,6 +79,9 @@ export default function ExportReportModal({
   const [selectedPid, setSelectedPid] = useState<string>(
     projectId ? String(projectId) : "all"
   );
+  const [selectedAppModule, setSelectedAppModule] = useState<string>(
+    projectApplication ? projectApplication : "all"
+  );
   const [fromDate, setFromDate] = useState<string>(initialFromDate);
   const [toDate, setToDate] = useState<string>(initialToDate);
   const [validationError, setValidationError] = useState<string>("");
@@ -79,11 +90,12 @@ export default function ExportReportModal({
   useEffect(() => {
     if (open) {
       setSelectedPid(projectId ? String(projectId) : "all");
+      setSelectedAppModule(projectApplication ? projectApplication : "all");
       setFromDate(initialFromDate && initialFromDate !== "all" ? initialFromDate : "");
       setToDate(initialToDate && initialToDate !== "all" ? initialToDate : "");
       setValidationError("");
     }
-  }, [open, projectId, initialFromDate, initialToDate]);
+  }, [open, projectId, projectApplication, initialFromDate, initialToDate]);
 
   if (!open) return null;
 
@@ -94,6 +106,24 @@ export default function ExportReportModal({
           ? { id: projectId, name: projectName || "", application: projectApplication }
           : null)
       : null;
+
+  const appModuleChoices = (() => {
+    const map = new Map<string, { name: string; nameAr?: string }>();
+    if (activeProject?.application) {
+      map.set(activeProject.application, { name: activeProject.application });
+    }
+    allApplications.forEach((app) => {
+      if (app.name && !map.has(app.name)) {
+        map.set(app.name, { name: app.name, nameAr: app.nameAr });
+      }
+    });
+    allProjects.forEach((p) => {
+      if (p.application && !map.has(p.application)) {
+        map.set(p.application, { name: p.application });
+      }
+    });
+    return Array.from(map.values());
+  })();
 
   const applyPreset = (preset: "today" | "7d" | "month" | "30d" | "year") => {
     const now = new Date();
@@ -147,6 +177,7 @@ export default function ExportReportModal({
     try {
       const res = await exportProjectExcelAction({
         projectId: selectedPid !== "all" ? Number(selectedPid) : null,
+        applicationModule: selectedAppModule !== "all" ? selectedAppModule : undefined,
         fromDate,
         toDate,
         tzOffsetMinutes: new Date().getTimezoneOffset(),
@@ -251,19 +282,26 @@ export default function ExportReportModal({
         </CardHeader>
 
         <CardContent className="p-5 sm:p-6 space-y-4">
-          {/* Optional Project Selector when not locked to a single project */}
-          {!lockProject && allProjects.length > 0 && (
+          {/* Project & Application / Module Selectors */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs font-bold text-slate-700">
-                {isRTL ? "المشروع المستهدف" : "Target Project"}
+                {isRTL ? "المشروع (Project)" : "Project"}
               </Label>
               <Select
                 value={selectedPid}
                 onValueChange={(val) => {
-                  setSelectedPid(val || "all");
+                  const nextPid = val || "all";
+                  setSelectedPid(nextPid);
+                  const foundProj = allProjects.find((p) => String(p.id) === nextPid);
+                  if (foundProj?.application) {
+                    setSelectedAppModule(foundProj.application);
+                  } else if (nextPid === "all") {
+                    setSelectedAppModule("all");
+                  }
                   setValidationError("");
                 }}
-                disabled={isExporting}
+                disabled={isExporting || (lockProject && Boolean(projectId))}
               >
                 <SelectTrigger className="h-10 text-xs bg-slate-50/70 border-slate-200 rounded-xl">
                   <SelectValue>
@@ -271,7 +309,7 @@ export default function ExportReportModal({
                       ? isRTL
                         ? "جميع المشاريع المتاحة"
                         : "All Available Projects"
-                      : activeProject?.name || ""}
+                      : activeProject?.name || projectName || ""}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
@@ -286,7 +324,47 @@ export default function ExportReportModal({
                 </SelectContent>
               </Select>
             </div>
-          )}
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-slate-700">
+                {isRTL
+                  ? "التطبيق / الموديول (Application / Module)"
+                  : "Application / Module"}
+              </Label>
+              <Select
+                value={selectedAppModule}
+                onValueChange={(val) => {
+                  setSelectedAppModule(val || "all");
+                  setValidationError("");
+                }}
+                disabled={isExporting}
+              >
+                <SelectTrigger className="h-10 text-xs bg-slate-50/70 border-slate-200 rounded-xl">
+                  <SelectValue>
+                    {selectedAppModule === "all"
+                      ? isRTL
+                        ? "جميع التطبيقات / الموديولات"
+                        : "All Applications / Modules"
+                      : selectedAppModule}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  <SelectItem value="all">
+                    {isRTL
+                      ? "جميع التطبيقات / الموديولات"
+                      : "All Applications / Modules"}
+                  </SelectItem>
+                  {appModuleChoices.map((app) => (
+                    <SelectItem key={app.name} value={app.name}>
+                      {isRTL && app.nameAr
+                        ? `${app.nameAr} (${app.name})`
+                        : app.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
 
           {/* Mandatory Date Range Pickers */}
           <div className="space-y-2">

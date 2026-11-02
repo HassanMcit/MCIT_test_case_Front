@@ -22,3 +22,60 @@ export function toLocalDateKey(input: string | number | Date | null | undefined)
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
 }
+
+export function formatActionTimestamp(
+  dateStr?: string | null,
+  lang: string = "ar"
+): string {
+  if (!dateStr) return "-";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+
+  const isAr = lang === "ar";
+  let hours = d.getHours();
+  const minutes = d.getMinutes().toString().padStart(2, "0");
+
+  if (isAr) {
+    const monthsAr = [
+      "يناير",
+      "فبراير",
+      "مارس",
+      "أبريل",
+      "مايو",
+      "يونيو",
+      "يوليو",
+      "أغسطس",
+      "سبتمبر",
+      "أكتوبر",
+      "نوفمبر",
+      "ديسمبر",
+    ];
+    const day = d.getDate();
+    const month = monthsAr[d.getMonth()];
+    const year = d.getFullYear();
+    const ampm = hours >= 12 ? "م" : "ص";
+    hours = hours % 12 || 12;
+    return `${day} ${month} ${year} - ${hours}:${minutes} ${ampm}`;
+  } else {
+    const monthsEn = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+    const month = monthsEn[d.getMonth()];
+    const day = d.getDate();
+    const year = d.getFullYear();
+    const ampm = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12 || 12;
+    return `${month} ${day}, ${year} - ${hours}:${minutes} ${ampm}`;
+  }
+}

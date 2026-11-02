@@ -8,6 +8,7 @@ import { buildOfficialQaXlsxBuffer } from "./xlsxTemplateBuilder";
 export interface ExportReportTestCase {
   id: number;
   testId: string;
+  projectName: string;
   module: string;
   pageName: string | null;
   scenario: string;
@@ -60,6 +61,7 @@ function toClientDayKey(dateVal: any, tzOffsetMinutes: number): string | null {
 
 export async function exportProjectExcelAction(params: {
   projectId?: number | null;
+  applicationModule?: string;
   fromDate: string;
   toDate: string;
   tzOffsetMinutes?: number;
@@ -94,9 +96,12 @@ export async function exportProjectExcelAction(params: {
     }
 
     const projectId = params.projectId && Number(params.projectId) > 0 ? Number(params.projectId) : null;
+    const applicationModule = params.applicationModule && params.applicationModule !== "all"
+      ? params.applicationModule.trim()
+      : undefined;
 
     let projectName = "All_Projects";
-    let projectApp: string | undefined = undefined;
+    let projectApp: string | undefined = applicationModule;
     let assignedLead = "";
 
     const conditions: string[] = [];
@@ -119,7 +124,7 @@ export async function exportProjectExcelAction(params: {
         };
       }
       projectName = proj.name;
-      projectApp = proj.application || undefined;
+      projectApp = applicationModule || proj.application || undefined;
       assignedLead = proj.assigned_lead || "";
 
       conditions.push(`(tc."projectId" = $${pidx} OR tc.module = $${pidx + 1})`);
@@ -134,6 +139,12 @@ export async function exportProjectExcelAction(params: {
       )`);
       sqlParams.push(Number(sessionUser.id), Number(sessionUser.id), Number(sessionUser.id));
       pidx += 3;
+    }
+
+    if (applicationModule) {
+      conditions.push(`(tc.module = $${pidx} OR p.application = $${pidx + 1})`);
+      sqlParams.push(applicationModule, applicationModule);
+      pidx += 2;
     }
 
     // Coarse SQL date window (±2 days for timezone safety), then exact local day filter below
@@ -197,7 +208,10 @@ export async function exportProjectExcelAction(params: {
       testCases: matchedRows.map((r: any) => ({
         id: r.id,
         testId: r.testId || `TC_${String(r.id).padStart(3, "0")}`,
-        module: r.module || r.proj_app || r.proj_name || projectApp || projectName,
+        projectName:
+          r.proj_name || (projectId ? projectName : r.module || "—"),
+        module:
+          r.module || r.proj_app || projectApp || r.proj_name || projectName,
         pageName: r.pageName,
         scenario: r.scenario || "",
         preConditions: r.preConditions,
