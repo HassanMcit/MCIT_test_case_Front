@@ -71,7 +71,7 @@ export const projectScheduleMessages: Record<
     en: "End date and time must be after start date and time.",
   },
   proj_invalid_tester: {
-    ar: "اختر مختبراً من القائمة أو اتركه بدون إسناد.",
-    en: "Select a tester from the list or leave unassigned.",
+    ar: "اختر مستخدماً من القائمة أو اتركه بدون إسناد.",
+    en: "Select a user from the list or leave unassigned.",
   },
 };

@@ -117,31 +117,21 @@ test("bilingual form schema accepts optional tester and rejects missing/reversed
     assert.ok(msg.en);
   }
 });
-test("Arabic/English field rendering includes labels, nullable tester, Cairo timezone, and accessible errors", () => {
-  const { default: Fields } = load(
-    "src/app/(dashboard)/projects/ProjectScheduleFields.tsx",
-    {
-      "@/components/ui/input": {
-        Input: (props) => React.createElement("input", props),
-      },
-      "@/components/ui/label": {
-        Label: (props) => React.createElement("label", props),
-      },
-    },
-  );
+test("Arabic/English fields render custom controls and optional unassigned state", () => {
+  const { default: Fields } =
+    require("./support/schedule-components.cjs").fields;
   for (const isRTL of [true, false]) {
     const html = renderToStaticMarkup(
       React.createElement(Fields, {
         value: { startAt: "", endAt: "", assignedTesterId: "" },
         onChange() {},
-        testers: [{ id: 2, name: "Tester Name" }],
+        users: [{ id: 2, name: "Tester Name", role: "tester" }],
         isRTL,
         errors: { endAt: "Validation message" },
       }),
     );
     assert.match(html, /Africa\/Cairo/);
-    assert.match(html, /datetime-local/);
-    assert.match(html, /Tester Name/);
+    assert.doesNotMatch(html, /datetime-local/);
     assert.match(html, /role="alert"/);
     assert.ok(html.includes(isRTL ? "بدون إسناد" : "Unassigned"));
     assert.ok(

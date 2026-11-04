@@ -68,8 +68,9 @@ import { Controller, useForm } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import ProjectScheduleFields, { type ProjectScheduleValues, type EligibleTester } from "./ProjectScheduleFields";
-import { getEligibleTesters } from "./eligible-testers.action";
+import ProjectScheduleFields, { type ProjectScheduleValues } from "./ProjectScheduleFields";
+import type { AssignableProjectUser } from "@/components/ui/project-user-combobox";
+import { getEligibleProjectUsers } from "./eligible-users.action";
 import { projectScheduleSchema, projectScheduleMessages } from "./project-schedule.zod";
 import { cairoInputToUtc, toCairoInput, formatProjectTime } from "@/lib/project-time";
 
@@ -456,16 +457,16 @@ export default function ProjectsForm({
     setExportModalProject(project);
   };
 
-  const [testers, setTesters] = useState<EligibleTester[]>([]);
-  const [testersLoading, setTestersLoading] = useState(false);
-  const [testersError, setTestersError] = useState(false);
-  const loadTesters = useCallback(async () => {
-    setTestersLoading(true); setTestersError(false);
-    try { setTesters(await getEligibleTesters()); }
-    catch { setTestersError(true); }
-    finally { setTestersLoading(false); }
+  const [assignableUsers, setAssignableUsers] = useState<AssignableProjectUser[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState(false);
+  const loadAssignableUsers = useCallback(async () => {
+    setUsersLoading(true); setUsersError(false);
+    try { setAssignableUsers(await getEligibleProjectUsers()); }
+    catch { setUsersError(true); }
+    finally { setUsersLoading(false); }
   }, []);
-  useEffect(() => { if (isAdmin && (showAddModal || editingProject)) void loadTesters(); }, [isAdmin, showAddModal, editingProject, loadTesters]);
+  useEffect(() => { if (isAdmin && (showAddModal || editingProject)) void loadAssignableUsers(); }, [isAdmin, showAddModal, editingProject, loadAssignableUsers]);
   useEffect(() => {
     const id = Number(searchParams.get("project"));
     if (id) setSelectedProject(projectsList.find((p) => p.id === id) || null);
@@ -1277,8 +1278,8 @@ export default function ProjectsForm({
                               <span className="text-xs text-slate-500 line-clamp-1">
                                 {isRTL ? p.desc : p.descEn}
                               </span>
-                              <span className="text-xs text-slate-500">{isRTL ? "??????? ???????: " : "Assigned Tester: "}{p.leadTester}</span>
-                              <span className="text-xs text-slate-500">{isRTL ? "?????? ???????: " : "Deadline: "}{formatProjectTime(p.endAt, isRTL)}</span>
+                              <span className="text-xs text-slate-500">{isRTL ? "المستخدم المسؤول: " : "Assigned User: "}{p.leadTester}</span>
+                              <span className="text-xs text-slate-500">{isRTL ? "الموعد النهائي: " : "Deadline: "}{formatProjectTime(p.endAt, isRTL)}</span>
                               <div className="flex items-center gap-1.5 mt-1">
                                 <span className="text-[10px] text-slate-400 font-medium">
                                   {isRTL ? "المسند إليهم:" : "Assigned:"}
@@ -1506,7 +1507,7 @@ export default function ProjectsForm({
             if (e.target === e.currentTarget) setShowAddModal(false);
           }}
         >
-          <Card className="w-full max-w-lg max-h-[90dvh] overflow-y-auto bg-white rounded-2xl shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+          <Card className="w-full max-w-2xl max-h-[90dvh] overflow-y-auto bg-white rounded-2xl shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
             <CardHeader className="p-6 border-b border-slate-100 flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="text-lg font-bold text-[#0b1c30]">
@@ -1663,7 +1664,7 @@ export default function ProjectsForm({
                 )}
               </div>
 
-              <ProjectScheduleFields value={{ startAt: watch("startAt"), endAt: watch("endAt"), assignedTesterId: watch("assignedTesterId") }} onChange={(key, value) => setValue(key, value, { shouldValidate: true })} testers={testers} isRTL={isRTL} loading={testersLoading} loadError={testersError} onRetry={loadTesters} disabled={isSubmitting} errors={{ startAt: translateError(errors.startAt?.message), endAt: translateError(errors.endAt?.message) }} />
+              <ProjectScheduleFields value={{ startAt: watch("startAt"), endAt: watch("endAt"), assignedTesterId: watch("assignedTesterId") }} onChange={(key, value) => setValue(key, value, { shouldValidate: true })} users={assignableUsers} isRTL={isRTL} loading={usersLoading} loadError={usersError} onRetry={loadAssignableUsers} disabled={isSubmitting} errors={{ startAt: translateError(errors.startAt?.message), endAt: translateError(errors.endAt?.message), assignedTesterId: translateError(errors.assignedTesterId?.message) }} />
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label className="text-xs font-bold text-slate-700">
@@ -1901,7 +1902,7 @@ export default function ProjectsForm({
 
             <CardContent className="p-6 space-y-6">
               <dl className="grid gap-3 text-sm sm:grid-cols-2">
-                <div><dt className="text-slate-500">{isRTL ? "المختبر المسؤول" : "Assigned Tester"}</dt><dd>{selectedProject.leadTester}</dd></div>
+                <div><dt className="text-slate-500">{isRTL ? "المستخدم المسؤول" : "Assigned User"}</dt><dd>{selectedProject.leadTester}</dd></div>
                 <div><dt className="text-slate-500">{isRTL ? "المنطقة الزمنية" : "Timezone"}</dt><dd>Africa/Cairo</dd></div>
                 <div><dt className="text-slate-500">{isRTL ? "البداية" : "Start"}</dt><dd>{formatProjectTime(selectedProject.startAt, isRTL)}</dd></div>
                 <div><dt className="text-slate-500">{isRTL ? "النهاية" : "End"}</dt><dd>{formatProjectTime(selectedProject.endAt, isRTL)}</dd></div>
@@ -1994,7 +1995,7 @@ export default function ProjectsForm({
                     variant="outline"
                     className="text-[10px] text-[#00A2D2] border-[#00aee0]/40"
                   >
-                    {isRTL ? "مكلفون بمتابعة الاختبارات" : "Assigned Testers"}
+                    {isRTL ? "مكلفون بمتابعة الاختبارات" : "Assigned Users"}
                   </Badge>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -2072,7 +2073,7 @@ export default function ProjectsForm({
             if (e.target === e.currentTarget && !isUpdatingProject) setEditingProject(null);
           }}
         >
-          <Card className="w-full max-w-lg max-h-[90dvh] overflow-y-auto bg-white rounded-2xl shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+          <Card className="w-full max-w-2xl max-h-[90dvh] overflow-y-auto bg-white rounded-2xl shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
             <CardHeader className="p-6 border-b border-slate-100 flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="text-lg font-bold text-[#0b1c30]">
@@ -2196,7 +2197,7 @@ export default function ProjectsForm({
                 />
               </div>
 
-              <ProjectScheduleFields value={editSchedule} onChange={(key, value) => setEditSchedule((old) => ({ ...old, [key]: value }))} testers={testers} isRTL={isRTL} loading={testersLoading} loadError={testersError} onRetry={loadTesters} disabled={isUpdatingProject} errors={editScheduleErrors} />
+              <ProjectScheduleFields value={editSchedule} onChange={(key, value) => setEditSchedule((old) => ({ ...old, [key]: value }))} users={assignableUsers} isRTL={isRTL} loading={usersLoading} loadError={usersError} onRetry={loadAssignableUsers} disabled={isUpdatingProject} errors={editScheduleErrors} />
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label className="text-xs font-bold text-slate-700">

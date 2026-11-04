@@ -1,6 +1,6 @@
 export const PROJECT_TIME_ZONE = "Africa/Cairo";
 
-/** HTML datetime-local values represent Cairo wall time, never the browser zone. */
+/** Picker values represent Cairo wall time, never the browser's timezone. */
 export function toCairoInput(iso?: string | null): string {
   if (!iso) return "";
   const date = new Date(iso);

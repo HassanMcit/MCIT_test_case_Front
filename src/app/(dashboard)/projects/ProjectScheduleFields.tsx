@@ -1,23 +1,24 @@
 "use client";
 
-import { useId, useState } from "react";
-import { Input } from "@/components/ui/input";
+import { CalendarDays, Globe2, UserRoundPlus } from "lucide-react";
+import { useId } from "react";
 import { Label } from "@/components/ui/label";
+import { ProjectDateTimePicker } from "@/components/ui/project-date-time-picker";
+import {
+  type AssignableProjectUser,
+  ProjectUserCombobox,
+} from "@/components/ui/project-user-combobox";
 
 export interface ProjectScheduleValues {
   startAt: string;
   endAt: string;
   assignedTesterId: string;
 }
-export interface EligibleTester {
-  id: number;
-  name: string;
-}
 
 export default function ProjectScheduleFields({
   value,
   onChange,
-  testers,
+  users,
   isRTL,
   errors = {},
   disabled,
@@ -27,7 +28,7 @@ export default function ProjectScheduleFields({
 }: {
   value: ProjectScheduleValues;
   onChange: (key: keyof ProjectScheduleValues, value: string) => void;
-  testers: EligibleTester[];
+  users: AssignableProjectUser[];
   isRTL: boolean;
   errors?: Partial<Record<keyof ProjectScheduleValues, string>>;
   disabled?: boolean;
@@ -36,115 +37,111 @@ export default function ProjectScheduleFields({
   onRetry?: () => void;
 }) {
   const id = useId();
-  const [search, setSearch] = useState("");
-  const visible = testers.filter(
-    (t) =>
-      String(t.id) === value.assignedTesterId ||
-      t.name.toLocaleLowerCase().includes(search.toLocaleLowerCase()),
-  );
   return (
-    <fieldset
-      disabled={disabled}
-      className="space-y-4 rounded-xl border border-slate-200 p-4"
+    <section
+      aria-labelledby={`${id}-title`}
+      dir={isRTL ? "rtl" : "ltr"}
+      className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm shadow-slate-200/30"
     >
-      <legend className="px-1 text-xs font-bold text-slate-700">
-        {isRTL ? "الجدول الزمني والمختبر" : "Schedule and tester"}
-      </legend>
-      <p className="text-xs text-slate-500">
-        {isRTL
-          ? "جميع الأوقات بتوقيت القاهرة (Africa/Cairo)، بما في ذلك التوقيت الصيفي."
-          : "All times use Africa/Cairo, including daylight saving time."}
-      </p>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {(["startAt", "endAt"] as const).map((key) => (
-          <div key={key} className="space-y-1.5">
-            <Label htmlFor={`${id}-${key}`}>
-              {key === "startAt"
+      <div className="flex items-start gap-3.5 border-b border-[#dceef6] bg-linear-to-r from-[#edf8fd] via-[#f3faff] to-[#f7fcfe] px-5 py-5 sm:px-6">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-white bg-white/85 text-[#00A2D2] shadow-xs">
+          <CalendarDays className="size-5" />
+        </span>
+        <div className="min-w-0">
+          <h3
+            id={`${id}-title`}
+            className="text-sm font-bold leading-relaxed text-[#0b1c30]"
+          >
+            {isRTL
+              ? "الجدول الزمني وإسناد المستخدم"
+              : "Schedule and User Assignment"}
+          </h3>
+          <p className="mt-1 text-xs leading-relaxed text-slate-500">
+            {isRTL
+              ? "حدد الجدول الزمني للمشروع وأسند أحد أعضاء الفريق اختيارياً."
+              : "Define the project timeline and optionally assign a team member."}
+          </p>
+        </div>
+      </div>
+      <div className="space-y-6 px-5 py-6 sm:px-6">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          {(["startAt", "endAt"] as const).map((key) => {
+            const label =
+              key === "startAt"
                 ? isRTL
                   ? "تاريخ ووقت بداية المشروع"
                   : "Project Start Date & Time"
                 : isRTL
                   ? "تاريخ ووقت نهاية المشروع"
-                  : "Project End Date & Time"}{" "}
-              *
-            </Label>
-            <Input
-              id={`${id}-${key}`}
-              type="datetime-local"
-              step="60"
-              required
-              dir="ltr"
-              value={value[key]}
-              onChange={(e) => onChange(key, e.target.value)}
-              aria-invalid={!!errors[key]}
-              aria-describedby={errors[key] ? `${id}-${key}-error` : undefined}
-            />
-            {errors[key] && (
-              <p
-                id={`${id}-${key}-error`}
-                role="alert"
-                className="text-xs text-red-600"
-              >
-                {errors[key]}
-              </p>
-            )}
-          </div>
-        ))}
-      </div>
-      <div className="space-y-1.5">
-        <Label htmlFor={`${id}-tester`}>
-          {isRTL ? "إسناد مختبر (اختياري)" : "Assign Tester (Optional)"}
-        </Label>
-        <Input
-          aria-label={isRTL ? "البحث عن مختبر" : "Search testers"}
-          placeholder={isRTL ? "البحث بالاسم..." : "Search by name..."}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <select
-          id={`${id}-tester`}
-          value={value.assignedTesterId}
-          onChange={(e) => onChange("assignedTesterId", e.target.value)}
-          disabled={loading}
-          className="h-10 w-full rounded-lg border border-input bg-white px-3 text-sm focus-visible:ring-2 focus-visible:ring-[#00A2D2]"
-          aria-describedby={`${id}-tester-status`}
-        >
-          <option value="">{isRTL ? "بدون إسناد" : "Unassigned"}</option>
-          {visible.map((tester) => (
-            <option key={tester.id} value={String(tester.id)}>
-              {tester.name}
-            </option>
-          ))}
-        </select>
-        <p
-          id={`${id}-tester-status`}
-          aria-live="polite"
-          className="text-xs text-slate-500"
-        >
-          {loading
-            ? isRTL
-              ? "جاري تحميل المختبرين..."
-              : "Loading testers..."
-            : loadError
-              ? isRTL
-                ? "تعذر تحميل المختبرين. يمكنك الحفظ بدون إسناد."
-                : "Could not load testers. You can save without an assignment."
-              : visible.length === 0
-                ? isRTL
-                  ? "لا يوجد مختبرون مطابقون"
-                  : "No matching testers"
-                : ""}
-        </p>
-        {loadError && (
-          <button
-            type="button"
-            className="text-xs text-[#00A2D2] underline"
-            onClick={onRetry}
+                  : "Project End Date & Time";
+            return (
+              <div key={key} className="min-w-0 space-y-2.5">
+                <Label
+                  id={`${id}-${key}-label`}
+                  htmlFor={`${id}-${key}`}
+                  className="text-xs font-semibold leading-relaxed text-slate-700"
+                >
+                  {label}
+                  <span aria-hidden="true" className="text-[#00A2D2]">
+                    *
+                  </span>
+                  <span className="sr-only">
+                    {isRTL ? "مطلوب" : "Required"}
+                  </span>
+                </Label>
+                <ProjectDateTimePicker
+                  id={`${id}-${key}`}
+                  label={label}
+                  value={value[key]}
+                  onChange={(next) => onChange(key, next)}
+                  isRTL={isRTL}
+                  disabled={disabled}
+                  error={errors[key]}
+                />
+                {errors[key] && (
+                  <p
+                    id={`${id}-${key}-error`}
+                    role="alert"
+                    className="text-xs leading-relaxed text-red-600"
+                  >
+                    {errors[key]}
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        <div className="flex items-start gap-2 rounded-xl border border-slate-100 bg-slate-50/70 px-3.5 py-3 text-[11px] leading-relaxed text-slate-500">
+          <Globe2 className="mt-0.5 size-3.5 shrink-0 text-[#00A2D2]" />
+          <span>
+            {isRTL
+              ? "جميع الأوقات بتوقيت القاهرة (Africa/Cairo)، مع مراعاة التوقيت الصيفي تلقائياً."
+              : "All times use Africa/Cairo, with daylight saving time handled automatically."}
+          </span>
+        </div>
+        <div className="space-y-2.5 border-t border-slate-100 pt-5">
+          <Label
+            id={`${id}-user-label`}
+            htmlFor={`${id}-user`}
+            className="flex items-center gap-2 text-xs font-semibold text-slate-700"
           >
-            {isRTL ? "إعادة المحاولة" : "Retry"}
-          </button>
-        )}
+            <UserRoundPlus className="size-3.5 text-[#00A2D2]" />
+            {isRTL ? "إسناد مستخدم (اختياري)" : "Assign User (Optional)"}
+          </Label>
+          <ProjectUserCombobox
+            id={`${id}-user`}
+            value={value.assignedTesterId}
+            onChange={(next) => onChange("assignedTesterId", next)}
+            users={users}
+            isRTL={isRTL}
+            disabled={disabled}
+            loading={loading}
+            loadError={loadError}
+            error={errors.assignedTesterId}
+            onRetry={onRetry}
+          />
+        </div>
       </div>
-    </fieldset>
+    </section>
   );
 }
