@@ -53,6 +53,16 @@ The new directory uses the same authenticated scoped force-cache policy and user
 tag. Existing project/assignment mutations invalidate relevant tags and paths, and
 the transactional database revision prevents stale cross-instance cached views.
 
+For staggered deployments, a missing `/users/assignable` route (404), or the
+specific numeric-ID ParseIntPipe 400 returned by an older `/users/:id` route,
+falls back to the existing `/users/all` API. Both requests retain force-cache,
+the users tag, and scoped revision invalidation. A fresh admin session is required
+before either request. Only validated ID/name/role fields for Tester/Admin users
+are returned to the browser. Authentication errors, permission errors, server
+failures, and unrelated bad requests do not invoke the public legacy endpoint.
+The latest backend must still be deployed to support saving Admin assignments;
+the compatibility path only addresses loading users during the rollout.
+
 ## Changed files
 
 Frontend:
@@ -100,7 +110,7 @@ verify the browser URL. No alternative UI automation was used to bypass that
 restriction. Visual browser/mobile-device testing therefore remains outstanding;
 SSR/responsive markup and interaction callback tests are not claimed as browser E2E.
 
-Final results: **13 frontend tests and 25 backend integration tests pass**. Both
+Final results: **19 frontend tests and 25 backend integration tests pass**. Both
 production builds and TypeScript checks pass. Focused lint checks pass; full
 repository lint still reports the pre-existing formatting/style and floating-promise
 errors. No new runtime dependency was added.

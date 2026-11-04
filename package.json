@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "biome check",
     "format": "biome format --write",
-    "test:projects": "node --test test/project-cache.test.cjs test/schedule-picker.test.cjs"
+    "test:projects": "node --test test/project-cache.test.cjs test/schedule-picker.test.cjs test/eligible-users.test.cjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
