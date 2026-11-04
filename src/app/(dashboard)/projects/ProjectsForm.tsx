@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
   Search,
@@ -68,13 +68,18 @@ import { Controller, useForm } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
+import ProjectScheduleFields, { type ProjectScheduleValues, type EligibleTester } from "./ProjectScheduleFields";
+import { getEligibleTesters } from "./eligible-testers.action";
+import { projectScheduleSchema, projectScheduleMessages } from "./project-schedule.zod";
+import { cairoInputToUtc, toCairoInput, formatProjectTime } from "@/lib/project-time";
+
 const projectSchema = z.object({
   name: z.string().min(1, "proj_req_name"),
   description: z.string().min(1, "proj_req_desc"),
   application: z.string().optional(),
   environment: z.string().min(1, "proj_req_env"),
   status: z.string().min(1, "proj_req_status"),
-});
+}).and(projectScheduleSchema);
 type ProjectFormValues = z.infer<typeof projectSchema>;
 
 function hasCustomPhoto(photo?: string | null): boolean {
@@ -137,6 +142,9 @@ import { getAllTester } from "./getAllUsers.action";
 import type { QualityApplication } from "../quality/quality.interface";
 
 interface ProjectItem {
+  startAt?: string | null;
+  endAt?: string | null;
+  assignedTesterId?: number | null;
   id: number;
   name: string;
   nameEn: string;
@@ -324,8 +332,10 @@ export default function ProjectsForm({
 }) {
   const { dir, lang } = useLanguage();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const errorTranslations: Record<string, Record<string, string>> = {
+    ...projectScheduleMessages,
     proj_req_name: {
       en: "Project name is required",
       ar: "اسم المشروع مطلوب",
@@ -362,7 +372,7 @@ export default function ProjectsForm({
 
 
   useEffect(() => {
-    if (serverProjects && serverProjects.length > 0) {
+    if (serverProjects !== undefined) {
       setRawProjects(serverProjects);
       return;
     }
@@ -390,6 +400,9 @@ export default function ProjectsForm({
       const { color, bg } = COLORS[idx % COLORS.length];
       return {
         id: p.id,
+        startAt: p.startAt,
+        endAt: p.endAt,
+        assignedTesterId: p.assignedTesterId,
         name: p.name,
         nameEn: p.name,
         desc: p.description || (isRTL ? "لا يوجد وصف مسجل للمشروع" : "No project description provided"),
@@ -409,8 +422,8 @@ export default function ProjectsForm({
           ? new Date(p.updatedAt).toLocaleDateString(isRTL ? "ar-EG" : "en-US")
           : (isRTL ? "حديثاً" : "Recently"),
         leadTester:
-          p.assignedUsers && p.assignedUsers.length > 0
-            ? p.assignedUsers[0].name
+          p.assignedTesterId
+            ? (p.assignedUsers?.find((u: { userId?: number; id: number; name: string }) => Number(u.userId || u.id) === Number(p.assignedTesterId))?.name || (isRTL ? "غير محدد" : "Unassigned"))
             : (isRTL ? "غير محدد" : "Unassigned"),
         assignedUsers: p.assignedUsers || [],
       };
@@ -443,6 +456,23 @@ export default function ProjectsForm({
     setExportModalProject(project);
   };
 
+  const [testers, setTesters] = useState<EligibleTester[]>([]);
+  const [testersLoading, setTestersLoading] = useState(false);
+  const [testersError, setTestersError] = useState(false);
+  const loadTesters = useCallback(async () => {
+    setTestersLoading(true); setTestersError(false);
+    try { setTesters(await getEligibleTesters()); }
+    catch { setTestersError(true); }
+    finally { setTestersLoading(false); }
+  }, []);
+  useEffect(() => { if (isAdmin && (showAddModal || editingProject)) void loadTesters(); }, [isAdmin, showAddModal, editingProject, loadTesters]);
+  useEffect(() => {
+    const id = Number(searchParams.get("project"));
+    if (id) setSelectedProject(projectsList.find((p) => p.id === id) || null);
+  }, [searchParams, projectsList]);
+  const [editSchedule, setEditSchedule] = useState<ProjectScheduleValues>({ startAt: "", endAt: "", assignedTesterId: "" });
+  const [editScheduleErrors, setEditScheduleErrors] = useState<Partial<Record<keyof ProjectScheduleValues, string>>>({});
+
   const [addCustomApp, setAddCustomApp] = useState(false);
   const [editApp, setEditApp] = useState("");
   const [editCustomApp, setEditCustomApp] = useState(false);
@@ -454,6 +484,8 @@ export default function ProjectsForm({
 
   useEffect(() => {
     if (editingProject) {
+      setEditSchedule({ startAt: toCairoInput(editingProject.startAt), endAt: toCairoInput(editingProject.endAt), assignedTesterId: editingProject.assignedTesterId ? String(editingProject.assignedTesterId) : "" });
+      setEditScheduleErrors({});
       setEditName(editingProject.name || "");
       setEditDesc(editingProject.desc || "");
       const currentApp = editingProject.application || "";
@@ -478,9 +510,20 @@ export default function ProjectsForm({
       return;
     }
 
+    const schedule = projectScheduleSchema.safeParse(editSchedule);
+    if (!schedule.success) {
+      setEditScheduleErrors(Object.fromEntries(schedule.error.issues.map((issue) => [issue.path[0], translateError(issue.message)])));
+      return;
+    }
+    const startAt = cairoInputToUtc(editSchedule.startAt);
+    const endAt = cairoInputToUtc(editSchedule.endAt);
+    if (!startAt || !endAt) return;
     setIsUpdatingProject(true);
     try {
       const res = await updateProject(editingProject.id, {
+        startAt,
+        endAt,
+        assignedTesterId: editSchedule.assignedTesterId ? Number(editSchedule.assignedTesterId) : null,
         name: editName.trim(),
         description: editDesc.trim(),
         application: editApp.trim() || undefined,
@@ -581,7 +624,8 @@ export default function ProjectsForm({
     control,
     reset,
     setValue,
-    formState: { errors },
+    watch,
+    formState: { errors, isSubmitting },
   } = useForm<ProjectFormValues>({
     resolver: zodResolver(projectSchema),
     defaultValues: {
@@ -590,6 +634,7 @@ export default function ProjectsForm({
       application: "",
       environment: "",
       status: "",
+      startAt: "", endAt: "", assignedTesterId: "",
     },
   });
 
@@ -615,9 +660,13 @@ export default function ProjectsForm({
     totalProjects
   ).toFixed(1);
 
-  function handleCreateProject(data: ProjectFormValues) {
-    toast.promise(addNewProject(data), {
+  async function handleCreateProject(data: ProjectFormValues) {
+    const startAt = cairoInputToUtc(data.startAt);
+    const endAt = cairoInputToUtc(data.endAt);
+    if (!startAt || !endAt) return;
+    await toast.promise(addNewProject({ ...data, startAt, endAt, assignedTesterId: data.assignedTesterId ? Number(data.assignedTesterId) : null }), {
       loading: isRTL ? "جاري إضافة المشروع..." : "Please Wait...",
+      error: (error) => error.message || (isRTL ? "تعذر إنشاء المشروع" : "Could not create project"),
       success: (_) => {
         reset({
           name: "",
@@ -625,6 +674,7 @@ export default function ProjectsForm({
           application: "",
           environment: "",
           status: "",
+          startAt: "", endAt: "", assignedTesterId: "",
         });
         setShowAddModal(false);
         getProjects().then((projs) => {
@@ -681,6 +731,7 @@ export default function ProjectsForm({
           application: "",
                   environment: "",
                   status: "",
+          startAt: "", endAt: "", assignedTesterId: "",
                 });
                 setShowAddModal(true);
               }}
@@ -1226,6 +1277,8 @@ export default function ProjectsForm({
                               <span className="text-xs text-slate-500 line-clamp-1">
                                 {isRTL ? p.desc : p.descEn}
                               </span>
+                              <span className="text-xs text-slate-500">{isRTL ? "??????? ???????: " : "Assigned Tester: "}{p.leadTester}</span>
+                              <span className="text-xs text-slate-500">{isRTL ? "?????? ???????: " : "Deadline: "}{formatProjectTime(p.endAt, isRTL)}</span>
                               <div className="flex items-center gap-1.5 mt-1">
                                 <span className="text-[10px] text-slate-400 font-medium">
                                   {isRTL ? "المسند إليهم:" : "Assigned:"}
@@ -1447,12 +1500,13 @@ export default function ProjectsForm({
       {isAdmin && showAddModal && (
         <form
           className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4"
-          onSubmit={handleSubmit(handleCreateProject)}
+          noValidate
+          onSubmit={handleSubmit((data) => handleCreateProject(data).catch(() => {}))}
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) setShowAddModal(false);
           }}
         >
-          <Card className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+          <Card className="w-full max-w-lg max-h-[90dvh] overflow-y-auto bg-white rounded-2xl shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
             <CardHeader className="p-6 border-b border-slate-100 flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="text-lg font-bold text-[#0b1c30]">
@@ -1467,6 +1521,8 @@ export default function ProjectsForm({
               <Button
                 variant="ghost"
                 size="sm"
+                type="button"
+                disabled={isSubmitting}
                 onClick={() => setShowAddModal(false)}
                 className="h-8 w-8 p-0 rounded-full text-slate-400 hover:text-slate-700"
               >
@@ -1607,6 +1663,7 @@ export default function ProjectsForm({
                 )}
               </div>
 
+              <ProjectScheduleFields value={{ startAt: watch("startAt"), endAt: watch("endAt"), assignedTesterId: watch("assignedTesterId") }} onChange={(key, value) => setValue(key, value, { shouldValidate: true })} testers={testers} isRTL={isRTL} loading={testersLoading} loadError={testersError} onRetry={loadTesters} disabled={isSubmitting} errors={{ startAt: translateError(errors.startAt?.message), endAt: translateError(errors.endAt?.message) }} />
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label className="text-xs font-bold text-slate-700">
@@ -1771,10 +1828,10 @@ export default function ProjectsForm({
               <Button
                 size="sm"
                 type="submit"
-                // onClick={() => setShowAddModal(false)}
+                disabled={isSubmitting}
                 className="bg-[#00A2D2] cursor-pointer hover:bg-[#008eb8] text-white text-xs font-bold px-4"
               >
-                {isRTL ? "حفظ المشروع" : "Save Project"}
+                {isSubmitting ? (isRTL ? "جاري الحفظ..." : "Saving...") : (isRTL ? "حفظ المشروع" : "Save Project")}
               </Button>
             </CardFooter>
           </Card>
@@ -1843,6 +1900,12 @@ export default function ProjectsForm({
             </CardHeader>
 
             <CardContent className="p-6 space-y-6">
+              <dl className="grid gap-3 text-sm sm:grid-cols-2">
+                <div><dt className="text-slate-500">{isRTL ? "المختبر المسؤول" : "Assigned Tester"}</dt><dd>{selectedProject.leadTester}</dd></div>
+                <div><dt className="text-slate-500">{isRTL ? "المنطقة الزمنية" : "Timezone"}</dt><dd>Africa/Cairo</dd></div>
+                <div><dt className="text-slate-500">{isRTL ? "البداية" : "Start"}</dt><dd>{formatProjectTime(selectedProject.startAt, isRTL)}</dd></div>
+                <div><dt className="text-slate-500">{isRTL ? "النهاية" : "End"}</dt><dd>{formatProjectTime(selectedProject.endAt, isRTL)}</dd></div>
+              </dl>
               {/* Detailed Metrics */}
               <div className="grid grid-cols-4 gap-3 text-center">
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
@@ -2002,13 +2065,14 @@ export default function ProjectsForm({
       {/* ── MODAL 3: Edit Project ─────────────────────────────────────── */}
       {editingProject && (
         <form
+          noValidate
           onSubmit={handleUpdateProject}
           className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4"
           onMouseDown={(e) => {
             if (e.target === e.currentTarget && !isUpdatingProject) setEditingProject(null);
           }}
         >
-          <Card className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+          <Card className="w-full max-w-lg max-h-[90dvh] overflow-y-auto bg-white rounded-2xl shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
             <CardHeader className="p-6 border-b border-slate-100 flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="text-lg font-bold text-[#0b1c30]">
@@ -2132,6 +2196,7 @@ export default function ProjectsForm({
                 />
               </div>
 
+              <ProjectScheduleFields value={editSchedule} onChange={(key, value) => setEditSchedule((old) => ({ ...old, [key]: value }))} testers={testers} isRTL={isRTL} loading={testersLoading} loadError={testersError} onRetry={loadTesters} disabled={isUpdatingProject} errors={editScheduleErrors} />
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label className="text-xs font-bold text-slate-700">

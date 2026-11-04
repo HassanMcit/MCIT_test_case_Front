@@ -20,7 +20,6 @@ const geistMono = Geist_Mono({
   preload: false,
 });
 
-export const fetchCache = "force-cache";
 
 export const metadata: Metadata = {
   title: "نظام إدارة اختبارات الجودة | QA Test Suite Manager",

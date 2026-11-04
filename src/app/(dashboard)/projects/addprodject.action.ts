@@ -1,10 +1,11 @@
 "use server";
+import { revalidatePath, updateTag } from "next/cache";
 
 import { getUserToken } from "@/app/myUtil";
-import { AddProjectResponse } from "./add-project.interface";
-import { revalidatePath, updateTag } from "next/cache";
+import { appFetch } from "@/lib/app-fetch";
 import { recordSystemAuditLog } from "@/lib/audit";
-import { pool } from "@/lib/db";
+import type { AddProjectResponse } from "./add-project.interface";
+import { createProjectApiSchema } from "./project-schedule.zod";
 
 export async function addNewProject(data: {
   name: string;
@@ -12,18 +13,37 @@ export async function addNewProject(data: {
   environment: string;
   status: string;
   application?: string;
+  startAt: string;
+  endAt: string;
+  assignedTesterId?: number | null;
 }) {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/projects`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${await getUserToken()}`,
+  const parsed = createProjectApiSchema.safeParse(data);
+  if (!parsed.success)
+    throw new Error(
+      "Check project fields and dates / راجع بيانات المشروع والتواريخ",
+    );
+  const response = await appFetch(
+    `${process.env.NEXT_PUBLIC_BASE_URL}/api/projects`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${await getUserToken()}`,
+      },
+      body: JSON.stringify(parsed.data),
+      cache: "no-store",
     },
-    body: JSON.stringify(data),
-    cache: "force-cache",
-  });
+  );
 
-  const userData: AddProjectResponse = await response.json();
+  const userData: AddProjectResponse & { message?: string | string[] } =
+    await response.json();
+  if (!response.ok)
+    throw new Error(
+      Array.isArray(userData.message)
+        ? userData.message.join(" - ")
+        : userData.message || "Could not create project",
+    );
+  updateTag("notifications");
   updateTag("projects");
   updateTag("dashboard-stats");
   updateTag("dashboard");
@@ -36,15 +56,6 @@ export async function addNewProject(data: {
   revalidatePath("/users");
 
   if (response.ok) {
-    if (data.application) {
-      const createdId = userData?.id || (userData as any)?.data?.id;
-      if (createdId) {
-        try {
-          await pool.query('UPDATE projects SET application = $1 WHERE id = $2', [data.application, createdId]);
-        } catch {}
-      }
-    }
-
     recordSystemAuditLog({
       action: "إضافة مشروع جديد",
       actionCategory: "PROJECTS",

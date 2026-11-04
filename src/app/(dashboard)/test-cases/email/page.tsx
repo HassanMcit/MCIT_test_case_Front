@@ -2,8 +2,6 @@ import { getFailedTestCases, getTestCaseById } from "../test-cases.action";
 import EmailComposer from "./EmailComposer";
 import type { TestCaseItem } from "../test-cases.interface";
 
-export const fetchCache = "force-cache";
-export const unstable_dynamicStaleTime = 600;
 
 interface PageProps {
   searchParams: Promise<{

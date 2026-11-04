@@ -3,8 +3,6 @@ import { workflowRequest } from "../workflow.action";
 import type { Cycle } from "../workflow.types";
 import CycleWorkspace from "./CycleWorkspace";
 
-export const fetchCache = "force-cache";
-export const unstable_dynamicStaleTime = 600;
 
 export default async function CyclePage({
   params,

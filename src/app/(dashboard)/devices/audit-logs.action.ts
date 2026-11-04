@@ -1,7 +1,7 @@
 "use server";
 
-import { unstable_cache, updateTag } from "next/cache";
-import { getUserToken } from "@/app/myUtil";
+import { updateTag } from "next/cache";
+import { getUserToken, getCurrentUserSession } from "@/app/myUtil";
 import { pool } from "@/lib/db";
 
 export interface AuditLogItem {
@@ -34,8 +34,7 @@ export interface AuditLogsResponse {
   };
 }
 
-const getCachedAuditLogs = unstable_cache(
-  async (query?: {
+const getCachedAuditLogs = async (query?: {
     page?: number;
     limit?: number;
     search?: string;
@@ -120,13 +119,7 @@ const getCachedAuditLogs = unstable_cache(
         totalPages: Math.ceil(total / limit) || 1,
       },
     };
-  },
-  ["audit-logs-query"],
-  {
-    tags: ["audit-logs"],
-    revalidate: false,
-  }
-);
+  };
 
 export async function getAuditLogs(query?: {
   page?: number;
@@ -136,6 +129,7 @@ export async function getAuditLogs(query?: {
   userId?: number;
 }): Promise<AuditLogsResponse> {
   try {
+    if ((await getCurrentUserSession())?.role !== "admin") throw new Error("Admin access required");
     return await getCachedAuditLogs(query);
   } catch (err) {
     console.error("Direct Postgres query failed for audit logs:", err);

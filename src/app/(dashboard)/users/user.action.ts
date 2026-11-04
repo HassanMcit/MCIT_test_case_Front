@@ -1,17 +1,19 @@
 "use server";
+import { appFetch } from "@/lib/app-fetch";
 
-import { getUserToken } from "@/app/myUtil";
+import { getUserToken, getCurrentUserSession } from "@/app/myUtil";
 import { GetAllUsersResponse } from "./user.interface";
 import { updateTag, revalidatePath } from "next/cache";
 import { recordSystemAuditLog } from "@/lib/audit";
 import { queryAllUsersFromDb, raceBackendFetch } from "@/lib/fast-read";
 
 export async function getAllUsers() {
+  if ((await getCurrentUserSession())?.role !== "admin") return [];
   try {
     const token = await getUserToken();
     if (!token) return [];
 
-    const fetchPromise = fetch(
+    const fetchPromise = appFetch(
       `${process.env.NEXT_PUBLIC_BASE_URL}/api/users`,
       {
         method: "GET",
@@ -37,12 +39,12 @@ export async function getAllUsers() {
 }
 
 export async function deleteThisUser(id: number) {
-  await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/users/${id}`, {
+  await appFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/users/${id}`, {
     method: "DELETE",
     headers: {
       Authorization: `Bearer ${await getUserToken()}`,
     },
-    cache: "force-cache",
+    cache: "no-store",
   });
 
   updateTag("users");

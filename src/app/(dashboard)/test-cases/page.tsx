@@ -3,8 +3,6 @@ import { getQualityApplications } from "../quality/quality.action";
 import { getTestCases } from "./test-cases.action";
 import TestCasesTable from "./TestCasesTable";
 
-export const fetchCache = "force-cache";
-export const unstable_dynamicStaleTime = 600;
 
 interface PageProps {
   searchParams: Promise<{

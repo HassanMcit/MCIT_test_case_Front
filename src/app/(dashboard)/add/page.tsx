@@ -2,8 +2,6 @@ import { getProjects } from '../projects/getProjects.action'
 import { getQualityApplications } from '../quality/quality.action'
 import AddTestCasePage from './TestCaseForm'
 
-export const fetchCache = "force-cache";
-export const unstable_dynamicStaleTime = 600;
 
 async function Page() {
   const allProjects = await getProjects({ assignedToMe: true });

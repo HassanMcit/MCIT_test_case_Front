@@ -1,4 +1,5 @@
 "use server";
+import { appFetch } from "@/lib/app-fetch";
 
 import { getUserToken } from "@/app/myUtil";
 import { AddNewUserResponse, AddUserType } from "./adduser.interface";
@@ -7,14 +8,14 @@ import { recordSystemAuditLog } from "@/lib/audit";
 
 export async function addNewUser(data: AddUserType) {
   const token = await getUserToken();
-  const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/users`, {
+  const response = await appFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/users`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(data),
-    cache: "force-cache"
+    cache: "no-store"
   });
 
   const result: AddNewUserResponse = await response.json();

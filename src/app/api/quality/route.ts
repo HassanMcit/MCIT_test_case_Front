@@ -1,106 +1,27 @@
-import { NextResponse } from "next/server";
+import { getQualityApplications } from "@/app/(dashboard)/quality/quality.action";
+import { privateJson } from "@/lib/private-response";
+import { getCurrentUserSession } from "@/app/myUtil";
+import { revalidatePath, revalidateTag } from "next/cache";
+export const dynamic = "force-dynamic";
 import { pool } from "@/lib/db";
-import type { QualityApplication, QualityMetricsSummary } from "@/app/(dashboard)/quality/quality.interface";
 
-export async function GET(req: Request) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const category = searchParams.get("category");
-    const search = searchParams.get("search");
-
-    let query = "SELECT * FROM quality_applications";
-    const conditions: string[] = [];
-    const params: any[] = [];
-
-    if (category && category !== "All") {
-      params.push(category);
-      conditions.push(`category = $${params.length}`);
+export async function GET(req: Request){
+      const user = await getCurrentUserSession();
+      if (!user) return privateJson({ success: false }, { status: 401 });
+      const query = new URL(req.url).searchParams;
+      return privateJson({ success: true, ...await getQualityApplications(query.get("category") || undefined, query.get("search") || undefined) });
     }
-
-    if (search && search.trim() !== "") {
-      params.push(`%${search.trim().toLowerCase()}%`);
-      conditions.push(`(LOWER(name) LIKE $${params.length} OR LOWER(COALESCE("nameAr", '')) LIKE $${params.length})`);
-    }
-
-    if (conditions.length > 0) {
-      query += ` WHERE ${conditions.join(" AND ")}`;
-    }
-
-    query += ' ORDER BY id ASC';
-
-    const result = await pool.query(query, params);
-    const applications: QualityApplication[] = result.rows.map((r: any) => ({
-      id: r.id,
-      name: r.name,
-      nameAr: r.nameAr || "",
-      category: r.category || "Government Services",
-      url: r.url || "",
-      environment: r.environment || "Production",
-      version: r.version || "v1.0",
-      status: r.status || "Healthy",
-      passRate: parseFloat(r.passRate) || 0,
-      suitesCount: parseInt(r.suitesCount, 10) || 0,
-      bugsCount: parseInt(r.bugsCount, 10) || 0,
-      lastCheck: r.lastCheck || "Recently",
-      defaultFunctions: Array.isArray(r.defaultFunctions)
-        ? r.defaultFunctions
-        : typeof r.defaultFunctions === "string"
-        ? JSON.parse(r.defaultFunctions || "[]")
-        : [],
-      createdAt: r.createdAt,
-      updatedAt: r.updatedAt,
-    }));
-
-    // Calculate overall metrics
-    const totalApps = applications.length;
-    const avgPassRate =
-      totalApps > 0
-        ? parseFloat(
-            (
-              applications.reduce((acc, curr) => acc + (curr.passRate || 0), 0) /
-              totalApps
-            ).toFixed(1)
-          )
-        : 0;
-
-    const totalSuites = applications.reduce(
-      (acc, curr) => acc + (curr.suitesCount || 0),
-      0
-    );
-    const totalDefects = applications.reduce(
-      (acc, curr) => acc + (curr.bugsCount || 0),
-      0
-    );
-
-    const metrics: QualityMetricsSummary = {
-      totalApps,
-      avgPassRate,
-      totalSuites,
-      totalDefects,
-      criticalDefects: 12,
-    };
-
-    return NextResponse.json({
-      success: true,
-      applications,
-      metrics,
-    });
-  } catch (error: any) {
-    console.error("GET /api/quality error:", error);
-    return NextResponse.json(
-      { success: false, error: error?.message || "Failed to fetch quality apps" },
-      { status: 500 }
-    );
-  }
-}
 
 export async function POST(req: Request) {
+  const user = await getCurrentUserSession();
+  if (user?.role !== "admin") return privateJson({ success: false }, { status: user ? 403 : 401 });
+
   try {
     const body = await req.json();
     const { name, nameAr, category, url, environment, version, defaultFunctions } = body;
 
     if (!name || !url) {
-      return NextResponse.json(
+      return privateJson(
         { success: false, message: "اسم التطبيق والرابط مطلوبان" },
         { status: 400 }
       );
@@ -126,14 +47,16 @@ export async function POST(req: Request) {
       ]
     );
 
-    return NextResponse.json({
+    revalidateTag("quality-apps", { expire: 0 });
+    revalidatePath("/quality");
+    return privateJson({
       success: true,
       message: "تم تسجيل التطبيق بنجاح",
       application: insertResult.rows[0],
     });
   } catch (error: any) {
     console.error("POST /api/quality error:", error);
-    return NextResponse.json(
+    return privateJson(
       { success: false, error: error?.message || "Failed to register application" },
       { status: 500 }
     );

@@ -1,10 +1,14 @@
 "use server";
+import { appFetch } from "@/lib/app-fetch";
 
 import { getUserToken, getCurrentUserSession } from "@/app/myUtil";
 import { queryProjectsFromDb, raceBackendFetch } from "@/lib/fast-read";
 
 export interface ProjectApiItem {
   id: number;
+  startAt?: string | null;
+  endAt?: string | null;
+  assignedTesterId?: number | null;
   name: string;
   description: string | null;
   application?: string | null;
@@ -65,7 +69,7 @@ export async function getProjects(params?: {
     }
 
     const qs = query.toString() ? `?${query.toString()}` : "";
-    const fetchPromise = fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/projects${qs}`, {
+    const fetchPromise = appFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/projects${qs}`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,

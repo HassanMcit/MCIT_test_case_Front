@@ -1,7 +1,7 @@
 "use server";
 
-import { unstable_cache, updateTag } from "next/cache";
-import { getUserToken } from "@/app/myUtil";
+import { updateTag } from "next/cache";
+import { getUserToken, getCurrentUserSession } from "@/app/myUtil";
 import { pool } from "@/lib/db";
 
 export interface LoginSessionItem {
@@ -21,8 +21,7 @@ export interface LoginSessionItem {
   revokedAt?: string;
 }
 
-const getCachedLoginSessions = unstable_cache(
-  async (): Promise<LoginSessionItem[]> => {
+const getCachedLoginSessions = async (): Promise<LoginSessionItem[]> => {
     const res = await pool.query(
       `SELECT * FROM user_login_sessions ORDER BY "createdAt" DESC, id DESC LIMIT 100`
     );
@@ -43,16 +42,11 @@ const getCachedLoginSessions = unstable_cache(
       lastSeenAt: r.lastSeenAt instanceof Date ? r.lastSeenAt.toISOString() : String(r.lastSeenAt),
       revokedAt: r.revokedAt ? (r.revokedAt instanceof Date ? r.revokedAt.toISOString() : String(r.revokedAt)) : undefined,
     }));
-  },
-  ["login-sessions-query"],
-  {
-    tags: ["login-sessions"],
-    revalidate: false,
-  }
-);
+  };
 
 export async function getLoginSessions(): Promise<LoginSessionItem[]> {
   try {
+    if ((await getCurrentUserSession())?.role !== "admin") throw new Error("Admin access required");
     return await getCachedLoginSessions();
   } catch (err) {
     console.error("Failed to query login sessions directly from DB:", err);
@@ -62,6 +56,7 @@ export async function getLoginSessions(): Promise<LoginSessionItem[]> {
 
 export async function revokeLoginSession(sessionId: string): Promise<{ success: boolean; message: string }> {
   try {
+    if ((await getCurrentUserSession())?.role !== "admin") throw new Error("Admin access required");
     const res = await pool.query(
       `UPDATE user_login_sessions 
        SET "isActive" = FALSE, "revokedAt" = NOW() 
@@ -101,6 +96,7 @@ export async function revokeLoginSession(sessionId: string): Promise<{ success: 
 
 export async function revokeAllOtherSessions(userId: number): Promise<{ success: boolean; message: string }> {
   try {
+    if ((await getCurrentUserSession())?.role !== "admin") throw new Error("Admin access required");
     const minIat = Math.floor(Date.now() / 1000);
     await pool.query(
       `UPDATE users SET "minTokenIat" = $1 WHERE id = $2`,

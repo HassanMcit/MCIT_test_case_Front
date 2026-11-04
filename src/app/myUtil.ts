@@ -1,3 +1,4 @@
+import { pool } from "@/lib/db";
 import { decode } from "next-auth/jwt";
 import { cookies } from "next/headers";
 
@@ -103,28 +104,26 @@ async function getDecodedToken() {
 }
 
 export async function getUserToken(): Promise<string | null> {
-  const token = await getDecodedToken();
-  const credentialToken =
-    (token?.credentialToken as string) ||
-    (token?.access_token as string) ||
-    (token?.token as string) ||
-    null;
-  return credentialToken;
+  return (await getCurrentUserSession())?.token || null;
 }
 
 export async function getCurrentUserSession() {
   const token = await getDecodedToken();
   if (!token) return null;
-
-  return {
-    id: token.id ? Number(token.id) : undefined,
-    role: (token.role as string) || "tester",
-    email: (token.email as string) || "",
-    name: (token.name as string) || "",
-    token:
-      (token.credentialToken as string) ||
-      (token.access_token as string) ||
-      (token.token as string) ||
-      null,
-  };
+  const credential = (token.credentialToken || token.access_token || token.token) as string;
+  let backend: { sub?: number; iat?: number; sid?: string };
+  try { backend = JSON.parse(Buffer.from(credential.split(".")[1], "base64url").toString("utf8")); }
+  catch { return null; }
+  const id = Number(backend.sub || token.id);
+  if (!id) return null;
+  // Always fresh. Auth.js has verified/decrypted the cookie carrying this JWT.
+  // A cache hit must never bypass current roles, logout, or device revocation.
+  const result = await pool.query(`
+    SELECT u.id,u.name,u.email,u.role,u."minTokenIat",r.revision,
+      (SELECT s."isActive" FROM user_login_sessions s WHERE s."sessionId"=$2 AND s."userId"=u.id) AS "sessionActive"
+    FROM users u CROSS JOIN app_cache_revision r WHERE u.id=$1 AND r.id=1
+  `, [id, backend.sid || token.sid || null]);
+  const user = result.rows[0];
+  if (!user || user.sessionActive === false || (Number(user.minTokenIat || 0) > 0 && (!backend.iat || backend.iat < Number(user.minTokenIat)))) return null;
+  return { id: Number(user.id), role: String(user.role), name: String(user.name), email: String(user.email), token: credential, cacheRevision: String(user.revision) };
 }

@@ -1,4 +1,5 @@
 "use server";
+import { appFetch } from "@/lib/app-fetch";
 
 import { getUserToken } from "@/app/myUtil";
 import { revalidatePath, updateTag } from "next/cache";
@@ -27,7 +28,7 @@ export async function fetchAssignData() {
 
 export async function assignProjectToUser(userId: number, projectId: number) {
   try {
-    const res = await fetch(
+    const res = await appFetch(
       `${process.env.NEXT_PUBLIC_BASE_URL}/api/users/${userId}/assign-project`,
       {
         method: "POST",
@@ -36,7 +37,7 @@ export async function assignProjectToUser(userId: number, projectId: number) {
           Authorization: `Bearer ${await getUserToken()}`,
         },
         body: JSON.stringify({ projectId }),
-        cache: "force-cache",
+        cache: "no-store",
       }
     );
 
@@ -72,7 +73,7 @@ export async function assignProjectToUser(userId: number, projectId: number) {
 
 export async function unassignProjectFromUser(userId: number, projectId: number) {
   try {
-    const res = await fetch(
+    const res = await appFetch(
       `${process.env.NEXT_PUBLIC_BASE_URL}/api/users/${userId}/assign-project/${projectId}`,
       {
         method: "DELETE",

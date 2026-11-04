@@ -1,4 +1,5 @@
 "use server";
+import { appFetch } from "@/lib/app-fetch";
 
 import { getUserToken } from "@/app/myUtil";
 import { revalidatePath, updateTag } from "next/cache";
@@ -27,14 +28,14 @@ export async function handleUserChangePassword(
     "https://mcit-test-case-backend.onrender.com";
 
   try {
-    const res = await fetch(`${baseUrl}/api/auth/change-password`, {
+    const res = await appFetch(`${baseUrl}/api/auth/change-password`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(data),
-      cache: "force-cache",
+      cache: "no-store",
     });
 
     let result: any = null;

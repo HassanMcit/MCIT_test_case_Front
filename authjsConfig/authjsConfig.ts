@@ -48,6 +48,7 @@ export const authConfig: NextAuthConfig = {
       authorize: async function (credential) {
         const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/login`, {
           method: "POST",
+          cache: "no-store",
           headers: {
             "content-type": "application/json",
           },

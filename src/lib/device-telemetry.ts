@@ -98,7 +98,7 @@ export async function collectLoginTelemetry(): Promise<{
 
   // If already cached, return in 0ms and refresh silently in background
   if (clientIp && location) {
-    fetch("https://ipwho.is/")
+    fetch("https://ipwho.is/", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data?.success && data.ip) {
@@ -123,7 +123,7 @@ export async function collectLoginTelemetry(): Promise<{
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 900);
-    const res = await fetch("https://ipwho.is/", { signal: controller.signal });
+    const res = await fetch("https://ipwho.is/", { signal: controller.signal, cache: "no-store" });
     clearTimeout(timer);
     if (res.ok) {
       const data = await res.json();

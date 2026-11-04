@@ -26,6 +26,7 @@ export async function GET(req: NextRequest) {
       `${backendBase}/api/users/notifications/stream?token=${encodeURIComponent(token)}`,
       {
         method: "GET",
+        cache: "no-store",
         headers: {
           Accept: "text/event-stream",
           Authorization: `Bearer ${token}`,

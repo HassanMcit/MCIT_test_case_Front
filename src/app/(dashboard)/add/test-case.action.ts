@@ -1,4 +1,5 @@
 "use server";
+import { appFetch } from "@/lib/app-fetch";
 
 import { getUserToken } from "@/app/myUtil";
 import type { AddTestCaseResponse, TestCaseFormValues } from "./test-case-interface";
@@ -20,14 +21,14 @@ export async function addNewTestCase(data: TestCaseFormValues) {
       executedAt: resolvedExecutedAt,
     };
 
-    let response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/test-cases`, {
+    let response = await appFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/test-cases`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
         "content-type": "application/json",
       },
       body: JSON.stringify(safePayload),
-      cache: "force-cache",
+      cache: "no-store",
     });
 
     if (!response.ok && response.status === 409) {
@@ -36,7 +37,7 @@ export async function addNewTestCase(data: TestCaseFormValues) {
         data.status === "failed"
           ? freshNextId.replace(/^TC-/, "BUG-")
           : freshNextId;
-      response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/test-cases`, {
+      response = await appFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/test-cases`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -47,7 +48,7 @@ export async function addNewTestCase(data: TestCaseFormValues) {
           testId: nextIdFormatted,
           executedAt: resolvedExecutedAt,
         }),
-        cache: "force-cache",
+        cache: "no-store",
       });
     }
 
@@ -106,7 +107,7 @@ export async function getNextTestCaseId(moduleName?: string, projectId?: number)
       url.searchParams.set("module", moduleName.trim());
     }
 
-    const response = await fetch(url.toString(), {
+    const response = await appFetch(url.toString(), {
       headers: {
         Authorization: `Bearer ${token}`,
       },

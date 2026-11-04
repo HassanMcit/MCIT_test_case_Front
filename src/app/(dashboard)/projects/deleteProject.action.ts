@@ -1,4 +1,5 @@
 "use server";
+import { appFetch } from "@/lib/app-fetch";
 
 import { getUserToken } from "@/app/myUtil";
 import { revalidatePath, updateTag } from "next/cache";
@@ -11,13 +12,13 @@ export async function deleteProject(id: number) {
       return { success: false, message: "يرجى تسجيل الدخول أولاً" };
     }
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/projects/${id}`, {
+    const response = await appFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/projects/${id}`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-      cache: "force-cache",
+      cache: "no-store",
     });
 
     const result = await response.json().catch(() => ({}));

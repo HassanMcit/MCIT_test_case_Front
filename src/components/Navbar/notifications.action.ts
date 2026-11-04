@@ -1,4 +1,5 @@
 "use server";
+import { appFetch } from "@/lib/app-fetch";
 
 import { getUserToken } from "@/app/myUtil";
 import { revalidatePath, updateTag } from "next/cache";
@@ -7,6 +8,9 @@ import { raceBackendFetch } from "@/lib/fast-read";
 export interface AppNotification {
   id: number;
   userId: number;
+  titleEn?: string | null;
+  messageEn?: string | null;
+  link?: string | null;
   title: string;
   message: string;
   projectId?: number | null;
@@ -48,15 +52,14 @@ export async function getMyNotifications(): Promise<NotificationsResponse> {
     const token = await getUserToken();
     if (!token) return { notifications: [], unreadCount: 0 };
 
-    const fetchPromise = fetch(
+    const fetchPromise = appFetch(
       `${process.env.NEXT_PUBLIC_BASE_URL}/api/users/notifications`,
       {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
         },
-        cache: "force-cache",
-        next: { tags: ["notifications"] },
+        cache: "no-store",
       }
     );
 
@@ -89,14 +92,14 @@ export async function markNotificationAsRead(id: number) {
     const token = await getUserToken();
     if (!token) return { success: false };
 
-    await fetch(
+    await appFetch(
       `${process.env.NEXT_PUBLIC_BASE_URL}/api/users/notifications/${id}/read`,
       {
         method: "PATCH",
         headers: {
           Authorization: `Bearer ${token}`,
         },
-        cache: "force-cache",
+        cache: "no-store",
       }
     );
 
@@ -112,14 +115,14 @@ export async function markAllNotificationsAsRead() {
     const token = await getUserToken();
     if (!token) return { success: false };
 
-    await fetch(
+    await appFetch(
       `${process.env.NEXT_PUBLIC_BASE_URL}/api/users/notifications/read-all`,
       {
         method: "PATCH",
         headers: {
           Authorization: `Bearer ${token}`,
         },
-        cache: "force-cache",
+        cache: "no-store",
       }
     );
 

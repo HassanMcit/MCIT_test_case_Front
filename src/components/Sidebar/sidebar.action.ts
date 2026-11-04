@@ -1,4 +1,5 @@
 "use server";
+import { appFetch } from "@/lib/app-fetch";
 
 import { getUserToken, getCurrentUserSession } from "@/app/myUtil";
 import { getProjects } from "@/app/(dashboard)/projects/getProjects.action";
@@ -27,7 +28,7 @@ export async function getDashboardStats(): Promise<DashboardStatsResponse> {
       : "";
 
     const [res, projects, testCasesRes] = await Promise.all([
-      fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/dashboard/stats${qs}`, {
+      appFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/dashboard/stats${qs}`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,

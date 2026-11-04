@@ -1,4 +1,5 @@
 "use server";
+import { appFetch } from "@/lib/app-fetch";
 import { getUserToken } from "@/app/myUtil";
 import { revalidatePath, updateTag } from "next/cache";
 
@@ -17,7 +18,7 @@ export async function workflowRequest<T>(
       throw new Error("Invalid workflow resource");
     const token = await getUserToken();
     if (!token) throw new Error("Please sign in / يرجى تسجيل الدخول");
-    const response = await fetch(
+    const response = await appFetch(
       `${process.env.NEXT_PUBLIC_BASE_URL}/api/${path}`,
       {
         method,

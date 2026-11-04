@@ -1,21 +1,24 @@
 export interface AddProjectResponse {
-  id: number
-  name: string
-  description: string
-  application?: string
-  environment: string
-  status: string
-  createdAt: string
-  updatedAt: string
-  stats: Stats
-  assignedUsers: any[]
-  recentTestCases: any[]
+  startAt?: string | null;
+  endAt?: string | null;
+  assignedTesterId?: number | null;
+  id: number;
+  name: string;
+  description: string;
+  application?: string;
+  environment: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  stats: Stats;
+  assignedUsers: any[];
+  recentTestCases: any[];
 }
 
 export interface Stats {
-  total: number
-  passed: number
-  failed: number
-  pending: number
-  successRate: number
+  total: number;
+  passed: number;
+  failed: number;
+  pending: number;
+  successRate: number;
 }

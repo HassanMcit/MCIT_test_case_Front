@@ -62,7 +62,7 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
     // Silent handling without intrusive window.location reloads
   };
 
-  // Fetch notifications on mount and periodically (0ms real-time sync with force-cache)
+  // Live notifications: SSE plus fresh polling across backend instances.
   const fetchNotifications = async (forceRefresh = false) => {
     try {
       const res = forceRefresh ? await refreshNotifications() : await getMyNotifications();
@@ -138,7 +138,7 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
                 () => (
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-[#0b1c30]">
-                      {parsed?.payload?.title || (isRTL ? "إشعار إسناد جديد 🔔" : "New notification 🔔")}
+                      {(!isRTL && parsed?.payload?.titleEn ? parsed.payload.titleEn : parsed?.payload?.title) || (isRTL ? "إشعار إسناد جديد 🔔" : "New notification 🔔")}
                     </span>
                   </div>
                 ),
@@ -373,14 +373,14 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
                       key={n.id}
                       onClick={async () => {
                         await markNotificationAsRead(n.id);
-                        setUnreadCount((c) => Math.max(0, c - 1));
+                        if (!n.read) setUnreadCount((c) => Math.max(0, c - 1));
                         setNotifications((prev) =>
                           prev.map((item) =>
                             item.id === n.id ? { ...item, read: true } : item
                           )
                         );
                         setShowNotifications(false);
-                        router.push("/projects");
+                        router.push(n.link?.startsWith("/projects?project=") ? n.link : n.projectId ? `/projects?project=${n.projectId}` : "/projects");
                       }}
                       className={`p-3.5 flex items-start gap-3 hover:bg-[#eff4ff] transition-colors cursor-pointer group ${
                         !n.read ? "bg-[#f8f9ff]" : "bg-white"
@@ -392,14 +392,14 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-1">
                           <h4 className="text-xs font-bold text-[#0b1c30] truncate">
-                            {n.title}
+                            {!isRTL && n.titleEn ? n.titleEn : n.title}
                           </h4>
                           {!n.read && (
                             <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
                           )}
                         </div>
                         <p className="text-[11px] text-[#565e74] line-clamp-2 mt-0.5 leading-relaxed">
-                          {n.message}
+                          {!isRTL && n.messageEn ? n.messageEn : n.message}
                         </p>
                         <span className="text-[10px] text-[#6d797f] font-mono mt-1 block">
                           {new Date(n.createdAt).toLocaleDateString(

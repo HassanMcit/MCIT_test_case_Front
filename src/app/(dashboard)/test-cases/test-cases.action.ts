@@ -1,4 +1,5 @@
 "use server";
+import { appFetch } from "@/lib/app-fetch";
 
 import { getUserToken, getCurrentUserSession } from "@/app/myUtil";
 import { revalidatePath, updateTag } from "next/cache";
@@ -38,7 +39,7 @@ export async function getTestCases(params?: TestCaseQueryParams): Promise<TestCa
     }
     url.searchParams.set("cv", (params as any)?._cv || "20261019_v3");
 
-    const fetchPromise = fetch(url.toString(), {
+    const fetchPromise = appFetch(url.toString(), {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -80,12 +81,12 @@ export async function deleteTestCase(id: number): Promise<{ success: boolean; me
       throw new Error("يرجى تسجيل الدخول أولاً");
     }
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/test-cases/${id}`, {
+    const res = await appFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/test-cases/${id}`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${token}`,
       },
-      cache: "force-cache",
+      cache: "no-store",
     });
 
     const data = await res.json().catch(() => ({}));
@@ -154,7 +155,7 @@ export async function updateTestCase(
       payload.updatedById = Number(sessionUser.id);
     }
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/test-cases/${id}`, {
+    const res = await appFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/test-cases/${id}`, {
       method: "PATCH",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -206,7 +207,7 @@ export async function getTestCaseById(id: number): Promise<TestCaseItem | null> 
     const token = await getUserToken();
     if (!token) return null;
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/test-cases/${id}`, {
+    const res = await appFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/test-cases/${id}`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -240,7 +241,7 @@ export async function getFailedTestCases(projectId?: number): Promise<TestCaseIt
       url.searchParams.set("userRole", sessionUser.role);
     }
 
-    const res = await fetch(url.toString(), {
+    const res = await appFetch(url.toString(), {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,

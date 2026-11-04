@@ -1,4 +1,4 @@
-import { unstable_cache } from "next/cache";
+import { scopedCache as unstable_cache } from "@/lib/scoped-cache";
 import { pool } from "@/lib/db";
 import type { ProjectApiItem } from "@/app/(dashboard)/projects/getProjects.action";
 import type {
@@ -122,6 +122,9 @@ async function queryProjectsFromDbRaw(params?: {
 
     return {
       id: pid,
+      startAt: p.startAt ? toIsoString(p.startAt) : null,
+      endAt: p.endAt ? toIsoString(p.endAt) : null,
+      assignedTesterId: p.assignedTesterId ?? null,
       name: p.name || "",
       description: p.description ?? null,
       application: p.application ?? null,
@@ -170,7 +173,7 @@ export const queryProjectsFromDb = unstable_cache(
   ["fast-read-projects"],
   {
     tags: ["projects", "test-cases", "dashboard", "dashboard-stats"],
-    revalidate: false,
+    revalidate: 60,
   }
 );
 
@@ -313,7 +316,7 @@ export const queryTestCasesFromDb = unstable_cache(
   ["fast-read-test-cases"],
   {
     tags: ["test-cases", "projects", "dashboard", "dashboard-stats"],
-    revalidate: false,
+    revalidate: 60,
   }
 );
 
@@ -392,6 +395,6 @@ export const queryAllUsersFromDb = unstable_cache(
   ["fast-read-all-users"],
   {
     tags: ["users", "projects", "test-cases", "dashboard"],
-    revalidate: false,
+    revalidate: 60,
   }
 );

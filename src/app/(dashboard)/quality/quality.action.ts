@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath, unstable_cache, updateTag } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
+import { scopedCache as unstable_cache } from "@/lib/scoped-cache";
 import { pool } from "@/lib/db";
 import { getCurrentUserSession } from "@/app/myUtil";
 import { recordSystemAuditLog } from "@/lib/audit";
@@ -101,7 +102,7 @@ const getCachedQualityApplicationsFromDb = unstable_cache(
   ["quality-applications-db"],
   {
     tags: ["quality-apps"],
-    revalidate: false,
+    revalidate: 60,
   }
 );
 
@@ -121,31 +122,7 @@ export async function getQualityApplications(
     criticalDefects: 12,
   };
 
-  if (process.env.INTERNAL_APP_URL) {
-    try {
-      const qs = new URLSearchParams();
-      if (category && category !== "All") qs.set("category", category);
-      if (search && search.trim() !== "") qs.set("search", search.trim());
 
-      const res = await fetch(`${process.env.INTERNAL_APP_URL}/api/quality?${qs.toString()}`, {
-        method: "GET",
-        cache: "force-cache",
-        next: { tags: ["quality-apps"] },
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data?.success && Array.isArray(data?.applications)) {
-          return {
-            applications: data.applications,
-            metrics: data.metrics || defaultMetrics,
-          };
-        }
-      }
-    } catch {
-      // Fallback to cached DB query
-    }
-  }
 
   try {
     return await getCachedQualityApplicationsFromDb(category, search);
@@ -216,7 +193,7 @@ const getCachedQualityAppByIdFromDb = unstable_cache(
   ["quality-app-by-id-db"],
   {
     tags: ["quality-apps"],
-    revalidate: false,
+    revalidate: 60,
   }
 );
 
@@ -226,25 +203,7 @@ const getCachedQualityAppByIdFromDb = unstable_cache(
 export async function getQualityAppById(
   id: number
 ): Promise<{ application: QualityApplication | null; assessments: QualityAssessment[] }> {
-  if (process.env.INTERNAL_APP_URL) {
-    try {
-      const res = await fetch(`${process.env.INTERNAL_APP_URL}/api/quality/${id}`, {
-        method: "GET",
-        cache: "force-cache",
-        next: { tags: ["quality-apps", `quality-app-${id}`] },
-      });
 
-      if (res.ok) {
-        const data = await res.json();
-        if (data?.success && data?.application) {
-          return {
-            application: data.application,
-            assessments: data.assessments || [],
-          };
-        }
-      }
-    } catch {}
-  }
 
   try {
     return await getCachedQualityAppByIdFromDb(id);
@@ -264,6 +223,7 @@ export async function submitQualityAssessment(payload: {
   notes?: string;
 }) {
   const sessionUser = await getCurrentUserSession();
+  if (!sessionUser?.id) throw new Error("Authentication required");
   const testerName = sessionUser?.name || "QA Tester";
   const testerId = sessionUser?.id ? Number(sessionUser.id) : null;
 

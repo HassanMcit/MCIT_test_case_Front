@@ -1,13 +1,14 @@
 "use server"
+import { appFetch } from "@/lib/app-fetch";
 
 import { LoginResponseType, LoginSchemaType } from "./login.interface";
 
 export async function sendUserLogin(userData:LoginSchemaType):Promise<LoginResponseType> {
 
     try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/login`, {
+        const response = await appFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/login`, {
             method: "POST",
-            cache: "force-cache",
+            cache: "no-store",
             headers: {
                 "content-type" : "application/json",
             },

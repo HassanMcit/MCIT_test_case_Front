@@ -5,8 +5,8 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   experimental: {
     staleTimes: {
-      dynamic: 600,
-      static: 600,
+      dynamic: 0,
+      static: 180,
     },
   },
   images: {

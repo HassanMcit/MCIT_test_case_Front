@@ -1,9 +1,10 @@
 "use server";
+import { revalidatePath, updateTag } from "next/cache";
 
 import { getUserToken } from "@/app/myUtil";
-import { revalidatePath, updateTag } from "next/cache";
+import { appFetch } from "@/lib/app-fetch";
 import { recordSystemAuditLog } from "@/lib/audit";
-import { pool } from "@/lib/db";
+import { updateProjectApiSchema } from "./project-schedule.zod";
 
 export async function updateProject(
   id: number,
@@ -13,23 +14,36 @@ export async function updateProject(
     environment?: string;
     status?: string;
     application?: string;
-  }
+    startAt?: string;
+    endAt?: string;
+    assignedTesterId?: number | null;
+  },
 ) {
   try {
+    const parsed = updateProjectApiSchema.safeParse(data);
+    if (!parsed.success)
+      return {
+        success: false,
+        message:
+          "Check project fields and dates / راجع بيانات المشروع والتواريخ",
+      };
     const token = await getUserToken();
     if (!token) {
       return { success: false, message: "يرجى تسجيل الدخول أولاً" };
     }
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/projects/${id}`, {
-      method: "PATCH",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+    const response = await appFetch(
+      `${process.env.NEXT_PUBLIC_BASE_URL}/api/projects/${id}`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(parsed.data),
+        cache: "no-store",
       },
-      body: JSON.stringify(data),
-      cache: "force-cache",
-    });
+    );
 
     const result = await response.json();
 
@@ -40,12 +54,7 @@ export async function updateProject(
       return { success: false, message: errorMsg };
     }
 
-    if (data.application !== undefined) {
-      try {
-        await pool.query('UPDATE projects SET application = $1 WHERE id = $2', [data.application, id]);
-      } catch {}
-    }
-
+    updateTag("notifications");
     updateTag("projects");
     updateTag("dashboard-stats");
     updateTag("dashboard");
