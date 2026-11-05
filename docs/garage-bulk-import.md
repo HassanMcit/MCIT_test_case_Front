@@ -4,6 +4,8 @@ Production status: **not deployed; no production records imported**. Production 
 
 Confirmed service locations: frontend **https://mcit-test-case-front.vercel.app** on Vercel, backend on Render, PostgreSQL on Supabase. GitHub pushes are separate from deployment approval; review automatic deployment rules before merging either release branch.
 
+For the current CORS security follow-up, runtime probe, clean-build results, provider access steps and approval gates, see [garage-release-readiness.md](garage-release-readiness.md). Backend commit 61299a07 is the reviewed base; the security follow-up is required before release.
+
 ## Production readiness review
 
 Read-only public checks found the Vercel login page returning 200 with private/no-store caching, the anonymous Auth.js session returning `null` with private/no-store caching, and Render `/api/auth/me` returning 401 without credentials. The live CORS configuration allows the correct frontend origin, but also reflects an unrelated origin with credentials enabled. This matches the existing `origin: true` source configuration. A restricted production origin allowlist should be reviewed before deployment; no production CORS settings have been changed. Server-to-server login/import/cache requests still require genuine backend JWT administrator authorization and do not rely on CORS for security.
@@ -176,7 +178,7 @@ Expected: exactly two grouped ownership rows with counts 30 and 21; no duplicate
 ## Local validation completed
 
 - Nest build and Next.js production build pass, including TypeScript checks.
-- 38 backend tests pass across Garage import, existing workflow, deletion and project deadline suites. Coverage includes genuine PostgreSQL transactions, rollback after a deliberately injected metadata failure, unique/source conflicts, stale preview, idempotent rerun, JWT authentication/expiry/current database role, outsider permissions, missing memberships, source integrity, actual audit times, list/search/filter/pagination and exact 30/21 ownership.
+- 46 backend tests pass across Garage import, existing workflow, deletion and project deadline suites. Coverage includes genuine PostgreSQL transactions, rollback after a deliberately injected metadata failure, unique/source conflicts, stale preview, idempotent rerun, JWT authentication/expiry/current database role, outsider permissions, missing memberships, source integrity, actual audit times, list/search/filter/pagination and exact 30/21 ownership.
 - Cache authorization/invalidation and read-only validation of the actual Desktop workbook pass (2 more tests). Offline source: 51 sequential rows, 11 columns, 13 distinct page names, canonical batch hash `7a332076ea55ed4889b38ca5d0268af84517c5fa0702abce3a0e96cffd7f5527`.
 - New frontend/CLI files pass targeted Biome checks; new backend import files pass targeted Oxlint with the existing project strictNullChecks configuration warnings. Full repository lint is still failing: backend existing workflow tests have floating-promise diagnostics, and the root Biome scan includes numerous existing/generated/backend formatting and lint findings. Unrelated code was not reformatted.
 - **Not verified yet:** live Render environment, live database user/project IDs, production online dry-run, production writes, production API comparisons or production browser visibility. No production deployment or import was attempted.
@@ -187,7 +189,7 @@ Reproduce from the workspace root:
 npm.cmd install --prefix .qa-test-tools --no-save --package-lock=false @electric-sql/pglite
 Push-Location backend
 npm.cmd run build
-node --test test/garage-import.integration.cjs test/workflow.integration.cjs test/test-case-delete.test.cjs test/project-deadlines.integration.cjs
+npm.cmd run test:release
 Pop-Location
 $env:GARAGE_WORKBOOK='C:\Users\hassa\Desktop\The Garage System Testing Report.xlsx'
 node --test test/garage-import-cache.test.cjs test/garage-workbook.test.cjs
