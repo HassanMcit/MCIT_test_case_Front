@@ -29,7 +29,11 @@ export default function ExecutionHistory({
     ),
     [page, setPage] = useState(1),
     [loading, setLoading] = useState(initialResult === undefined),
-    [selected, setSelected] = useState<Execution | null>(null);
+    [selected, setSelected] = useState<Execution | null>(
+      initialResult?.ok && initialResult.data?.data?.length
+        ? initialResult.data.data[0]
+        : null,
+    );
   useEffect(() => {
     if (page === 1 && initialQuery.current === id && initialResult) {
       setData(initialResult.ok ? initialResult.data : null);

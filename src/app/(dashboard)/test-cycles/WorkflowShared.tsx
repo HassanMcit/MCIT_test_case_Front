@@ -137,6 +137,13 @@ export function DefinitionView({ definition: d }: { definition: Definition }) {
   } catch {
     steps = [String(d.steps || "")];
   }
+  const displaySteps = (
+    steps.length === 1 && typeof steps[0] === "string" && steps[0].includes("\n")
+      ? steps[0].split(/\r?\n/)
+      : steps
+  )
+    .map((s) => String(s || "").trim().replace(/^\d+[\-\.\)]\s*/, ""))
+    .filter(Boolean);
   return (
     <div className="space-y-4 text-sm">
       <div>
@@ -154,7 +161,7 @@ export function DefinitionView({ definition: d }: { definition: Definition }) {
       <div>
         <h4 className="mb-1 font-semibold">{w("Steps", "الخطوات")}</h4>
         <ol className="list-inside list-decimal space-y-2 text-slate-600">
-          {steps.map((step, i) => (
+          {displaySteps.map((step, i) => (
             <li className="whitespace-pre-wrap" key={i}>
               {step}
             </li>
