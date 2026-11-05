@@ -144,7 +144,7 @@ export default function TestCasesTable({
   const dateActivityMap = useMemo(() => {
     const map = new Map<string, { total: number; failed: number }>();
     for (const tc of items) {
-      const k = toLocalDateKey(tc.executedAt || tc.createdAt);
+      const k = toLocalDateKey(tc.importMetadata?.plannedAt || tc.importMetadata?.importedAt || tc.executedAt || tc.createdAt);
       if (!k) continue;
       const prev = map.get(k) || { total: 0, failed: 0 };
       prev.total += 1;
@@ -222,7 +222,7 @@ export default function TestCasesTable({
 
     // Date range filter (from date to to date)
     if (fromDateFilter !== "all" || toDateFilter !== "all") {
-      const tcDate = tc.executedAt || tc.createdAt;
+      const tcDate = tc.importMetadata?.plannedAt || tc.importMetadata?.importedAt || tc.executedAt || tc.createdAt;
       if (!tcDate) {
         return false;
       }
@@ -252,8 +252,16 @@ export default function TestCasesTable({
 
     return true;
   }).sort((a, b) => {
-    const timeA = new Date(a.executedAt || a.createdAt || 0).getTime();
-    const timeB = new Date(b.executedAt || b.createdAt || 0).getTime();
+    const timeA = new Date(a.importMetadata?.importedAt || a.executedAt || a.createdAt || 0).getTime();
+    const timeB = new Date(b.importMetadata?.importedAt || b.executedAt || b.createdAt || 0).getTime();
+    if (
+      a.importMetadata?.batchHash &&
+      a.importMetadata.batchHash === b.importMetadata?.batchHash &&
+      typeof a.importMetadata.sourceRow === "number" &&
+      typeof b.importMetadata.sourceRow === "number"
+    ) {
+      return a.importMetadata.sourceRow - b.importMetadata.sourceRow;
+    }
     if (timeA !== timeB) {
       return timeB - timeA;
     }
@@ -923,7 +931,14 @@ export default function TestCasesTable({
                   const validSteps = Array.isArray(row.steps)
                     ? row.steps.filter(Boolean)
                     : [];
-                  const stepsPreview = validSteps.slice(0, 2).join(" • ");
+                  const displaySteps =
+                    validSteps.length === 1 && validSteps[0].includes("\n")
+                      ? validSteps[0]
+                          .split(/\r?\n/)
+                          .map((s) => s.trim())
+                          .filter(Boolean)
+                      : validSteps;
+                  const stepsPreview = displaySteps.slice(0, 2).join(" • ");
 
                   return (
                     <tr
@@ -1010,7 +1025,7 @@ export default function TestCasesTable({
                         {validSteps.length > 0 ? (
                           <div className="flex flex-col gap-0.5">
                             <span className="text-[10px] font-bold text-[#006685] bg-slate-100 px-1.5 py-0.2 rounded w-fit">
-                              {validSteps.length} {isRTL ? "خطوات" : "steps"}
+                              {displaySteps.length} {isRTL ? "خطوات" : "steps"}
                             </span>
                             <span dir="auto" className="truncate text-[#6d797f]">
                               {stepsPreview}
@@ -1064,7 +1079,24 @@ export default function TestCasesTable({
                           </span>
                           <span className="text-[11px] text-[#6d797f] font-mono mt-0.5 flex items-center gap-1">
                             <Clock className="w-3 h-3 text-slate-400 shrink-0" />
-                            <span>{row.importMetadata ? "Imported: " : ""}{formatActionTimestamp(row.importMetadata?.importedAt || row.executedAt || row.createdAt, lang)}</span>
+                            <span>
+                              {row.importMetadata?.plannedAt
+                                ? isRTL
+                                  ? "مخطط: "
+                                  : "Planned: "
+                                : row.importMetadata
+                                  ? isRTL
+                                    ? "مستورد: "
+                                    : "Imported: "
+                                  : ""}
+                              {formatActionTimestamp(
+                                row.importMetadata?.plannedAt ||
+                                  row.importMetadata?.importedAt ||
+                                  row.executedAt ||
+                                  row.createdAt,
+                                lang
+                              )}
+                            </span>
                           </span>
                           <ImportedTestCaseDetails item={row} />
                           {isCaseUpdated(row) && (

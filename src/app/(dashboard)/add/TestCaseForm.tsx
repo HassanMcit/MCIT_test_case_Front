@@ -325,11 +325,10 @@ export default function AddTestCasePage({
                         if (matchedProj) {
                           field.onChange(matchedProj.id);
                           const currentMod = watch("module");
-                          const nextMod =
-                            !currentMod && matchedProj.application
-                              ? matchedProj.application
-                              : currentMod;
-                          if (!currentMod && matchedProj.application) {
+                          const nextMod = matchedProj.application
+                            ? matchedProj.application
+                            : currentMod;
+                          if (matchedProj.application) {
                             setValue("module", matchedProj.application, {
                               shouldValidate: true,
                             });
@@ -436,7 +435,21 @@ export default function AddTestCasePage({
                             field.onChange("");
                           } else {
                             field.onChange(selectedVal);
-                            const currentPid = Number(selectedProjectId) || allProjects[0]?.id;
+                            const matchingProj = allProjects.find(
+                              (p) =>
+                                p.application &&
+                                p.application.trim().toLowerCase() ===
+                                  String(selectedVal || "").trim().toLowerCase()
+                            );
+                            let currentPid =
+                              Number(selectedProjectId) || allProjects[0]?.id;
+                            if (matchingProj && matchingProj.id !== currentPid) {
+                              currentPid = matchingProj.id;
+                              setSelectedProjectId(String(matchingProj.id));
+                              setValue("projectId", matchingProj.id, {
+                                shouldValidate: true,
+                              });
+                            }
                             if (currentPid) {
                               const nextId = await getNextTestCaseId(selectedVal || undefined, currentPid);
                               const finalId =
