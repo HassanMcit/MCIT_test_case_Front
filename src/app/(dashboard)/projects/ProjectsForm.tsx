@@ -965,7 +965,7 @@ export default function ProjectsForm({
                 onClick={() => router.push(`/test-cases?projectId=${p.id}`)}
                 className="border border-slate-200/80 shadow-xs hover:shadow-lg transition-all duration-200 rounded-2xl overflow-hidden flex flex-col justify-between group hover:border-[#00A2D2]/60 bg-white cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
               >
-                <div className="min-w-0 w-full">
+                <div className="min-w-0 w-full flex-1 flex flex-col justify-between">
                   {/* Card Header Top */}
                   <CardHeader className="p-5 pb-3 flex flex-col min-w-0 w-full">
                     <div className="flex items-start justify-between gap-2.5 w-full min-w-0">
@@ -978,13 +978,13 @@ export default function ProjectsForm({
                         <div className="flex flex-col min-w-0 flex-1">
                           <CardTitle
                             title={isRTL ? p.name : p.nameEn}
-                            className="text-[15px] font-bold text-[#0b1c30] line-clamp-2 wrap-break-word group-hover:text-[#00A2D2] transition-colors leading-snug"
+                            className="text-[15px] font-bold text-[#0b1c30] line-clamp-2 min-h-[2.6rem] wrap-break-word group-hover:text-[#00A2D2] transition-colors leading-snug"
                           >
                             {isRTL ? p.name : p.nameEn}
                           </CardTitle>
-                          <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                          <div className="flex items-center gap-1.5 min-h-[20px] overflow-hidden mt-0.5">
                             {p.application && (
-                              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-100/80 shrink-0">
+                              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-100/80 shrink-0 max-w-[130px] truncate">
                                 {p.application}
                               </span>
                             )}
@@ -1013,13 +1013,13 @@ export default function ProjectsForm({
                       </Badge>
                     </div>
 
-                    <CardDescription className="text-xs text-[#3d484f] line-clamp-2 mt-3 leading-relaxed w-full min-w-0">
+                    <CardDescription className="text-xs text-[#3d484f] line-clamp-2 min-h-[2.45rem] mt-3 leading-relaxed w-full min-w-0">
                       {isRTL ? p.desc : p.descEn}
                     </CardDescription>
                   </CardHeader>
 
                   {/* Card Metrics Section */}
-                  <CardContent className="px-5 py-3">
+                  <CardContent className="px-5 py-3 mt-auto">
                     {/* Stats pill breakdown */}
                     <div className="grid grid-cols-3 gap-2 p-3 bg-slate-50/70 border border-slate-100 rounded-xl text-center">
                       <div>
@@ -1081,7 +1081,7 @@ export default function ProjectsForm({
                     </div>
 
                     {/* Assigned Users Avatar Stack */}
-                    <div className="flex items-center justify-between pt-2.5 mt-2 border-t border-slate-100 text-[11px] text-slate-500">
+                    <div className="flex items-center justify-between pt-2.5 mt-2 border-t border-slate-100 text-[11px] text-slate-500 min-h-[34px]">
                       <span className="flex items-center gap-1 font-medium text-slate-600">
                         <Users className="w-3.5 h-3.5 text-[#00A2D2]" />
                         <span>{isRTL ? "المسند إليهم:" : "Assigned:"}</span>
