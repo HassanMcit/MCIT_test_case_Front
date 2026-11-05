@@ -54,6 +54,7 @@ import toast from "react-hot-toast";
 import { toLocalDateKey } from "@/lib/utils";
 import { getTeamsCallUrl } from "@/lib/teams";
 import ExportReportModal from "@/components/ExportReportModal";
+import { ImportedTestCaseDetails } from "@/components/ImportedTestCaseDetails";
 
 interface TestCasesTableProps {
   initialData: TestCaseListResponse;
@@ -1055,6 +1056,7 @@ export default function TestCasesTable({
 
                       {/* 8. Tester / Action Performed & Last Update */}
                       <td className={`px-3.5 py-3 whitespace-nowrap ${isRTL ? "text-right" : "text-left"}`}>
+                        {row.importMetadata && <span className="text-[10px] text-slate-500">Assigned owner · Imported record</span>}
                         <div className="flex flex-col">
                           <span className="font-bold text-[12.5px] text-[#0b1c30] flex items-center gap-1.5">
                             <User className="w-3.5 h-3.5 text-[#006685] shrink-0" />
@@ -1062,8 +1064,9 @@ export default function TestCasesTable({
                           </span>
                           <span className="text-[11px] text-[#6d797f] font-mono mt-0.5 flex items-center gap-1">
                             <Clock className="w-3 h-3 text-slate-400 shrink-0" />
-                            <span>{formatActionTimestamp(row.executedAt || row.createdAt, lang)}</span>
+                            <span>{row.importMetadata ? "Imported: " : ""}{formatActionTimestamp(row.importMetadata?.importedAt || row.executedAt || row.createdAt, lang)}</span>
                           </span>
+                          <ImportedTestCaseDetails item={row} />
                           {isCaseUpdated(row) && (
                             <div className="mt-1.5 px-2 py-1 rounded-lg bg-amber-50/90 border border-amber-200/80 flex flex-col gap-0.5 w-fit">
                               <span className="text-[10.5px] font-bold text-amber-800 flex items-center gap-1">
@@ -1536,7 +1539,7 @@ export default function TestCasesTable({
               <div className="p-3.5 bg-blue-50/70 border border-blue-200/80 rounded-xl flex items-center justify-between text-xs">
                 <div className="space-y-0.5">
                   <span className="text-[11px] font-bold text-[#006685] block">
-                    {isRTL ? "منفذ الإجراء (Created / Executed By):" : "Created / Executed By:"}
+                    {selectedItem.importMetadata ? (isRTL ? "المالك المعين:" : "Assigned owner:") : (isRTL ? "منفذ الإجراء (Created / Executed By):" : "Created / Executed By:")}
                   </span>
                   <span className="font-bold text-[#0b1c30] text-sm flex items-center gap-1.5">
                     <User className="w-3.5 h-3.5 text-[#006685]" />
@@ -1545,11 +1548,11 @@ export default function TestCasesTable({
                 </div>
                 <div className="text-left rtl:text-right space-y-0.5">
                   <span className="text-[11px] font-bold text-slate-600 block">
-                    {isRTL ? "توقيت الإضافة / التنفيذ:" : "Created / Executed At:"}
+                    {selectedItem.importMetadata ? (isRTL ? "وقت الاستيراد:" : "Imported at:") : (isRTL ? "توقيت الإضافة / التنفيذ:" : "Created / Executed At:")}
                   </span>
                   <span className="font-mono text-slate-700 text-xs flex items-center gap-1">
                     <Clock className="w-3 h-3 text-slate-400" />
-                    {formatActionTimestamp(selectedItem.executedAt || selectedItem.createdAt, lang)}
+                    {formatActionTimestamp(selectedItem.importMetadata?.importedAt || selectedItem.executedAt || selectedItem.createdAt, lang)}
                   </span>
                 </div>
               </div>

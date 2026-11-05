@@ -12,6 +12,17 @@ export interface TestCaseProject {
 }
 
 export interface TestCaseItem {
+  importMetadata?: {
+    sourceKey: string;
+    sourceRow: number;
+    sourceTestId: string;
+    batchHash: string;
+    original: Record<string, string | null>;
+    plannedAt: string | null;
+    plannedTimezone: string | null;
+    importedById: number | null;
+    importedAt: string;
+  } | null;
   id: number;
   testId: string;
   module: string;

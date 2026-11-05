@@ -238,8 +238,9 @@ async function queryTestCasesFromDbRaw(
   const [countRes, rowsRes, usersRes] = await Promise.all([
     pool.query(`SELECT COUNT(*)::int AS total FROM test_cases tc WHERE ${whereSql}`, sqlParams),
     pool.query(
-      `SELECT to_jsonb(tc) AS tc_json, to_jsonb(u) AS tester_json, to_jsonb(p) AS proj_json
+      `SELECT to_jsonb(tc) AS tc_json, to_jsonb(u) AS tester_json, to_jsonb(p) AS proj_json, to_jsonb(imported) AS import_json
        FROM test_cases tc
+       LEFT JOIN test_case_imports imported ON imported."testCaseId" = tc.id
        LEFT JOIN users u ON tc."testerId" = u.id
        LEFT JOIN projects p ON tc."projectId" = p.id
        WHERE ${whereSql}
@@ -267,6 +268,7 @@ async function queryTestCasesFromDbRaw(
       testId: tc.testId || `TC-${String(tc.id).padStart(4, "0")}`,
       module: tc.module || p?.name || "",
       pageName: tc.pageName ?? null,
+      importMetadata: r.import_json ?? null,
       scenario: tc.scenario || "",
       preConditions: tc.preConditions ?? null,
       steps: parseStepsArray(tc.steps),
