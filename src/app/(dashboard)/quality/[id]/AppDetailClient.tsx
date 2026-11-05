@@ -368,7 +368,7 @@ export default function AppDetailClient({
   const BackIcon = isRTL ? ArrowRight : ArrowLeft;
 
   return (
-    <div className="min-h-screen bg-[#f8f9ff] py-8 px-4 sm:px-6 lg:px-8 w-full max-w-full overflow-x-hidden" dir={dir}>
+    <div className="min-h-screen bg-[#f8f9ff] py-8 px-4 sm:px-6 lg:px-8 w-full max-w-full min-w-0" dir={dir}>
       <div className="max-w-5xl mx-auto space-y-6 w-full max-w-full">
         {/* ── Breadcrumb & Navigation Bar ──────────────────────────────── */}
         <div className="flex items-center justify-between">

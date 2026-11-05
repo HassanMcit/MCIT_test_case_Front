@@ -223,13 +223,13 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
     
     <header
     className={cn(
-        "fixed top-0 h-16 bg-white/95 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-30 flex items-center justify-between px-3 sm:px-6 border-b border-slate-100 transition-all duration-200",
+        "fixed top-0 min-w-0 gap-2 h-16 bg-white/95 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-30 flex items-center justify-between px-3 sm:px-6 border-b border-slate-100 transition-all duration-200",
         "left-0 right-0",
         isRTL ? "lg:right-72 lg:left-0" : "lg:left-72 lg:right-0"
       )}
     >
       {/* ── Start Side: Hamburger (Mobile) + Logos ─────────── */}
-      <div className="flex items-center gap-2 sm:gap-4">
+      <div className="flex min-w-0 items-center gap-2 sm:gap-4">
         {/* Mobile Hamburger Menu Button */}
         <button
           type="button"
@@ -241,7 +241,7 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
         </button>
 
         <Link href="/dashboard" className="flex items-center gap-2 sm:gap-4 hover:opacity-90 transition-opacity">
-          <div className="relative h-8 sm:h-10 w-24 sm:w-28 flex items-center">
+          <div className="relative h-8 sm:h-10 w-24 sm:w-28 min-w-0 flex items-center">
             <Image
               src="/mcit-logo.png"
               alt="MCIT Logo"
@@ -266,7 +266,7 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
       </div>
 
       {/* ── End Side: Language Toggle + Bell + User Menu ────────────── */}
-      <div className="flex items-center gap-2 sm:gap-4">
+      <div className="flex min-w-0 items-center gap-2 sm:gap-4">
         {/* Bilingual Toggle Pill */}
         <div className="flex items-center bg-[#eff4ff] rounded-lg p-0.5 border border-slate-200">
           <button
@@ -316,8 +316,8 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
           {/* Notifications Dropdown */}
           {showNotifications && (
             <div
-              className={`absolute top-full mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 animate-in fade-in zoom-in-95 duration-150 ${
-                isRTL ? "left-0" : "right-0"
+              className={`fixed inset-x-3 top-16 mt-2 sm:absolute sm:inset-x-auto sm:top-full sm:w-96 max-w-[calc(100vw-1.5rem)] bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 animate-in fade-in zoom-in-95 duration-150 ${
+                isRTL ? "sm:left-0" : "sm:right-0"
               }`}
             >
               {/* Notifications Header */}
@@ -460,11 +460,11 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
                 }}
               />
             </div>
-            <div className={cn("hidden sm:flex flex-col", isRTL ? "text-right" : "text-left")}>
-              <span className="text-[13px] font-bold text-[#0b1c30] leading-none">
+            <div className={cn("hidden sm:flex min-w-0 max-w-28 lg:max-w-40 flex-col", isRTL ? "text-right" : "text-left")}>
+              <span className="truncate text-[13px] font-bold text-[#0b1c30] leading-none">
                 {data?.user?.name!}
               </span>
-              <span className="text-[11px] text-[#6d797f] mt-0.5">
+              <span className="truncate text-[11px] text-[#6d797f] mt-0.5">
                 {data?.user?.role}
               </span>
             </div>
@@ -478,7 +478,7 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
           {/* Dropdown Menu */}
           {showDropdown && (
             <div
-              className={`absolute top-full mt-2 w-56 bg-white rounded-xl shadow-lg border border-slate-200/80 py-2 z-50 ${
+              className={`absolute top-full mt-2 w-56 max-w-[calc(100vw-1.5rem)] bg-white rounded-xl shadow-lg border border-slate-200/80 py-2 z-50 ${
                 isRTL ? "left-0" : "right-0"
               }`}
             >

@@ -385,8 +385,8 @@ export default function QualityClient({
   const ArrowIcon = isRTL ? ArrowLeft : ArrowRight;
 
   return (
-    <div className="min-h-screen bg-[#f8f9ff] py-8 px-4 sm:px-6 lg:px-8 overflow-x-hidden max-w-full" dir={dir}>
-      <div className="max-w-7xl mx-auto space-y-6 w-full overflow-x-hidden">
+    <div className="min-h-screen bg-[#f8f9ff] py-8 px-4 sm:px-6 lg:px-8 min-w-0 max-w-full" dir={dir}>
+      <div className="max-w-7xl mx-auto space-y-6 w-full min-w-0">
         {/* ── Top Header Section (Matching Image 1) ────────────────────── */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="space-y-1.5">

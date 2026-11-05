@@ -252,3 +252,22 @@
 .sidebar-nav-link.active svg {
   color: #00A2D2 !important;
 }
+
+/* Let shared dashboard flex/grid content shrink around the fixed sidebar.
+   Keep wide data inside its own scroller; do not clip the page or overlays. */
+@layer components {
+  .dashboard-content {
+    overflow-wrap: anywhere;
+  }
+
+  .dashboard-content :where(.flex, .grid) > :where(div, section, article, form),
+  .dashboard-content > * {
+    min-inline-size: 0;
+  }
+
+  .dashboard-content :where(input, textarea, select),
+  .dashboard-content :where(.overflow-x-auto) {
+    min-inline-size: 0;
+    max-inline-size: 100%;
+  }
+}

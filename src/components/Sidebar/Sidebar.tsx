@@ -96,7 +96,8 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "fixed top-0 bottom-0 h-screen w-72 bg-white shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-50 flex flex-col justify-between border-slate-100 select-none overflow-clip transition-transform duration-200 ease-in-out",
+        "fixed top-0 bottom-0 h-screen w-72 max-w-full bg-white shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-50 flex flex-col justify-between border-slate-100 select-none overflow-clip transition-transform duration-200 ease-in-out",
+        !isOpen && "invisible lg:visible",
         isRTL ? "right-0 border-l" : "left-0 border-r",
         // Desktop (lg+): always visible at translate-x-0
         // Mobile: slide in when isOpen is true, off-screen when false

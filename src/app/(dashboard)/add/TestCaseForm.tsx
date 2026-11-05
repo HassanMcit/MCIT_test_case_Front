@@ -240,9 +240,9 @@ export default function AddTestCasePage({
   }
 
   return (
-    <div className="flex flex-col w-full p-6 gap-6 max-w-7xl mx-auto">
+    <div className="flex flex-col min-w-0 w-full p-4 sm:p-6 gap-6 max-w-7xl mx-auto">
       {/* Title */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-[32px] leading-10 font-bold text-[#0b1c30]">
             {isRTL ? "إضافة حالة اختبار جديدة" : "Add New Test Case"}
@@ -274,14 +274,14 @@ export default function AddTestCasePage({
 
       {/* Form */}
       <Card className="shadow-sm">
-        <CardContent className="p-6">
+        <CardContent className="p-4 sm:p-6">
           <form
             className="space-y-6"
             onSubmit={handleSubmit(handleAddNewTestCase)}
             noValidate
           >
             {/* Row 1: ID, Project, Application, Page */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
               {/* Test ID */}
               <div className="space-y-1.5 min-w-0">
                 <Label className="text-[13px] font-semibold text-[#0b1c30]">
@@ -386,7 +386,7 @@ export default function AddTestCasePage({
 
               {/* Application / Module (التطبيق / الموديول) */}
               <div className="space-y-1.5 min-w-0">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <Label className="text-[13px] font-semibold text-[#0b1c30]">
                     {isRTL
                       ? "التطبيق / الموديول (Application / Module) *"
@@ -573,7 +573,7 @@ export default function AddTestCasePage({
 
             {/* Row 4: Dynamic Steps */}
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <Label className="text-[13px] text-[#0b1c30]">
                   {isRTL ? "خطوات الاختبار الديناميكية " : "Test Steps"}
                 </Label>
@@ -685,7 +685,7 @@ export default function AddTestCasePage({
             <div
               className={cn(
                 "grid grid-cols-1 md:grid-cols-2 gap-4",
-                currentStatus === "failed" ? "lg:grid-cols-5" : "lg:grid-cols-4"
+                currentStatus === "failed" ? "xl:grid-cols-5" : "xl:grid-cols-4"
               )}
             >
               {/* Priority */}
@@ -911,7 +911,7 @@ export default function AddTestCasePage({
 
               {/* Execution Date & Time (Today's Date & Time - Uneditable) */}
               <div className="space-y-1.5">
-                <Label className="text-[13px] text-[#0b1c30] flex items-center justify-between">
+                <Label className="text-[13px] text-[#0b1c30] flex flex-wrap items-center justify-between gap-2">
                   <span>
                     {isRTL ? "تاريخ ووقت التنفيذ" : "Execution Date & Time"}
                   </span>
@@ -958,7 +958,7 @@ export default function AddTestCasePage({
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-end gap-3 pt-2 border-t border-[#e5eeff]">
+            <div className="flex flex-wrap items-center justify-end gap-3 pt-2 border-t border-[#e5eeff]">
               <Button
                 type="button"
                 variant="outline"
