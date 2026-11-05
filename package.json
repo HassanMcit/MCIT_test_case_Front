@@ -9,7 +9,9 @@
     "lint": "biome check",
     "format": "biome format --write",
     "test:projects": "node --test test/project-cache.test.cjs test/schedule-picker.test.cjs test/eligible-users.test.cjs",
-    "test:layout": "node test/layout-overflow.cjs"
+    "test:layout": "node test/layout-overflow.cjs",
+    "test:performance": "node --test test/performance-cache.test.cjs",
+    "test:performance:browser": "node test/performance-browser.cjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

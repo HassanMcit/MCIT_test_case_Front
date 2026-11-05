@@ -5,7 +5,9 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   experimental: {
     staleTimes: {
-      dynamic: 0,
+      dynamic: 60,
+      // Full, intent-prefetched workflow pages may be reused briefly in this
+      // browser session. Other dynamic pages still require a fresh navigation.
       static: 180,
     },
   },

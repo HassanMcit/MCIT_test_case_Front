@@ -4,8 +4,10 @@ import AddTestCasePage from './TestCaseForm'
 
 
 async function Page() {
-  const allProjects = await getProjects({ assignedToMe: true });
-  const qualityData = await getQualityApplications();
+  const [allProjects, qualityData] = await Promise.all([
+    getProjects({ assignedToMe: true }),
+    getQualityApplications(),
+  ]);
   const allApplications = qualityData?.applications || [];
 
   return (

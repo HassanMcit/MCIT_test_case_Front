@@ -4,6 +4,7 @@ import { appFetch } from "@/lib/app-fetch";
 import { getUserToken, getCurrentUserSession } from "@/app/myUtil";
 import { getProjects } from "@/app/(dashboard)/projects/getProjects.action";
 import { getTestCases } from "@/app/(dashboard)/test-cases/test-cases.action";
+import { raceBackendFetch } from "@/lib/fast-read";
 
 export interface DashboardStatsResponse {
   total: number;
@@ -27,15 +28,7 @@ export async function getDashboardStats(): Promise<DashboardStatsResponse> {
       ? `?userId=${sessionUser.id}&role=${sessionUser.role}`
       : "";
 
-    const [res, projects, testCasesRes] = await Promise.all([
-      appFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/dashboard/stats${qs}`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        cache: "force-cache",
-        next: { tags: ["dashboard", "dashboard-stats", "test-cases", "projects"] },
-      }).catch(() => null),
+    const [projects, testCasesRes] = await Promise.all([
       getProjects(),
       getTestCases({ limit: 500 }),
     ]);
@@ -73,6 +66,16 @@ export async function getDashboardStats(): Promise<DashboardStatsResponse> {
       };
     }
 
+    // Only request the legacy stats endpoint when the scoped data above could
+    // not supply stats. Do not block useful results on a cold backend twice.
+    const res = await raceBackendFetch(
+      appFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/dashboard/stats${qs}`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "force-cache",
+        next: { tags: ["dashboard", "dashboard-stats", "test-cases", "projects"] },
+      }),
+    );
     if (!res || !res.ok) {
       return { total: 0, passed: 0, failed: 0, pending: 0, passRate: 0, totalProjects: 0 };
     }

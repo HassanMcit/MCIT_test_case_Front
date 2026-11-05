@@ -52,7 +52,7 @@ export default function UsersClient({
   const { data: session } = useSession();
 
   const [usersList, setUsersList] = useState<GetAllUsersResponse[] | null>(
-    initialUsers && initialUsers.length > 0 ? initialUsers : null
+    initialUsers ?? null
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | "admin" | "tester" | "user">("all");
@@ -64,7 +64,7 @@ export default function UsersClient({
   } | null>(null);
 
   useEffect(() => {
-    if (initialUsers && initialUsers.length > 0) {
+    if (initialUsers !== undefined) {
       setUsersList(initialUsers);
       return;
     }

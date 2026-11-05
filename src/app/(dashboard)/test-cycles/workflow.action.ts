@@ -2,6 +2,7 @@
 import { appFetch } from "@/lib/app-fetch";
 import { getUserToken } from "@/app/myUtil";
 import { revalidatePath, updateTag } from "next/cache";
+import { unstable_rethrow } from "next/navigation";
 
 export async function workflowRequest<T>(
   path: string,
@@ -61,6 +62,7 @@ export async function workflowRequest<T>(
     }
     return { ok: true, data };
   } catch (error) {
+    unstable_rethrow(error);
     return {
       ok: false,
       error: error instanceof Error ? error.message : "Request failed",

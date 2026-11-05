@@ -15,7 +15,8 @@ export async function appFetch(
   if (
     method !== "GET" ||
     FRESH_ENDPOINT.test(new URL(input).pathname) ||
-    init.cache === "no-store"
+    init.cache === "no-store" ||
+    init.next?.revalidate === 0
   ) {
     const { next: _next, ...fresh } = init;
     return fetch(input, { ...fresh, cache: "no-store" });
@@ -34,6 +35,6 @@ export async function appFetch(
     ...init,
     headers,
     cache: "force-cache",
-    next: { ...init.next, revalidate: 60 },
+    next: { ...init.next, revalidate: init.next?.revalidate ?? 60 },
   });
 }

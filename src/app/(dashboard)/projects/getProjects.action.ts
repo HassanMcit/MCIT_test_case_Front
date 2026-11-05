@@ -1,5 +1,6 @@
 "use server";
 import { appFetch } from "@/lib/app-fetch";
+import { unstable_rethrow } from "next/navigation";
 
 import { getUserToken, getCurrentUserSession } from "@/app/myUtil";
 import { queryProjectsFromDb, raceBackendFetch } from "@/lib/fast-read";
@@ -95,7 +96,7 @@ export async function getProjects(params?: {
       assignedToUserId: params?.assignedToUserId,
     });
   } catch (error) {
-    if (error && typeof error === 'object' && 'digest' in error && String(error.digest).startsWith('DYNAMIC_SERVER_USAGE')) throw error;
+    unstable_rethrow(error);
     console.error("Error fetching projects:", error);
     return [];
   }

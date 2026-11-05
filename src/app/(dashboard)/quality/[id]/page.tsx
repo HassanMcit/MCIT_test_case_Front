@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getQualityAppById } from "../quality.action";
 import AppDetailClient from "./AppDetailClient";
 
+export const fetchCache = "force-cache";
 
 interface AppDetailPageProps {
   params: Promise<{

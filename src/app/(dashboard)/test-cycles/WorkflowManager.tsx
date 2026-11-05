@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -54,10 +54,12 @@ export default function WorkflowManager({
   projects,
   isAdmin,
   initialProjectId,
+  initialCycles,
 }: {
   projects: ProjectApiItem[];
   isAdmin: boolean;
   initialProjectId?: string;
+  initialCycles?: PageData<Cycle>;
 }) {
   const { w, dir } = useWords();
   const [project, setProject] = useState(
@@ -68,7 +70,8 @@ export default function WorkflowManager({
   const [tab, setTab] = useState<"cycles" | "releases">("cycles");
   const [releases, setReleases] = useState<Release[]>([]);
   const [releasePage, setReleasePage] = useState<PageData<Release>>(empty);
-  const [cycles, setCycles] = useState<PageData<Cycle>>(empty);
+  const [cycles, setCycles] = useState<PageData<Cycle>>(initialCycles ?? empty);
+  const initialQuery = useRef(project);
   const [page, setPage] = useState(1),
     [search, setSearch] = useState(""),
     [status, setStatus] = useState(""),
@@ -92,6 +95,9 @@ export default function WorkflowManager({
       setReleases([]);
       return;
     }
+    // Release choices are only used by the cycle form, not the initial list.
+    if (!showForm || tab !== "cycles") return;
+    setReleases([]);
     const load = async () => {
       const list: Release[] = [];
       let n = 1,
@@ -114,10 +120,24 @@ export default function WorkflowManager({
     return () => {
       cancelled = true;
     };
-  }, [project, revision]);
+  }, [project, revision, showForm, tab]);
   useEffect(() => {
     let cancelled = false;
     if (!project) return;
+    if (
+      initialCycles &&
+      initialQuery.current === project &&
+      tab === "cycles" &&
+      page === 1 &&
+      !search &&
+      !status &&
+      revision === 0
+    ) {
+      setCycles(initialCycles);
+      setLoading(false);
+      return;
+    }
+    initialQuery.current = "";
     setLoading(true);
     setError("");
     const timeout = setTimeout(async () => {
@@ -146,7 +166,7 @@ export default function WorkflowManager({
       cancelled = true;
       clearTimeout(timeout);
     };
-  }, [project, tab, page, search, status, revision]);
+  }, [project, tab, page, search, status, revision, initialCycles]);
   const open = (release?: Release) => {
     setEditing(release || null);
     reset(

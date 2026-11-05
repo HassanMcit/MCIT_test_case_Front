@@ -1,6 +1,7 @@
 import { pool } from "@/lib/db";
 import { decode } from "next-auth/jwt";
 import { cookies } from "next/headers";
+import { cache } from "react";
 
 const SESSION_COOKIE_NAMES = [
   "__Secure-authjs.session-token",
@@ -107,7 +108,9 @@ export async function getUserToken(): Promise<string | null> {
   return (await getCurrentUserSession())?.token || null;
 }
 
-export async function getCurrentUserSession() {
+// Request-local memoization only: parallel RSC reads share the authorization
+// query, but a new request always checks roles, revocation, and cache revision.
+export const getCurrentUserSession = cache(async function getCurrentUserSession() {
   const token = await getDecodedToken();
   if (!token) return null;
   const credential = (token.credentialToken || token.access_token || token.token) as string;
@@ -126,4 +129,4 @@ export async function getCurrentUserSession() {
   const user = result.rows[0];
   if (!user || user.sessionActive === false || (Number(user.minTokenIat || 0) > 0 && (!backend.iat || backend.iat < Number(user.minTokenIat)))) return null;
   return { id: Number(user.id), role: String(user.role), name: String(user.name), email: String(user.email), token: credential, cacheRevision: String(user.revision) };
-}
+});

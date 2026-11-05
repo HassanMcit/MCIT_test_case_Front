@@ -375,9 +375,10 @@ async function main() {
     ],
   });
   let styles = css.build(scanner.scan());
-  const fontFiles = fs
-    .readdirSync(".next/static/chunks")
-    .filter((f) => f.endsWith(".css"));
+  const chunksDir = ".next/static/chunks";
+  const fontFiles = fs.existsSync(chunksDir)
+    ? fs.readdirSync(chunksDir).filter((f) => f.endsWith(".css"))
+    : [];
   let fonts =
     fontFiles
       .map((f) => fs.readFileSync(`.next/static/chunks/${f}`, "utf8"))
@@ -388,7 +389,9 @@ async function main() {
     /url\(\.\.\/media\/([^)]+)\)/g,
     (_, f) =>
       "url(data:font/woff2;base64," +
-      fs.readFileSync(`.next/static/media/${f}`).toString("base64") +
+      (fs.existsSync(`.next/static/media/${f}`)
+        ? fs.readFileSync(`.next/static/media/${f}`).toString("base64")
+        : "") +
       ")",
   );
   styles += `${fonts}:root{--font-almarai:Almarai;--font-geist-mono:"Geist Mono"}`;

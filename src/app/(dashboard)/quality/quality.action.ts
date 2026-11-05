@@ -1,7 +1,8 @@
 "use server";
 
 import { revalidatePath, updateTag } from "next/cache";
-import { scopedCache as unstable_cache } from "@/lib/scoped-cache";
+import { unstable_rethrow } from "next/navigation";
+import { authenticatedSharedCache, scopedCache as unstable_cache } from "@/lib/scoped-cache";
 import { pool } from "@/lib/db";
 import { getCurrentUserSession } from "@/app/myUtil";
 import { recordSystemAuditLog } from "@/lib/audit";
@@ -14,7 +15,9 @@ import type {
   CreateQualityAppDto,
 } from "./quality.interface";
 
-const getCachedQualityApplicationsFromDb = unstable_cache(
+// This catalog has identical read permissions for all signed-in roles.
+// Assessment history below remains identity-scoped.
+const getCachedQualityApplicationsFromDb = authenticatedSharedCache(
   async (category?: string, search?: string): Promise<QualityPageData> => {
     const defaultMetrics: QualityMetricsSummary = {
       totalApps: 16,
@@ -125,8 +128,10 @@ export async function getQualityApplications(
 
 
   try {
-    return await getCachedQualityApplicationsFromDb(category, search);
+    // All consumers (forms, projects and portfolio) share equivalent filters.
+    return await getCachedQualityApplicationsFromDb(category || "All", search?.trim().toLowerCase() || "");
   } catch (dbErr) {
+    unstable_rethrow(dbErr);
     console.error("Direct DB fallback error in getQualityApplications:", dbErr);
     return {
       applications: [],
@@ -208,6 +213,7 @@ export async function getQualityAppById(
   try {
     return await getCachedQualityAppByIdFromDb(id);
   } catch (err) {
+    unstable_rethrow(err);
     console.error("Direct DB error in getQualityAppById:", err);
     return { application: null, assessments: [] };
   }

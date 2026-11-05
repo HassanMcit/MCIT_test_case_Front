@@ -1,5 +1,6 @@
 "use server";
 import { appFetch } from "@/lib/app-fetch";
+import { unstable_rethrow } from "next/navigation";
 
 import { getUserToken, getCurrentUserSession } from "@/app/myUtil";
 import { revalidatePath, updateTag } from "next/cache";
@@ -37,7 +38,7 @@ export async function getTestCases(params?: TestCaseQueryParams): Promise<TestCa
       url.searchParams.set("userId", String(sessionUser.id));
       url.searchParams.set("userRole", sessionUser.role);
     }
-    url.searchParams.set("cv", (params as any)?._cv || "20261019_v3");
+    url.searchParams.set("cv", "20261019_v3");
 
     const fetchPromise = appFetch(url.toString(), {
       method: "GET",
@@ -66,6 +67,7 @@ export async function getTestCases(params?: TestCaseQueryParams): Promise<TestCa
     // Render Cold-Start Fallback: read directly from PostgreSQL pool (~80ms)
     return await queryTestCasesFromDb(params, sessionUser);
   } catch (error) {
+    unstable_rethrow(error);
     console.error("Error in getTestCases:", error);
     return {
       data: [],
@@ -219,6 +221,7 @@ export async function getTestCaseById(id: number): Promise<TestCaseItem | null> 
     if (!res.ok) return null;
     return await res.json();
   } catch (error) {
+    unstable_rethrow(error);
     console.error("Error in getTestCaseById:", error);
     return null;
   }
@@ -254,6 +257,7 @@ export async function getFailedTestCases(projectId?: number): Promise<TestCaseIt
     const json = await res.json();
     return Array.isArray(json?.data) ? json.data : [];
   } catch (error) {
+    unstable_rethrow(error);
     console.error("Error in getFailedTestCases:", error);
     return [];
   }

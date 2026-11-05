@@ -81,7 +81,7 @@ export default function AssignProjectsClient({
   }, [initialUsers]);
 
   // Data State
-  const [loading, setLoading] = useState(mappedInitialUsers.length === 0);
+  const [loading, setLoading] = useState(initialUsers === undefined);
   const [users, setUsers] = useState<BackendUser[]>(mappedInitialUsers);
   const [projects, setProjects] = useState<BackendProject[]>(initialProjects || []);
   
@@ -93,17 +93,17 @@ export default function AssignProjectsClient({
   const [projectSearch, setProjectSearch] = useState("");
 
   useEffect(() => {
-    if (mappedInitialUsers.length > 0) {
+    if (initialUsers !== undefined) {
       setUsers(mappedInitialUsers);
       setProjects(initialProjects || []);
-      setSelectedUserId((prev) => prev ?? mappedInitialUsers[0].id);
+      setSelectedUserId((prev) => prev ?? mappedInitialUsers[0]?.id ?? null);
       setLoading(false);
       return;
     }
     if (status === "authenticated" && users.length === 0) {
       loadData();
     }
-  }, [status, mappedInitialUsers, initialProjects]);
+  }, [status, initialUsers, mappedInitialUsers, initialProjects]);
 
   async function loadData() {
     setLoading(true);

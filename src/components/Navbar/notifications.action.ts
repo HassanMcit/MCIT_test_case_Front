@@ -2,7 +2,7 @@
 import { appFetch } from "@/lib/app-fetch";
 
 import { getUserToken } from "@/app/myUtil";
-import { revalidatePath, updateTag } from "next/cache";
+import { updateTag } from "next/cache";
 import { raceBackendFetch } from "@/lib/fast-read";
 
 export interface AppNotification {
@@ -22,6 +22,7 @@ export interface NotificationsResponse {
   notifications: AppNotification[];
   unreadCount: number;
   unauthorized?: boolean;
+  unavailable?: boolean;
 }
 
 export async function getClientToken(): Promise<string | null> {
@@ -29,13 +30,9 @@ export async function getClientToken(): Promise<string | null> {
 }
 
 export async function refreshNotifications(): Promise<NotificationsResponse> {
-  try {
-    updateTag("notifications");
-    return getMyNotifications();
-  } catch (err) {
-    console.error("Error refreshing notifications:", err);
-    return getMyNotifications();
-  }
+  // Reads are already no-store. Invalidating a tag here also invalidates the
+  // invoking browser's Router Cache, discarding unrelated ready page payloads.
+  return getMyNotifications();
 }
 
 export async function revalidateNotificationsTag() {
@@ -65,7 +62,7 @@ export async function getMyNotifications(): Promise<NotificationsResponse> {
 
     const res = await raceBackendFetch(fetchPromise, 2000);
     if (!res) {
-      return { notifications: [], unreadCount: 0 };
+      return { notifications: [], unreadCount: 0, unavailable: true };
     }
 
     if (res.status === 401) {
@@ -73,7 +70,7 @@ export async function getMyNotifications(): Promise<NotificationsResponse> {
     }
 
     if (!res.ok) {
-      return { notifications: [], unreadCount: 0 };
+      return { notifications: [], unreadCount: 0, unavailable: true };
     }
 
     const data = await res.json();
@@ -83,7 +80,7 @@ export async function getMyNotifications(): Promise<NotificationsResponse> {
     };
   } catch (err) {
     console.error("Error fetching notifications:", err);
-    return { notifications: [], unreadCount: 0 };
+    return { notifications: [], unreadCount: 0, unavailable: true };
   }
 }
 
@@ -103,7 +100,6 @@ export async function markNotificationAsRead(id: number) {
       }
     );
 
-    updateTag("notifications");
     return { success: true };
   } catch {
     return { success: false };
@@ -126,7 +122,6 @@ export async function markAllNotificationsAsRead() {
       }
     );
 
-    updateTag("notifications");
     return { success: true };
   } catch {
     return { success: false };

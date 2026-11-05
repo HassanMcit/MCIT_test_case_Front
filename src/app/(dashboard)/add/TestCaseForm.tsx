@@ -65,9 +65,11 @@ export default function AddTestCasePage({
   );
 
   useEffect(() => {
+    // Immediately synchronize to user's real local time on mount
+    setLiveTimestamp(new Date().toISOString());
     const timer = setInterval(() => {
       setLiveTimestamp(new Date().toISOString());
-    }, 10000);
+    }, 1000);
     return () => clearInterval(timer);
   }, []);
 
@@ -681,15 +683,15 @@ export default function AddTestCasePage({
               </div>
             </div>
 
-            {/* Row 6: Priority, Status, Severity, Tester, Date */}
+            {/* Row 6: Priority, Status, Severity */}
             <div
               className={cn(
-                "grid grid-cols-1 md:grid-cols-2 gap-4",
-                currentStatus === "failed" ? "xl:grid-cols-5" : "xl:grid-cols-4"
+                "grid grid-cols-1 gap-4",
+                currentStatus === "failed" ? "sm:grid-cols-3" : "sm:grid-cols-2"
               )}
             >
               {/* Priority */}
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 min-w-0">
                 <Label className="text-[13px] text-[#0b1c30]">
                   {isRTL ? "الأولوية " : "Priority"}
                 </Label>
@@ -703,7 +705,7 @@ export default function AddTestCasePage({
                     >
                       <SelectTrigger
                         className={cn(
-                          "rounded-xl text-[13px] bg-[#f8f9ff] border-[#bcc8d0]",
+                          "rounded-xl text-[13px] bg-[#f8f9ff] border-[#bcc8d0] w-full min-w-0",
                           errors.priority &&
                             "border-red-400 focus-visible:border-red-400"
                         )}
@@ -749,7 +751,7 @@ export default function AddTestCasePage({
               </div>
 
               {/* Status */}
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 min-w-0">
                 <Label className="text-[13px] text-[#0b1c30]">
                   {isRTL ? "حالة التنفيذ " : "Status"}
                 </Label>
@@ -784,7 +786,7 @@ export default function AddTestCasePage({
                     >
                       <SelectTrigger
                         className={cn(
-                          "rounded-xl text-[13px] bg-[#f8f9ff] border-[#bcc8d0]",
+                          "rounded-xl text-[13px] bg-[#f8f9ff] border-[#bcc8d0] w-full min-w-0",
                           errors.status &&
                             "border-red-400 focus-visible:border-red-400"
                         )}
@@ -824,7 +826,7 @@ export default function AddTestCasePage({
 
               {/* Severity (Displayed ONLY when Failed) */}
               {currentStatus === "failed" && (
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 min-w-0">
                   <Label className="text-[13px] text-red-600 font-bold flex items-center gap-1">
                     <span>⚠️</span>
                     <span>
@@ -841,7 +843,7 @@ export default function AddTestCasePage({
                       >
                         <SelectTrigger
                           className={cn(
-                            "rounded-xl text-[13px] bg-red-50/50 border-red-300 text-red-900 focus-visible:border-red-500",
+                            "rounded-xl text-[13px] bg-red-50/50 border-red-300 text-red-900 focus-visible:border-red-500 w-full min-w-0",
                             errors.severity && "border-red-500"
                           )}
                         >
@@ -893,9 +895,12 @@ export default function AddTestCasePage({
                   )}
                 </div>
               )}
+            </div>
 
+            {/* Row 7: Tester Name & Execution Date & Time */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Tester Name */}
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 min-w-0">
                 <Label className="text-[13px] text-[#0b1c30]">
                   {isRTL ? "اسم المختبر " : "Tester"}
                 </Label>
@@ -905,12 +910,12 @@ export default function AddTestCasePage({
                   placeholder={
                     isRTL ? "اسم المختبر المسؤول" : "Tester Name"
                   }
-                  className="rounded-xl text-[13px] bg-[#f8f9ff] border-[#bcc8d0]"
+                  className="rounded-xl text-[13px] bg-[#f8f9ff] border-[#bcc8d0] truncate"
                 />
               </div>
 
               {/* Execution Date & Time (Today's Date & Time - Uneditable) */}
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 min-w-0">
                 <Label className="text-[13px] text-[#0b1c30] flex flex-wrap items-center justify-between gap-2">
                   <span>
                     {isRTL ? "تاريخ ووقت التنفيذ" : "Execution Date & Time"}
@@ -920,19 +925,20 @@ export default function AddTestCasePage({
                     {isRTL ? "تلقائي" : "Auto"}
                   </span>
                 </Label>
-                <div className="relative flex items-center">
+                <div className="relative flex items-center min-w-0">
                   <Clock className="w-4 h-4 text-[#006685] absolute start-3 pointer-events-none" />
                   <Input
                     readOnly
                     disabled
                     value={formatActionTimestamp(liveTimestamp, lang)}
-                    className="rounded-xl text-[13px] font-mono bg-slate-100/80 text-slate-700 border-[#bcc8d0] ps-9 cursor-not-allowed opacity-100"
+                    title={formatActionTimestamp(liveTimestamp, lang)}
+                    className="rounded-xl text-[13px] bg-slate-100/80 text-slate-700 border-[#bcc8d0] ps-9 cursor-not-allowed opacity-100 select-none truncate"
                   />
                 </div>
               </div>
             </div>
 
-            {/* Row 7: Notes */}
+            {/* Row 8: Notes */}
             <div className="space-y-1.5">
               <Label className="text-[13px] text-[#0b1c30]">
                 {isRTL ? "ملاحظات إضافية " : "Notes"}

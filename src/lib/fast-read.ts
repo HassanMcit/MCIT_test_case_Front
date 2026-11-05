@@ -20,10 +20,15 @@ export async function raceBackendFetch(
 ): Promise<Response | null> {
   // Prevent unhandled rejection if fetch fails later in background
   const safeFetch = fetchPromise.catch(() => null);
-  const timeout = new Promise<null>((resolve) =>
-    setTimeout(() => resolve(null), timeoutMs)
-  );
-  return Promise.race([safeFetch, timeout]);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<null>((resolve) => {
+    timer = setTimeout(() => resolve(null), timeoutMs);
+  });
+  try {
+    return await Promise.race([safeFetch, timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 function toIsoString(val: any): string {

@@ -2,7 +2,6 @@
 
 import React, { useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useLanguage } from "@/context/language-context";
 import {
   RefreshCw,
@@ -44,7 +43,6 @@ interface DashboardClientProps {
 }
 
 export default function DashboardClient({ data }: DashboardClientProps) {
-  const router = useRouter();
   const { lang, t, dir } = useLanguage();
   const isRTL = dir === "rtl";
 
@@ -527,7 +525,7 @@ export default function DashboardClient({ data }: DashboardClientProps) {
     setIsRefreshing(true);
     try {
       await revalidateDashboardAction();
-      router.refresh();
+      // The action revalidates this path and returns the refreshed RSC tree.
       toast.success(
         isRTL
           ? "تم تحديث بيانات لوحة المؤشرات بنجاح"

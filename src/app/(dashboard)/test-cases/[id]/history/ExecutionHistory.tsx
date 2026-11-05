@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { workflowRequest } from "../../../test-cycles/workflow.action";
@@ -10,14 +10,34 @@ import {
   StatusBadge,
   useWords,
 } from "../../../test-cycles/WorkflowShared";
-export default function ExecutionHistory({ id }: { id: number }) {
+export default function ExecutionHistory({
+  id,
+  initialResult,
+}: {
+  id: number;
+  initialResult?:
+    | { ok: true; data: PageData<Execution> }
+    | { ok: false; error: string };
+}) {
   const { w, dir, lang } = useWords();
-  const [data, setData] = useState<PageData<Execution> | null>(null),
-    [error, setError] = useState(""),
+  const initialQuery = useRef(id);
+  const [data, setData] = useState<PageData<Execution> | null>(
+      initialResult?.ok ? initialResult.data : null,
+    ),
+    [error, setError] = useState(
+      initialResult && !initialResult.ok ? initialResult.error : "",
+    ),
     [page, setPage] = useState(1),
-    [loading, setLoading] = useState(true),
+    [loading, setLoading] = useState(initialResult === undefined),
     [selected, setSelected] = useState<Execution | null>(null);
   useEffect(() => {
+    if (page === 1 && initialQuery.current === id && initialResult) {
+      setData(initialResult.ok ? initialResult.data : null);
+      setError(initialResult.ok ? "" : initialResult.error);
+      setLoading(false);
+      return;
+    }
+    initialQuery.current = 0;
     let active = true;
     setLoading(true);
     void workflowRequest<PageData<Execution>>(
@@ -34,7 +54,7 @@ export default function ExecutionHistory({ id }: { id: number }) {
     return () => {
       active = false;
     };
-  }, [id, page]);
+  }, [id, page, initialResult]);
   return (
     <div dir={dir} className="mx-auto max-w-6xl space-y-5 p-4 sm:p-8">
       <Link className="text-sm text-[#0086ac]" href="/test-cases">

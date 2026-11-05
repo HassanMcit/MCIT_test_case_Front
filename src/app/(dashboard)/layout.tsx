@@ -25,7 +25,7 @@ export default function DashboardLayout({
 
   return (
     <MySession>
-      <div className="dashboard-shell min-h-screen min-w-0 w-full bg-[#f8f9ff] text-[#0b1c30] antialiased">
+      <div className="dashboard-shell min-h-screen min-w-0 w-full bg-[#f8f9ff] text-[#0b1c30] antialiased overflow-x-hidden">
         {/* Mobile Backdrop Overlay */}
         {isSidebarOpen && (
           <div
@@ -47,11 +47,11 @@ export default function DashboardLayout({
         {/* 3. Main Content: Full width on mobile, padded beside sidebar on desktop */}
         <div
           className={cn(
-            "min-h-screen min-w-0 w-full pt-16 transition-all duration-200",
+            "min-h-screen min-w-0 w-full pt-16 transition-all duration-200 overflow-x-hidden",
             isRTL ? "lg:pr-72" : "lg:pl-72"
           )}
         >
-          <main className="dashboard-content w-full min-w-0 max-w-full">
+          <main className="dashboard-content w-full min-w-0 max-w-full overflow-x-hidden">
             {children}
           </main>
         </div>

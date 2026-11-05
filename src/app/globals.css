@@ -133,9 +133,13 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-almarai), "Almarai", sans-serif;
+    overflow-x: hidden;
+    max-width: 100vw;
   }
   html {
     font-family: var(--font-almarai), "Almarai", sans-serif;
+    overflow-x: hidden;
+    max-width: 100vw;
   }
 
   /* Global input focus ring with user specified brand color #00A2D2 */

@@ -4,8 +4,10 @@ import ProjectsForm from "./ProjectsForm";
 
 
 export default async function Page() {
-  const initialProjects = await getProjects();
-  const qualityData = await getQualityApplications();
+  const [initialProjects, qualityData] = await Promise.all([
+    getProjects(),
+    getQualityApplications(),
+  ]);
   const allApplications = qualityData?.applications || [];
 
   return (

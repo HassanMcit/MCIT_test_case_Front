@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { Check, X, Plus, History, RefreshCw } from "lucide-react";
 import toast from "react-hot-toast";
@@ -32,25 +32,30 @@ export default function CycleWorkspace({
   id,
   initial,
   initialError,
+  initialItems,
   isAdmin,
   userId,
 }: {
   id: number;
   initial: Cycle | null;
   initialError: string;
+  initialItems?: PageData<CycleItem>;
   isAdmin: boolean;
   userId: number;
 }) {
   const { w, dir } = useWords();
   const [cycle, setCycle] = useState(initial),
     [error, setError] = useState(initialError),
-    [items, setItems] = useState<PageData<CycleItem>>(blankPage);
+    [items, setItems] = useState<PageData<CycleItem>>(
+      initialItems ?? blankPage,
+    );
+  const initialQuery = useRef(id);
   const [search, setSearch] = useState(""),
     [status, setStatus] = useState(""),
     [tester, setTester] = useState(""),
     [page, setPage] = useState(1),
     [revision, setRevision] = useState(0),
-    [loading, setLoading] = useState(true);
+    [loading, setLoading] = useState(initialItems === undefined);
   const [selected, setSelected] = useState<CycleItem | null>(null),
     [actualResult, setActualResult] = useState(""),
     [notes, setNotes] = useState(""),
@@ -68,6 +73,22 @@ export default function CycleWorkspace({
     [busy, startTransition] = useTransition();
   useEffect(() => {
     let active = true;
+    if (
+      initial &&
+      initialItems &&
+      initialQuery.current === id &&
+      page === 1 &&
+      !search &&
+      !status &&
+      !tester &&
+      revision === 0
+    ) {
+      setCycle(initial);
+      setItems(initialItems);
+      setLoading(false);
+      return;
+    }
+    initialQuery.current = 0;
     setLoading(true);
     const timer = setTimeout(async () => {
       const q = new URLSearchParams({
@@ -77,10 +98,10 @@ export default function CycleWorkspace({
         testerId: tester,
       });
       if (!tester) q.delete("testerId");
-      const c = await workflowRequest<Cycle>(`test-cycles/${id}`);
-      const r = await workflowRequest<PageData<CycleItem>>(
-        `test-cycles/${id}/items?${q}`,
-      );
+      const [c, r] = await Promise.all([
+        workflowRequest<Cycle>(`test-cycles/${id}`),
+        workflowRequest<PageData<CycleItem>>(`test-cycles/${id}/items?${q}`),
+      ]);
       if (active) {
         if (c.ok) setCycle(c.data);
         if (r.ok) {
@@ -94,7 +115,7 @@ export default function CycleWorkspace({
       active = false;
       clearTimeout(timer);
     };
-  }, [id, page, search, status, tester, revision]);
+  }, [id, page, search, status, tester, revision, initial, initialItems]);
   useEffect(() => {
     if (!picker) return;
     let active = true;

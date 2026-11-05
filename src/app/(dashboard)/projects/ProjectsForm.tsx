@@ -139,7 +139,6 @@ import { addNewProject } from "./addprodject.action";
 import { updateProject } from "./updateProject.action";
 import { deleteProject } from "./deleteProject.action";
 import { getProjects, ProjectApiItem } from "./getProjects.action";
-import { getAllTester } from "./getAllUsers.action";
 import type { QualityApplication } from "../quality/quality.interface";
 
 interface ProjectItem {
@@ -434,13 +433,8 @@ export default function ProjectsForm({
   const [envFilter, setEnvFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
-  const [availableTeamMembers, setAvailableTeamMembers] = useState<any[]>([]);
-
-  useEffect(() => {
-    getAllTester().then((data) => {
-      if (Array.isArray(data)) setAvailableTeamMembers(data);
-    }).catch(() => {});
-  }, []);
+  // The old team selectors below are commented out. The active schedule fields
+  // load the authorized directory only when an add/edit modal opens.
   // Modal / Drawer UI State (Design Only)
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState<ProjectItem | null>(
@@ -539,9 +533,13 @@ export default function ProjectsForm({
             : "Project updated successfully"
         );
         setEditingProject(null);
-        getProjects().then((data) => {
-          if (data && Array.isArray(data)) setRawProjects(data);
-        }).catch(() => {});
+        // Revalidated server props update the page; only standalone/unseeded
+        // consumers need an additional client read.
+        if (serverProjects === undefined) {
+          getProjects().then((data) => {
+            if (data && Array.isArray(data)) setRawProjects(data);
+          }).catch(() => {});
+        }
       } else {
         toast.error(
           res.message ||
@@ -678,9 +676,11 @@ export default function ProjectsForm({
           startAt: "", endAt: "", assignedTesterId: "",
         });
         setShowAddModal(false);
-        getProjects().then((projs) => {
-          if (projs && Array.isArray(projs)) setRawProjects(projs);
-        }).catch(() => {});
+        if (serverProjects === undefined) {
+          getProjects().then((projs) => {
+            if (projs && Array.isArray(projs)) setRawProjects(projs);
+          }).catch(() => {});
+        }
         return (
           <h1 className="text-emerald-500">
             {isRTL ? "تم اضافة المشروع بنجاح" : "Project created successfully"}

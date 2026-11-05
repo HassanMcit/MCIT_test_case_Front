@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -29,7 +29,6 @@ import {
   type AppNotification,
 } from "./notifications.action";
 import toast from "react-hot-toast";
-import { getUserToken } from "@/app/myUtil";
 
 interface NavbarProps {
   onToggleSidebar?: () => void;
@@ -52,30 +51,75 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
   
   const [uploadImage, setUploadImage] = useState<string | null>(null);
   const { data, status, update } = useSession();
+  const notificationAccount = data?.user?.id || data?.user?.email;
+  const notificationOwner = status === "authenticated" && notificationAccount
+    ? `${notificationAccount}:${data?.user?.sid || ""}:${data?.user?.role || ""}`
+    : null;
   const isLoggingOutRef = useRef(false);
 
   const [imgSrc, setImgSrc] = useState<string>(() => {
     return data?.user?.image || "/avatar.png";
   });
 
-  const handleExpiredTokenRedirect = async () => {
-    // Silent handling without intrusive window.location reloads
-  };
+  const notificationRequestRef = useRef<Promise<void> | null>(null);
+  const pendingNotificationRefreshRef = useRef(false);
+  const notificationGenerationRef = useRef(0);
+  const lastNotificationReadRef = useRef(0);
+  const notificationLocaleRef = useRef(isRTL);
+  useEffect(() => { notificationLocaleRef.current = isRTL; }, [isRTL]);
 
-  // Live notifications: SSE plus fresh polling across backend instances.
-  const fetchNotifications = async (forceRefresh = false) => {
-    try {
-      const res = forceRefresh ? await refreshNotifications() : await getMyNotifications();
-      if (res && Array.isArray(res.notifications)) {
-        setNotifications(res.notifications);
-        setUnreadCount(res.unreadCount);
-      }
-    } catch (err) {
-      console.error("Failed to fetch notifications:", err);
+  // Coalesce focus, stream, and polling reads within this mounted session.
+  // No notification response is persisted or shared with another user.
+  const fetchNotifications = useCallback(function readNotifications(forceRefresh = false): Promise<void> {
+    if (notificationRequestRef.current) {
+      // A stream/mutation event can arrive after an older snapshot was read.
+      // Coalesce those events into one trailing fresh read rather than lose it.
+      if (forceRefresh) pendingNotificationRefreshRef.current = true;
+      return notificationRequestRef.current;
     }
+    const generation = notificationGenerationRef.current;
+    const request = (async () => {
+      try {
+        const res = forceRefresh ? await refreshNotifications() : await getMyNotifications();
+        if (generation !== notificationGenerationRef.current || res.unavailable) return;
+        if (Array.isArray(res.notifications)) {
+          lastNotificationReadRef.current = Date.now();
+          setNotifications(res.notifications);
+          setUnreadCount(res.unreadCount);
+        }
+      } catch (err) {
+        console.error("Failed to fetch notifications:", err);
+      }
+    })();
+    notificationRequestRef.current = request;
+    void request.finally(() => {
+      if (notificationRequestRef.current === request) {
+        notificationRequestRef.current = null;
+        if (pendingNotificationRefreshRef.current) {
+          pendingNotificationRefreshRef.current = false;
+          void readNotifications(true);
+        }
+      }
+    });
+    return request;
+  }, []);
+
+  const reconcileNotificationsAfterWrite = () => {
+    // A pre-mutation poll must not overwrite the newly updated read state.
+    notificationGenerationRef.current += 1;
+    notificationRequestRef.current = null;
+    pendingNotificationRefreshRef.current = false;
+    void fetchNotifications(true);
   };
 
   useEffect(() => {
+    notificationGenerationRef.current += 1;
+    notificationRequestRef.current = null;
+    pendingNotificationRefreshRef.current = false;
+    lastNotificationReadRef.current = 0;
+    setNotifications([]);
+    setUnreadCount(0);
+    if (!notificationOwner) return;
     // Initial fetch
     fetchNotifications();
 
@@ -93,6 +137,7 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
         bc.onmessage = (event) => {
           if (event?.data?.type === "NOTIFICATION_ASSIGNED") {
             fetchNotifications(true);
+            router.refresh();
           }
         };
       }
@@ -134,6 +179,10 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
             }
             if (parsed?.type === "NOTIFICATION") {
               fetchNotifications(true);
+              // Genuine remote writes invalidate this tab's ready route
+              // snapshots; routine notification reads must not do so.
+              router.refresh();
+              const isRTL = notificationLocaleRef.current;
               toast(
                 () => (
                   <div className="flex items-center gap-2">
@@ -165,11 +214,19 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
     window.addEventListener("focus", handleVisibility);
     document.addEventListener("visibilitychange", handleVisibility);
 
-    // 5. Fallback periodic polling every 5s
-    const interval = setInterval(() => fetchNotifications(false), 5000);
+    // SSE supplies immediate updates; reconcile healthy streams once a minute.
+    // Keep the existing 5s fallback when disconnected, and pause hidden tabs.
+    const interval = setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+      if (eventSource?.readyState === EventSource.OPEN && Date.now() - lastNotificationReadRef.current < 60_000) return;
+      void fetchNotifications();
+    }, 5000);
 
     return () => {
       isCancelled = true;
+      notificationGenerationRef.current += 1;
+      notificationRequestRef.current = null;
+      pendingNotificationRefreshRef.current = false;
       clearInterval(interval);
       if (expiryTimer) clearTimeout(expiryTimer);
       window.removeEventListener("mcit:notification_assigned", handleLocalAssignment);
@@ -186,7 +243,7 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
         } catch {}
       }
     };
-  }, [isRTL]);
+  }, [notificationOwner, fetchNotifications, router]);
 
   // Close dropdowns on click outside
   useEffect(() => {
@@ -342,6 +399,7 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
                       setNotifications((prev) =>
                         prev.map((n) => ({ ...n, read: true }))
                       );
+                      reconcileNotificationsAfterWrite();
                       toast.success(
                         isRTL
                           ? "تم تحديد جميع الإشعارات كمقروءة"
@@ -379,6 +437,7 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
                             item.id === n.id ? { ...item, read: true } : item
                           )
                         );
+                        reconcileNotificationsAfterWrite();
                         setShowNotifications(false);
                         router.push(n.link?.startsWith("/projects?project=") ? n.link : n.projectId ? `/projects?project=${n.projectId}` : "/projects");
                       }}

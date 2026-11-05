@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import IntentLink from "@/components/IntentLink";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useLanguage } from "@/context/language-context";
@@ -161,7 +162,7 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
                   : pathname === item.href || pathname.startsWith(item.href + "/");
 
               return (
-                <Link
+                <IntentLink
                   key={item.href}
                   href={item.href}
                   onClick={onClose}
@@ -172,7 +173,7 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
                 >
                   <Icon />
                   <span className="truncate">{item.label}</span>
-                </Link>
+                </IntentLink>
               );
             })}
           </nav>

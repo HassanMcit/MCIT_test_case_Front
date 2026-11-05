@@ -49,7 +49,7 @@ import { useLanguage } from "@/context/language-context";
 import type { TestCaseItem, TestCaseListResponse } from "./test-cases.interface";
 import type { ProjectApiItem } from "../projects/getProjects.action";
 import type { QualityApplication } from "../quality/quality.interface";
-import { deleteTestCase, getTestCases, updateTestCase } from "./test-cases.action";
+import { deleteTestCase, updateTestCase } from "./test-cases.action";
 import toast from "react-hot-toast";
 import { toLocalDateKey } from "@/lib/utils";
 import { getTeamsCallUrl } from "@/lib/teams";
@@ -122,17 +122,6 @@ export default function TestCasesTable({
     setItems(initialData.data || []);
   }, [initialData.data]);
 
-  useEffect(() => {
-    getTestCases({
-      projectId: initialProjectId,
-      limit: 1000,
-      _cv: String(Date.now()),
-    } as any).then((fresh) => {
-      if (Array.isArray(fresh?.data) && fresh.data.length > 0) {
-        setItems(fresh.data);
-      }
-    });
-  }, [initialProjectId]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
