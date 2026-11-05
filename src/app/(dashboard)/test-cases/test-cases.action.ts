@@ -94,7 +94,12 @@ export async function deleteTestCase(id: number): Promise<{ success: boolean; me
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      throw new Error(data.message || "فشل حذف حالة الاختبار");
+      return {
+        success: false,
+        message: Array.isArray(data.message)
+          ? data.message.join(" - ")
+          : data.message || "فشل حذف حالة الاختبار",
+      };
     }
 
     updateTag("test-cases");

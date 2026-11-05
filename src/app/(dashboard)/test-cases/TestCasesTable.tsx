@@ -457,9 +457,11 @@ export default function TestCasesTable({
       {
         loading: isRTL ? "جاري حذف حالة الاختبار..." : "Deleting test case...",
         success: isRTL ? "تم حذف حالة الاختبار بنجاح" : "Test case deleted successfully",
-        error: isRTL ? "فشل حذف حالة الاختبار" : "Failed to delete test case",
+        error: (error) => error instanceof Error && error.message
+          ? error.message
+          : isRTL ? "فشل حذف حالة الاختبار" : "Failed to delete test case",
       }
-    ).finally(() => {
+    ).catch(() => {}).finally(() => {
       setIsDeleting(false);
       setItemToDelete(null);
     });
