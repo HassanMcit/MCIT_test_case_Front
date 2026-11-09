@@ -644,6 +644,9 @@ test("notification focus/stream/polling coalesce; healthy streams poll less; old
         getMyNotifications: request,
         refreshNotifications: request,
       },
+      "@/lib/authenticated-event-source": {
+        AuthenticatedEventSource: FixtureEventSource,
+      },
     },
     {
       document,
@@ -652,7 +655,6 @@ test("notification focus/stream/polling coalesce; healthy streams poll less; old
         removeEventListener() {},
       },
       Date: { now: () => now },
-      EventSource: FixtureEventSource,
       setInterval: (fn) => {
         tick = fn;
         return 1;

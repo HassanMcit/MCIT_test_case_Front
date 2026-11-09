@@ -56,7 +56,7 @@ export async function addNewProject(data: {
   revalidatePath("/users");
 
   if (response.ok) {
-    recordSystemAuditLog({
+    await recordSystemAuditLog({
       action: "إضافة مشروع جديد",
       actionCategory: "PROJECTS",
       description: `إضافة مشروع جديد (${data.name}) - التطبيق: (${data.application || "العام"}) في بيئة (${data.environment || "production"})`,

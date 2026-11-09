@@ -385,18 +385,18 @@ export default function UsersClient({
       </div>
 
       {/* ── Users Table ────────────────────────────────────────── */}
-      <Card className="border-slate-200/80 shadow-xs overflow-hidden bg-white">
+      <Card className="border border-slate-200/80 shadow-xs rounded-2xl overflow-hidden bg-white">
         <div className="overflow-x-auto">
-          <table className="w-full text-xs sm:text-sm text-right rtl:text-right ltr:text-left border-collapse">
+          <table className="w-full min-w-[880px] text-xs sm:text-sm text-right rtl:text-right ltr:text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/80 text-slate-500 border-b border-slate-200/80 text-[11px] font-bold uppercase tracking-wider">
-                <th className="py-4 px-6">{t("users_col_id")}</th>
-                <th className="py-4 px-6">{t("users_col_user")}</th>
-                <th className="py-4 px-6">{t("users_col_role")}</th>
-                <th className="py-4 px-6 text-center">{t("users_col_projects")}</th>
-                <th className="py-4 px-6 text-center">{t("users_col_testcases")}</th>
-                <th className="py-4 px-6">{t("users_col_joined")}</th>
-                <th className="py-4 px-6 text-center">{t("users_col_actions")}</th>
+              <tr className="bg-slate-50/90 text-slate-500 border-b border-slate-200/80 text-[11px] font-bold uppercase tracking-wider select-none">
+                <th className="py-4 px-6 whitespace-nowrap w-36 text-start">{t("users_col_id")}</th>
+                <th className="py-4 px-6 whitespace-nowrap min-w-[240px] text-start">{t("users_col_user")}</th>
+                <th className="py-4 px-6 whitespace-nowrap text-start">{t("users_col_role")}</th>
+                <th className="py-4 px-6 whitespace-nowrap text-center">{t("users_col_projects")}</th>
+                <th className="py-4 px-6 whitespace-nowrap text-center">{t("users_col_testcases")}</th>
+                <th className="py-4 px-6 whitespace-nowrap text-start">{t("users_col_joined")}</th>
+                <th className="py-4 px-6 whitespace-nowrap text-center">{t("users_col_actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -415,32 +415,33 @@ export default function UsersClient({
                   return (
                     <tr
                       key={String(user.id)}
-                      className="hover:bg-slate-50/60 transition-colors group"
+                      className="hover:bg-slate-50/70 transition-colors group"
                     >
                       {/* Employee ID */}
-                      <td className="py-4 px-6 font-mono font-bold text-slate-700">
-                        <span className="px-2.5 py-1 rounded-md bg-slate-100 text-slate-800 border border-slate-200/80 text-xs">
-                          #{user.id}
+                      <td className="py-4 px-6 whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-100/90 hover:bg-slate-200/70 border border-slate-200 text-slate-800 font-mono text-xs font-bold tabular-nums shadow-2xs whitespace-nowrap shrink-0 transition-colors">
+                          <span className="text-slate-400 font-normal select-none">#</span>
+                          <span className="tracking-tight whitespace-nowrap">{user.id}</span>
                         </span>
                       </td>
 
                       {/* User Avatar, Name, Email */}
-                      <td className="py-4 px-6">
-                        <div className="flex items-center gap-3">
-                          <div className="relative w-9 h-9 rounded-full overflow-hidden bg-slate-100 ring-1 ring-slate-200/80 shrink-0">
+                      <td className="py-4 px-6 whitespace-nowrap">
+                        <div className="flex items-center gap-3.5 min-w-0">
+                          <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 ring-2 ring-slate-200/80 shadow-2xs shrink-0 flex items-center justify-center">
                             <Image
                               src={user.profileImage || user.photo || "/avatar.png"}
                               alt={user.name}
                               fill
-                              sizes="36px"
+                              sizes="40px"
                               className="object-cover"
                             />
                           </div>
                           <div className="flex flex-col min-w-0">
-                            <span className="font-bold text-[#0b1c30] truncate text-sm">
+                            <span className="font-bold text-slate-900 group-hover:text-[#00A2D2] transition-colors text-sm truncate" title={user.name}>
                               {user.name}
                             </span>
-                            <span className="text-xs text-slate-400 font-mono truncate">
+                            <span className="text-xs text-slate-400 font-mono truncate mt-0.5" title={user.email}>
                               {user.email}
                             </span>
                           </div>
@@ -448,58 +449,62 @@ export default function UsersClient({
                       </td>
 
                       {/* Role & Permissions Badge */}
-                      <td className="py-4 px-6">
+                      <td className="py-4 px-6 whitespace-nowrap">
                         {isAdmin ? (
-                          <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100 border-purple-200 gap-1 text-[11px] font-semibold py-0.5">
-                            <ShieldAlert className="w-3 h-3 text-purple-600" />
-                            {t("users_role_admin")}
+                          <Badge className="bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 gap-1.5 text-xs font-bold py-1 px-3 rounded-full shadow-2xs whitespace-nowrap shrink-0">
+                            <ShieldAlert className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                            <span>{t("users_role_admin")}</span>
                           </Badge>
                         ) : isTester ? (
-                          <Badge className="bg-teal-100 text-teal-800 hover:bg-teal-100 border-teal-200 gap-1 text-[11px] font-semibold py-0.5">
-                            <FileCheck2 className="w-3 h-3 text-teal-600" />
-                            {t("users_role_tester")}
+                          <Badge className="bg-sky-50 text-[#006685] hover:bg-sky-100 border border-sky-200 gap-1.5 text-xs font-bold py-1 px-3 rounded-full shadow-2xs whitespace-nowrap shrink-0">
+                            <FileCheck2 className="w-3.5 h-3.5 text-[#00A2D2] shrink-0" />
+                            <span>{t("users_role_tester")}</span>
                           </Badge>
                         ) : (
-                          <Badge className="bg-slate-100 text-slate-700 hover:bg-slate-100 border-slate-200 gap-1 text-[11px] font-semibold py-0.5">
-                            <UserCheck className="w-3 h-3 text-slate-500" />
-                            {t("users_role_user")}
+                          <Badge className="bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200 gap-1.5 text-xs font-bold py-1 px-3 rounded-full shadow-2xs whitespace-nowrap shrink-0">
+                            <UserCheck className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                            <span>{t("users_role_user")}</span>
                           </Badge>
                         )}
                       </td>
 
                       {/* Assigned Projects */}
-                      <td className="py-4 px-6 text-center">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200/60">
-                          <FolderGit2 className="w-3 h-3 text-blue-500" />
-                          {user._count?.assignedProjects || user.assignedProjects?.length || 0}
+                      <td className="py-4 px-6 text-center whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-sky-50/80 text-[#006685] border border-sky-200/70 shadow-2xs whitespace-nowrap shrink-0">
+                          <FolderGit2 className="w-3.5 h-3.5 text-[#00A2D2] shrink-0" />
+                          <span className="font-mono font-bold tabular-nums">
+                            {user._count?.assignedProjects || user.assignedProjects?.length || 0}
+                          </span>
+                          <span className="text-[10px] text-[#006685]/75 font-medium">
+                            {isRTL ? "مشاريع" : "projects"}
+                          </span>
                         </span>
                       </td>
 
                       {/* Test Cases Count */}
-                      <td className="py-4 px-6 text-center">
-                        <span className="font-mono font-bold text-slate-600 text-xs">
+                      <td className="py-4 px-6 text-center whitespace-nowrap">
+                        <span className="inline-flex items-center justify-center min-w-[2.75rem] px-2.5 py-1 rounded-lg font-mono text-xs font-bold bg-slate-100/90 text-slate-700 border border-slate-200/80 tabular-nums shadow-2xs whitespace-nowrap shrink-0">
                           {user._count?.testCases || 0}
                         </span>
                       </td>
 
                       {/* Joined Date */}
-                      <td className="py-4 px-6 text-slate-500 text-xs whitespace-nowrap">
-                        <div className="flex items-center gap-1.5">
-                          <Calendar className="w-3 h-3 text-slate-400" />
-                          <span>{formatDate(user.createdAt)}</span>
+                      <td className="py-4 px-6 whitespace-nowrap">
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50/80 border border-slate-200/60 text-slate-500 text-xs font-medium whitespace-nowrap shrink-0">
+                          <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                          <span className="whitespace-nowrap">{formatDate(user.createdAt)}</span>
                         </div>
                       </td>
 
                       {/* Actions: Microsoft Teams Call + Delete */}
-                      <td className="py-4 px-6 text-center">
-                        <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                      <td className="py-4 px-6 text-center whitespace-nowrap">
+                        <div className="flex items-center justify-center gap-2 whitespace-nowrap">
                           {user.email && (
-                            /* Microsoft Teams Call Only */
                             <a
                               href={getTeamsCallUrl(user.email)}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-[#eff0fc] hover:bg-[#5059c9] text-[#5059c9] hover:text-white border border-[#d6d8f8] hover:border-[#5059c9] transition-all shadow-2xs"
+                              className="inline-flex items-center justify-center h-8.5 w-8.5 rounded-xl bg-[#eff0fc] hover:bg-[#5059c9] text-[#5059c9] hover:text-white border border-[#d6d8f8] hover:border-[#5059c9] transition-all shadow-2xs cursor-pointer shrink-0"
                               title={
                                 isRTL
                                   ? `اتصال عبر Microsoft Teams مع ${user.name}`
@@ -511,22 +516,20 @@ export default function UsersClient({
                           )}
 
                           {isAdmin ? (
-                            // STRICT SECURITY: Admin is protected and CANNOT be deleted
-                            <div className="relative group/tooltip inline-block">
+                            <div className="relative group/tooltip inline-block shrink-0">
                               <Button
                                 disabled
                                 size="sm"
-                                className="h-8 px-2.5 bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed rounded-lg opacity-70 gap-1 text-xs"
+                                className="h-8.5 px-3 bg-slate-100 text-slate-400 border border-slate-200/90 cursor-not-allowed rounded-xl opacity-75 gap-1.5 text-xs font-semibold shadow-2xs"
                               >
-                                <Lock className="w-3.5 h-3.5 text-slate-400" />
-                                <span className="text-[11px]">
+                                <Lock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                <span className="text-[11px] whitespace-nowrap">
                                   {isRTL ? "محمي" : "Locked"}
                                 </span>
                               </Button>
-                              {/* Hover tooltip explaining admin protection */}
                               <div
                                 className={cn(
-                                  "absolute bottom-full mb-2 hidden group-hover/tooltip:block z-50 w-56 p-2 bg-slate-900 text-white text-[11px] rounded-lg shadow-lg text-center leading-tight pointer-events-none",
+                                  "absolute bottom-full mb-2 hidden group-hover/tooltip:block z-50 w-56 p-2 bg-slate-900 text-white text-[11px] rounded-lg shadow-lg text-center leading-tight pointer-events-none whitespace-normal",
                                   isRTL ? "right-1/2 translate-x-1/2" : "left-1/2 -translate-x-1/2"
                                 )}
                               >
@@ -535,14 +538,13 @@ export default function UsersClient({
                               </div>
                             </div>
                           ) : (
-                            // RED DELETE BUTTON for regular users & testers
                             <Button
                               type="button"
                               onClick={() => initiateDelete(user)}
-                              className="h-8 px-2.5 bg-red-50 hover:bg-red-600 text-red-600 hover:text-white border border-red-200 hover:border-red-600 transition-all rounded-lg cursor-pointer shadow-xs gap-1 text-xs font-semibold"
+                              className="h-8.5 px-3 bg-red-50 hover:bg-red-600 text-red-600 hover:text-white border border-red-200 hover:border-red-600 transition-all rounded-xl cursor-pointer shadow-2xs gap-1.5 text-xs font-semibold whitespace-nowrap shrink-0"
                               title={t("users_delete_btn")}
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
+                              <Trash2 className="w-3.5 h-3.5 shrink-0" />
                               <span>{t("users_delete_btn")}</span>
                             </Button>
                           )}

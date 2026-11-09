@@ -42,7 +42,7 @@ export async function deleteProject(id: number) {
     revalidatePath("/dashboard");
     revalidatePath("/users");
 
-    recordSystemAuditLog({
+    await recordSystemAuditLog({
       action: "حذف مشروع",
       actionCategory: "PROJECTS",
       description: `حذف المشروع نهائياً #${id}`,

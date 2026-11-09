@@ -42,7 +42,7 @@ function clearAuthCookies(res: NextResponse) {
   return res;
 }
 
-export default async function proxy(req: NextRequest) {
+export default async function middleware(req: NextRequest) {
   const pathName = req.nextUrl.pathname;
   const isAuth = pathName === "/login";
 

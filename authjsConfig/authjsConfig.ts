@@ -3,6 +3,61 @@ import { NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { pool } from "@/lib/db";
 import * as crypto from "node:crypto";
+import { isAllowedAccountEmail } from "@/lib/account-email";
+
+export function sanitizeEnvValue(raw?: string | null): string {
+  if (typeof raw !== "string") return "";
+  let value = raw.trim();
+  // Also accept pasted dotenv assignments (including an optional `export`).
+  // Process environments normally contain only the value, but local launchers
+  // and platform dashboards sometimes preserve the KEY= wrapper.
+  value = value.replace(/^(?:export\s+)?(?:AUTH_URL|NEXTAUTH_URL|NEXT_PUBLIC_BASE_URL)\s*=\s*/i, "");
+  while (
+    value.length >= 2 &&
+    ((value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'")))
+  ) {
+    value = value.slice(1, -1).trim();
+  }
+  return value;
+}
+
+export function normalizeOriginUrl(raw?: string | null): string | undefined {
+  const cleaned = sanitizeEnvValue(raw).replace(/\/+$/, "");
+  if (!cleaned) return undefined;
+  try {
+    const parsed = new URL(cleaned);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return undefined;
+    }
+    const pathPart =
+      parsed.pathname && parsed.pathname !== "/"
+        ? parsed.pathname.replace(/\/+$/, "")
+        : "";
+    return `${parsed.origin}${pathPart}`;
+  } catch {
+    return undefined;
+  }
+}
+
+export function sanitizeAuthProcessEnv(
+  env: Record<string, string | undefined> = process.env,
+): void {
+  for (const key of ["AUTH_URL", "NEXTAUTH_URL", "NEXT_PUBLIC_BASE_URL"] as const) {
+    const raw = env[key];
+    if (typeof raw !== "string") continue;
+    const normalized = normalizeOriginUrl(raw);
+    if (normalized) {
+      env[key] = normalized;
+    } else if (key === "AUTH_URL" || key === "NEXTAUTH_URL") {
+      delete env[key];
+    } else {
+      env[key] = sanitizeEnvValue(raw).replace(/\/+$/, "");
+    }
+  }
+}
+
+sanitizeAuthProcessEnv();
 
 declare module "next-auth" {
   interface User {
@@ -26,6 +81,7 @@ declare module "next-auth" {
 }
 
 export const authConfig: NextAuthConfig = {
+  trustHost: true,
   session: {
     strategy: "jwt",
     maxAge: 60 * 60 * 24 * 7,
@@ -46,7 +102,17 @@ export const authConfig: NextAuthConfig = {
         userAgent: { label: "User Agent", type: "text" },
       },
       authorize: async function (credential) {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/login`, {
+        if (!isAllowedAccountEmail(credential.email)) return null;
+
+        sanitizeAuthProcessEnv();
+        const baseUrl =
+          normalizeOriginUrl(process.env.NEXT_PUBLIC_BASE_URL) ||
+          sanitizeEnvValue(process.env.NEXT_PUBLIC_BASE_URL).replace(/\/+$/, "");
+        if (!baseUrl) {
+          return null;
+        }
+
+        const response = await fetch(`${baseUrl}/api/auth/login`, {
           method: "POST",
           cache: "no-store",
           headers: {
@@ -65,27 +131,48 @@ export const authConfig: NextAuthConfig = {
           access_token,
         } = data;
 
-        const sessionId = (data as any).sessionId || crypto.randomUUID();
+        const backendSessionId = (data as any).sessionId;
+        const sessionId = backendSessionId || crypto.randomUUID();
         const clientIp = (credential.clientIp as string) || "Unknown IP";
         const macAddress = (credential.macAddress as string) || "02:00:00:00:00:01";
         const deviceInfo = (credential.deviceInfo as string) || "Browser";
         const location = (credential.location as string) || "Cairo, Egypt";
         const userAgent = (credential.userAgent as string) || "";
 
-        // Direct DB Persistence for Sessions and Audit Trail
-        try {
-          await pool.query(
-            `INSERT INTO user_login_sessions (
+        // The backend login endpoint owns session creation when it returns a
+        // sessionId. Only older backend responses without one need a local row.
+        if (!backendSessionId) {
+          try {
+            await pool.query(
+              `INSERT INTO user_login_sessions (
               "sessionId", "userId", "userName", email, ip, "macAddress", "deviceInfo", location, "userAgent", "isActive", "createdAt", "lastSeenAt"
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, TRUE, NOW(), NOW())`,
-            [sessionId, id, name, email, clientIp, macAddress, deviceInfo, location, userAgent]
-          );
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, TRUE, NOW(), NOW())
+            ON CONFLICT ("sessionId") DO UPDATE SET
+              "lastSeenAt" = NOW(),
+              ip = COALESCE(NULLIF(EXCLUDED.ip, 'Unknown IP'), user_login_sessions.ip),
+              "macAddress" = COALESCE(NULLIF(EXCLUDED."macAddress", '02:00:00:00:00:01'), user_login_sessions."macAddress"),
+              "deviceInfo" = COALESCE(NULLIF(EXCLUDED."deviceInfo", 'Browser'), user_login_sessions."deviceInfo"),
+              location = COALESCE(NULLIF(EXCLUDED.location, 'Cairo, Egypt'), user_login_sessions.location),
+              "userAgent" = COALESCE(NULLIF(EXCLUDED."userAgent", ''), user_login_sessions."userAgent")
+            WHERE user_login_sessions."userId" = EXCLUDED."userId"
+              AND user_login_sessions."isActive" = TRUE`,
+              [sessionId, id, name, email, clientIp, macAddress, deviceInfo, location, userAgent]
+            );
+          } catch (dbErr) {
+            console.error("Error persisting login session:", dbErr);
+          }
+        }
 
+        try {
           await pool.query(
             `UPDATE users SET "minTokenIat" = 0 WHERE id = $1`,
             [id]
           );
+        } catch (dbErr) {
+          console.error("Error resetting user token cutoff:", dbErr);
+        }
 
+        try {
           await pool.query(
             `INSERT INTO audit_logs (
               "userId", "userName", email, role, action, "actionCategory",
@@ -113,7 +200,7 @@ export const authConfig: NextAuthConfig = {
             ]
           );
         } catch (dbErr) {
-          console.error("Error persisting login session and audit log:", dbErr);
+          console.error("Error persisting login audit log:", dbErr);
         }
 
         return { name, email, image: photo, access_token, role, id: String(id), sid: sessionId };
@@ -196,7 +283,11 @@ export const authConfig: NextAuthConfig = {
             await pool.query(
               `INSERT INTO user_login_sessions (
                 "sessionId", "userId", "userName", email, ip, "macAddress", "deviceInfo", location, "userAgent", "isActive", "createdAt", "lastSeenAt"
-              ) VALUES ($1, $2, $3, $4, '41.179.246.45', '02:00:47:92:21:53', 'Windows 10/11 - Browser', 'Cairo, Cairo Governorate, Egypt (Ministry of Communications and Information Technology)', 'Active Session', TRUE, NOW(), NOW())`,
+              ) VALUES ($1, $2, $3, $4, '41.179.246.45', '02:00:47:92:21:53', 'Windows 10/11 - Browser', 'Cairo, Cairo Governorate, Egypt (Ministry of Communications and Information Technology)', 'Active Session', TRUE, NOW(), NOW())
+              ON CONFLICT ("sessionId") DO UPDATE SET
+                "lastSeenAt" = NOW()
+              WHERE user_login_sessions."userId" = EXCLUDED."userId"
+                AND user_login_sessions."isActive" = TRUE`,
               [newSid, userId, session.user.name || "MCIT User", session.user.email || ""]
             );
           } else {

@@ -55,7 +55,7 @@ export async function deleteThisUser(id: number) {
   revalidatePath("/assign-projects");
   revalidatePath("/dashboard");
 
-  recordSystemAuditLog({
+  await recordSystemAuditLog({
     action: "حذف مستخدم",
     actionCategory: "USER_MANAGEMENT",
     description: `حذف المستخدم #${id} نهائياً من النظام`,

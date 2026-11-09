@@ -1,0 +1,66 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "mcit-test-case-front-staging",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-11-06",
+  "compatibility_flags": [
+    "nodejs_compat",
+    "global_fetch_strictly_public"
+  ],
+  "workers_dev": true,
+  "preview_urls": false,
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "vars": {
+    "MCIT_CLOUDFLARE": "true",
+    "NEXT_PUBLIC_APP_ENV": "staging",
+    "AUTH_TRUST_HOST": "true",
+    "AUTH_URL": "https://mcit-test-case-front-staging.hassan-a173784.workers.dev",
+    "NEXT_PUBLIC_BASE_URL": "https://mcit-test-case-backend-staging.onrender.com"
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "mcit-test-case-front-staging"
+    }
+  ],
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "05ed75e5fe7f4bfd8a1ee3caaf41874d",
+      "localConnectionString": "postgresql://local:local@127.0.0.1:1/local"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "NEXT_INC_CACHE_KV",
+      "id": "982fb5e2076049db927135af01ee8a21"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "NEXT_CACHE_DO_QUEUE",
+        "class_name": "DOQueueHandler"
+      },
+      {
+        "name": "NEXT_TAG_CACHE_DO_SHARDED",
+        "class_name": "DOShardedTagCache"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "DOQueueHandler",
+        "DOShardedTagCache"
+      ]
+    }
+  ],
+  "images": {
+    "binding": "IMAGES"
+  }
+}

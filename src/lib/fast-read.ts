@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import { scopedCache as unstable_cache } from "@/lib/scoped-cache";
 import { pool } from "@/lib/db";
 import type { ProjectApiItem } from "@/app/(dashboard)/projects/getProjects.action";
@@ -20,6 +21,7 @@ export async function raceBackendFetch(
 ): Promise<Response | null> {
   // Prevent unhandled rejection if fetch fails later in background
   const safeFetch = fetchPromise.catch(() => null);
+  if (process.env.MCIT_CLOUDFLARE === "true") after(async () => { await safeFetch; });
   let timer: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<null>((resolve) => {
     timer = setTimeout(() => resolve(null), timeoutMs);

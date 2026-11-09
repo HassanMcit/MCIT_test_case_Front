@@ -4,14 +4,14 @@ const {
   readGarageWorkbook,
   HEADERS,
 } = require("../scripts/lib/garage-workbook.cjs");
-const {
-  garageRows,
-} = require("../backend/dist/test-cases/garage-import.service");
 // Optional read-only regression against the user's workbook. Never contacts a database.
 void test(
   "real workbook preserves every source column, IDs, whitespace and the planned timeline",
   { skip: !process.env.GARAGE_WORKBOOK },
   () => {
+    // The backend is intentionally absent from standalone frontend checkouts.
+    // Load this optional regression dependency only when its workbook is supplied.
+    const { garageRows } = require("../backend/dist/test-cases/garage-import.service");
     const rows = readGarageWorkbook(process.env.GARAGE_WORKBOOK);
     const mapped = garageRows({ dryRun: true, rows });
     assert.equal(mapped.length, 51);

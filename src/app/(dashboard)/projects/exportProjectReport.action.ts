@@ -234,7 +234,7 @@ export async function exportProjectExcelAction(params: {
       .trim();
     const fileName = `QA_Report_${cleanProj}_${fromDate}_to_${toDate}.xlsx`;
 
-    recordSystemAuditLog({
+    await recordSystemAuditLog({
       action: "تصدير تقرير إكسيل للمشروع",
       actionCategory: "PROJECTS",
       description: `تصدير تقرير Excel للمشروع (${projectName}) عن الفترة من ${fromDate} إلى ${toDate} (${built.totalCount} حالة اختبار، ${built.bugsCount} عيب)`,

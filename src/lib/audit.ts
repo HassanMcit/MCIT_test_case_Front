@@ -104,7 +104,11 @@ export async function touchUserSessionInDb(user: {
       await pool.query(
         `INSERT INTO user_login_sessions (
           "sessionId", "userId", "userName", email, ip, "macAddress", "deviceInfo", location, "userAgent", "isActive", "createdAt", "lastSeenAt"
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, TRUE, NOW(), NOW())`,
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, TRUE, NOW(), NOW())
+        ON CONFLICT ("sessionId") DO UPDATE SET
+          "lastSeenAt" = NOW()
+        WHERE user_login_sessions."userId" = EXCLUDED."userId"
+          AND user_login_sessions."isActive" = TRUE`,
         [sessionId, user.id, user.name || "MCIT User", user.email || "", ip, mac, deviceInfo, location, ua]
       );
       return {

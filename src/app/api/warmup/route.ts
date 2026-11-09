@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -7,7 +7,12 @@ export async function GET() {
   const backendUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
   // 1. Warm PostgreSQL pool in parallel (non-blocking if slow)
-  pool.query("SELECT 1").catch(() => {});
+  after(() =>
+    pool
+      .query("SELECT 1")
+      .then(() => {})
+      .catch(() => {}),
+  );
 
   // 2. Wake up Render backend in the background; wait at most 1200ms before returning
   let backendAwake = false;
@@ -20,13 +25,14 @@ export async function GET() {
         fetch(backendUrl, {
           method: "GET",
           cache: "no-store",
-        })
+        }),
       )
       .then(() => {
         backendAwake = true;
       })
       .catch(() => {});
 
+    after(() => pingPromise);
     await Promise.race([
       pingPromise,
       new Promise((resolve) => setTimeout(resolve, 1200)),
@@ -35,6 +41,6 @@ export async function GET() {
 
   return NextResponse.json(
     { ok: true, status: backendAwake ? "awake" : "warming" },
-    { status: 200 }
+    { status: 200 },
   );
 }

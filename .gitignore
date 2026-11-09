@@ -42,3 +42,10 @@ yarn-error.log*
 next-env.d.ts
 .qa-test-tools/
 /scratch/
+
+# Cloudflare local build and secrets
+.open-next/
+.wrangler/
+.cloudflare-dry-run/
+.cloudflare-prod-dry-run/
+.dev.vars*

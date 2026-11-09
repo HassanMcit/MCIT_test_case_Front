@@ -23,9 +23,15 @@ export async function handleUserChangePassword(
     };
   }
 
-  const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_URL?.trim() ||
-    "https://mcit-test-case-backend.onrender.com";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.trim()?.replace(/\/+$/, "");
+  if (!baseUrl) {
+    return {
+      success: false,
+      status: 503,
+      message: "حدث خطأ في الاتصال بالخادم، يرجى المحاولة لاحقاً",
+      messageEn: "Backend service is not configured.",
+    };
+  }
 
   try {
     const res = await appFetch(`${baseUrl}/api/auth/change-password`, {
@@ -50,7 +56,7 @@ export async function handleUserChangePassword(
       revalidatePath("/change-password");
       revalidatePath("/dashboard");
 
-      recordSystemAuditLog({
+      await recordSystemAuditLog({
         action: "تغيير كلمة المرور",
         actionCategory: "SECURITY",
         description: "تم تغيير كلمة المرور بنجاح للحساب",

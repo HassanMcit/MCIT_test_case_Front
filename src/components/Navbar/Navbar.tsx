@@ -29,6 +29,7 @@ import {
   type AppNotification,
 } from "./notifications.action";
 import toast from "react-hot-toast";
+import { AuthenticatedEventSource } from "@/lib/authenticated-event-source";
 
 interface NavbarProps {
   onToggleSidebar?: () => void;
@@ -145,7 +146,7 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
 
     // 3. Connect to real-time Server-Sent Events (SSE) via same-origin proxy (no CORS issues)
     //    and schedule exact timer for JWT expiration
-    let eventSource: EventSource | null = null;
+    let eventSource: AuthenticatedEventSource | null = null;
     let expiryTimer: ReturnType<typeof setTimeout> | null = null;
     let isCancelled = false;
 
@@ -168,8 +169,8 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
       } catch {}
 
       try {
-        const sseUrl = `/api/users/notifications/stream?token=${encodeURIComponent(token)}`;
-        eventSource = new EventSource(sseUrl);
+        const sseUrl = "/api/users/notifications/stream";
+        eventSource = new AuthenticatedEventSource(sseUrl, token);
 
         eventSource.onmessage = (e) => {
           try {
@@ -218,7 +219,7 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
     // Keep the existing 5s fallback when disconnected, and pause hidden tabs.
     const interval = setInterval(() => {
       if (document.visibilityState !== "visible") return;
-      if (eventSource?.readyState === EventSource.OPEN && Date.now() - lastNotificationReadRef.current < 60_000) return;
+      if (eventSource?.readyState === AuthenticatedEventSource.OPEN && Date.now() - lastNotificationReadRef.current < 60_000) return;
       void fetchNotifications();
     }, 5000);
 

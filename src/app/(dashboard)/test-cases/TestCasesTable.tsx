@@ -514,11 +514,28 @@ export default function TestCasesTable({
     if (!editingItem) return;
 
     setIsUpdating(true);
-    const cleanedSteps = editSteps.filter((s) => s.trim() !== "");
-    const payload = {
-      ...editFormData,
+    const cleanedSteps = editSteps.map((s) => s.trim()).filter(Boolean);
+    const payload: Partial<TestCaseItem> = {
+      module: editFormData.module ? editFormData.module.trim() : "",
+      pageName: editFormData.pageName ? editFormData.pageName.trim() : null,
+      scenario: editFormData.scenario ? editFormData.scenario.trim() : "",
+      preConditions: editFormData.preConditions ? editFormData.preConditions.trim() : null,
+      expectedResult: editFormData.expectedResult ? editFormData.expectedResult.trim() : "",
+      actualResult: editFormData.actualResult ? editFormData.actualResult.trim() : null,
+      priority: editFormData.priority,
+      status: editFormData.status,
+      severity: editFormData.status === "failed" ? editFormData.severity || "medium" : undefined,
+      notes: editFormData.notes ? editFormData.notes.trim() : null,
       steps: cleanedSteps.length > 0 ? cleanedSteps : editSteps,
     };
+
+    if (
+      editFormData.projectId !== undefined &&
+      editFormData.projectId !== editingItem.projectId &&
+      Number(editFormData.projectId) > 0
+    ) {
+      payload.projectId = Number(editFormData.projectId);
+    }
     const targetId = editingItem.id;
 
     const nowIso = new Date().toISOString();
@@ -561,9 +578,12 @@ export default function TestCasesTable({
       {
         loading: isRTL ? "جاري حفظ التعديلات..." : "Saving changes...",
         success: isRTL ? "تم تحديث حالة الاختبار بنجاح" : "Test case updated successfully",
-        error: isRTL ? "فشل تحديث حالة الاختبار" : "Failed to update test case",
+        error: (error: any) =>
+          error?.message
+            ? error.message
+            : isRTL ? "فشل تحديث حالة الاختبار" : "Failed to update test case",
       }
-    ).finally(() => {
+    ).catch(() => {}).finally(() => {
       setIsUpdating(false);
     });
   };
@@ -1877,20 +1897,11 @@ export default function TestCasesTable({
                   <Select
                     value={editFormData.status || "pending"}
                     onValueChange={(val: any) =>
-                      setEditFormData((prev) => {
-                        let nextTestId = prev.testId;
-                        if (val === "failed" && nextTestId?.startsWith("TC-")) {
-                          nextTestId = nextTestId.replace(/^TC-/, "BUG-");
-                        } else if (val !== "failed" && nextTestId?.startsWith("BUG-")) {
-                          nextTestId = nextTestId.replace(/^BUG-/, "TC-");
-                        }
-                        return {
-                          ...prev,
-                          status: val,
-                          testId: nextTestId,
-                          severity: val === "failed" ? (prev.severity || "medium") : prev.severity,
-                        };
-                      })
+                      setEditFormData((prev) => ({
+                        ...prev,
+                        status: val,
+                        severity: val === "failed" ? (prev.severity || "medium") : prev.severity,
+                      }))
                     }
                   >
                     <SelectTrigger className="h-10 text-[13px] bg-[#f8f9ff] border-slate-200 rounded-xl">

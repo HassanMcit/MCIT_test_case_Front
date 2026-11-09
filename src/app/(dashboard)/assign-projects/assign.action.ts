@@ -57,7 +57,7 @@ export async function assignProjectToUser(userId: number, projectId: number) {
     revalidatePath("/dashboard");
     revalidatePath("/users");
 
-    recordSystemAuditLog({
+    await recordSystemAuditLog({
       action: "إسناد مشروع لمستخدم",
       actionCategory: "PROJECTS",
       description: `إسناد المستخدم #${userId} إلى المشروع #${projectId}`,
@@ -99,7 +99,7 @@ export async function unassignProjectFromUser(userId: number, projectId: number)
     revalidatePath("/dashboard");
     revalidatePath("/users");
 
-    recordSystemAuditLog({
+    await recordSystemAuditLog({
       action: "إلغاء إسناد مشروع",
       actionCategory: "PROJECTS",
       description: `إلغاء إسناد المشروع #${projectId} من المستخدم #${userId}`,

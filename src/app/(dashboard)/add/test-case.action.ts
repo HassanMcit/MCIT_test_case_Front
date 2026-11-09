@@ -66,7 +66,7 @@ export async function addNewTestCase(data: TestCaseFormValues) {
       revalidatePath("/users");
 
       // Audit Log
-      recordSystemAuditLog({
+      await recordSystemAuditLog({
         action: "إضافة حالة اختبار جديدة",
         actionCategory: "TEST_CASES",
         description: `إضافة حالة اختبار برقم (${safePayload.testId || "جديد"}) في موديول (${safePayload.module || "العام"}) - الحالة: ${safePayload.status}`,

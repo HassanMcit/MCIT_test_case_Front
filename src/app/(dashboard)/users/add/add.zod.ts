@@ -1,4 +1,5 @@
 import * as zod from "zod";
+import { accountEmailPattern, allowsSyntheticEmails } from "@/lib/account-email";
 
 type TranslationFn = (key: string) => string;
 type Language = "ar" | "en";
@@ -23,6 +24,10 @@ const translations: Record<string, Record<Language, string>> = {
   error_email_required: {
     ar: "البريد الإلكتروني مطلوب",
     en: "Email is required",
+  },
+  error_email_regex_staging: {
+    en: "Use a ministry email (@mcit.gov.eg) or a staging test email (@synthetic.local)",
+    ar: "استخدم بريد الوزارة (@mcit.gov.eg) أو بريد اختبار بيئة التجربة (@synthetic.local)",
   },
   error_email_regex: {
     ar: "يجب استخدام البريد الإلكتروني الرسمي التابع للوزارة (@mcit.gov.eg)",
@@ -89,8 +94,8 @@ export const getAddUserSchema = (t?: TranslationFn | Language) =>
     email: zod
       .string(resolveMessage("error_email_required", t))
       .regex(
-        /^[a-zA-Z0-9._%+-]+@mcit\.gov\.eg$/,
-        resolveMessage("error_email_regex", t)
+        accountEmailPattern(),
+        resolveMessage(allowsSyntheticEmails() ? "error_email_regex_staging" : "error_email_regex", t)
       ),
 
     password: zod

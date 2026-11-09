@@ -98,6 +98,10 @@ const translations: Record<string, Record<Language, string>> = {
     ar: "نظرة عامة على أتمتة الاختبارات، والتشغيل اليدوي، ومؤشرات الأخطاء لمنصة مصر الرقمية",
   },
 
+  error_email_regex_staging: {
+    en: "Use a ministry email (@mcit.gov.eg) or a staging test email (@synthetic.local)",
+    ar: "استخدم بريد الوزارة (@mcit.gov.eg) أو بريد اختبار بيئة التجربة (@synthetic.local)",
+  },
   error_email_regex: {
   en: "Please use the official ministry email (@mcit.gov.eg)",
   ar: "يجب استخدام البريد الإلكتروني الرسمي التابع للوزارة (@mcit.gov.eg)",

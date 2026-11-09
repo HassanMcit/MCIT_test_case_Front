@@ -294,7 +294,7 @@ export async function submitQualityAssessment(payload: {
   revalidatePath("/test-cases");
   revalidatePath("/dashboard");
 
-  recordSystemAuditLog({
+  await recordSystemAuditLog({
     action: "فحص جودة تطبيق",
     actionCategory: "QUALITY",
     description: `فحص جودة التطبيق #${appId} - نسبة النجاح: ${performanceScore}% - الحالة: ${status}`,
@@ -353,7 +353,7 @@ export async function registerQualityApplication(dto: CreateQualityAppDto) {
   revalidatePath("/test-cases");
   revalidatePath("/dashboard");
 
-  recordSystemAuditLog({
+  await recordSystemAuditLog({
     action: "إضافة تطبيق جودة جديد",
     actionCategory: "QUALITY",
     description: `إضافة تطبيق جودة (${dto.name}) لمصفوفة المراقبة`,
@@ -454,7 +454,7 @@ export async function updateQualityApplication(
   revalidatePath("/test-cases");
   revalidatePath("/dashboard");
 
-  recordSystemAuditLog({
+  await recordSystemAuditLog({
     action: "تعديل تطبيق جودة",
     actionCategory: "QUALITY",
     description: `تعديل بيانات تطبيق الجودة #${id} (${data.name || ""})`,
@@ -487,7 +487,7 @@ export async function deleteQualityApplication(id: number) {
   revalidatePath("/test-cases");
   revalidatePath("/dashboard");
 
-  recordSystemAuditLog({
+  await recordSystemAuditLog({
     action: "حذف تطبيق جودة",
     actionCategory: "QUALITY",
     description: `حذف تطبيق الجودة #${id}`,

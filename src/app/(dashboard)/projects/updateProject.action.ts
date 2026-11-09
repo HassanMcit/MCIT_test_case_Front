@@ -67,7 +67,7 @@ export async function updateProject(
     revalidatePath("/dashboard");
     revalidatePath("/users");
 
-    recordSystemAuditLog({
+    await recordSystemAuditLog({
       action: "تعديل مشروع",
       actionCategory: "PROJECTS",
       description: `تعديل بيانات المشروع #${id} (${data.name || ""})`,
