@@ -7,6 +7,7 @@ import { revalidatePath, updateTag } from "next/cache";
 import type { TestCaseItem, TestCaseListResponse, TestCaseQueryParams } from "./test-cases.interface";
 import { recordSystemAuditLog } from "@/lib/audit";
 import { queryTestCasesFromDb, raceBackendFetch } from "@/lib/fast-read";
+import { pool } from "@/lib/db";
 
 export async function getTestCases(params?: TestCaseQueryParams): Promise<TestCaseListResponse> {
   try {
@@ -144,19 +145,22 @@ export async function updateTestCase(
     }
 
     const payload: Record<string, any> = {};
-    if (data.module !== undefined && data.module !== null) {
-      payload.module = String(data.module).slice(0, 200).trim();
+    if (data.testId !== undefined && data.testId !== null) {
+      payload.testId = String(data.testId).trim();
     }
-    if (data.pageName !== undefined) {
-      payload.pageName = data.pageName ? String(data.pageName).trim() : null;
+    if (data.module !== undefined && data.module !== null) {
+      payload.module = String(data.module).slice(0, 50).trim();
+    }
+    if (data.pageName !== undefined && data.pageName !== null) {
+      payload.pageName = String(data.pageName).trim();
     }
     if (data.scenario !== undefined && data.scenario !== null) {
       payload.scenario = String(data.scenario).trim();
     }
-    if (data.preConditions !== undefined) {
-      payload.preConditions = data.preConditions ? String(data.preConditions).trim() : null;
+    if (data.preConditions !== undefined && data.preConditions !== null) {
+      payload.preConditions = String(data.preConditions).trim();
     }
-    if (data.steps !== undefined) {
+    if (data.steps !== undefined && data.steps !== null) {
       payload.steps = Array.isArray(data.steps)
         ? data.steps
             .map((s) => (typeof s === "string" ? s.trim() : String(s)))
@@ -166,14 +170,15 @@ export async function updateTestCase(
     if (data.expectedResult !== undefined && data.expectedResult !== null) {
       payload.expectedResult = String(data.expectedResult).trim();
     }
-    if (data.actualResult !== undefined) {
-      payload.actualResult = data.actualResult ? String(data.actualResult).trim() : null;
+    if (data.actualResult !== undefined && data.actualResult !== null) {
+      payload.actualResult = String(data.actualResult).trim();
     }
-    if (data.priority !== undefined && ["critical", "high", "medium", "low"].includes(data.priority)) {
+    if (data.priority !== undefined && data.priority !== null && ["critical", "high", "medium", "low"].includes(data.priority)) {
       payload.priority = data.priority;
     }
     if (
       data.status !== undefined &&
+      data.status !== null &&
       ["passed", "failed", "pending", "blocked", "skipped"].includes(data.status)
     ) {
       payload.status = data.status;
@@ -185,14 +190,11 @@ export async function updateTestCase(
     ) {
       payload.severity = data.severity;
     }
-    if (data.notes !== undefined) {
-      payload.notes = data.notes ? String(data.notes).trim() : null;
+    if (data.notes !== undefined && data.notes !== null) {
+      payload.notes = String(data.notes).trim();
     }
     if (data.projectId !== undefined && data.projectId !== null && Number(data.projectId) > 0) {
       payload.projectId = Number(data.projectId);
-    }
-    if (sessionUser?.id) {
-      payload.updatedById = Number(sessionUser.id);
     }
 
     const res = await appFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/test-cases/${id}`, {
@@ -215,6 +217,15 @@ export async function updateTestCase(
         success: false,
         message: errorMsg,
       };
+    }
+
+    // Persist updater ID directly in DB to guarantee audit tracking
+    if (sessionUser?.id) {
+      try {
+        await pool.query('UPDATE test_cases SET "updatedById" = $1, "updatedAt" = NOW() WHERE id = $2', [Number(sessionUser.id), id]);
+      } catch (dbErr) {
+        console.warn("Could not update updatedById in DB:", dbErr);
+      }
     }
 
     // Safety: ensure response data never overwrites the original creator with the updater
