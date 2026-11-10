@@ -34,6 +34,65 @@ interface NavbarProps {
   onToggleSidebar?: () => void;
 }
 
+async function downscaleImage(file: File, maxDim = 512, quality = 0.85): Promise<File> {
+  if (typeof window === "undefined" || !file.type.startsWith("image/")) {
+    return file;
+  }
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new window.Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+        if (width <= maxDim && height <= maxDim && file.size < 150 * 1024) {
+          resolve(file);
+          return;
+        }
+        if (width > height) {
+          if (width > maxDim) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          }
+        } else {
+          if (height > maxDim) {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(file);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const compressed = new File([blob], file.name.replace(/\.[^/.]+$/, ".jpg"), {
+                type: "image/jpeg",
+                lastModified: Date.now(),
+              });
+              resolve(compressed);
+            } else {
+              resolve(file);
+            }
+          },
+          "image/jpeg",
+          quality
+        );
+      };
+      img.onerror = () => resolve(file);
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = () => resolve(file);
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
   const router = useRouter();
   const { lang, dir, setLanguage, t } = useLanguage();
@@ -60,6 +119,12 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
   const [imgSrc, setImgSrc] = useState<string>(() => {
     return data?.user?.image || "/avatar.png";
   });
+
+  useEffect(() => {
+    if (data?.user?.image) {
+      setImgSrc(data.user.image);
+    }
+  }, [data?.user?.image]);
 
   const notificationRequestRef = useRef<Promise<void> | null>(null);
   const pendingNotificationRefreshRef = useRef(false);
@@ -170,9 +235,9 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
       try {
         // Render owns long-lived streams. Avoid holding a billed, time-limited
         // Netlify function open for each employee. Requires exact-origin CORS.
-        const streamBase = process.env.NEXT_PUBLIC_HOSTING_PLATFORM === "netlify"
-          ? (process.env.NEXT_PUBLIC_BASE_URL || "").replace(/\/$/, "")
-          : "";
+        const isNetlifyPlatform = typeof process !== "undefined" && process.env?.NEXT_PUBLIC_HOSTING_PLATFORM === "netlify";
+        const backendBase = (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_BASE_URL) || "";
+        const streamBase = isNetlifyPlatform ? backendBase.replace(/\/$/, "") : "";
         const sseUrl = `${streamBase}/api/users/notifications/stream?token=${encodeURIComponent(token)}`;
         eventSource = new EventSource(sseUrl);
 
@@ -206,7 +271,7 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
         eventSource.onerror = () => {
           // Avoid EventSource's rapid reconnect loop during Render outages.
           // Visible-tab reconciliation keeps notifications available.
-          if (process.env.NEXT_PUBLIC_HOSTING_PLATFORM === "netlify") {
+          if (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_HOSTING_PLATFORM === "netlify") {
             eventSource?.close();
           }
         };
@@ -226,11 +291,12 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
 
     // SSE supplies immediate updates; reconcile healthy streams once a minute.
     // Keep the existing 5s fallback when disconnected, and pause hidden tabs.
+    const pollIntervalMs = (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_HOSTING_PLATFORM === "netlify") ? 60_000 : 5000;
     const interval = setInterval(() => {
       if (document.visibilityState !== "visible") return;
-      if (eventSource?.readyState === EventSource.OPEN && Date.now() - lastNotificationReadRef.current < 60_000) return;
+      if (typeof EventSource !== "undefined" && eventSource?.readyState === EventSource.OPEN && Date.now() - lastNotificationReadRef.current < 60_000) return;
       void fetchNotifications();
-    }, process.env.NEXT_PUBLIC_HOSTING_PLATFORM === "netlify" ? 60_000 : 5000);
+    }, pollIntervalMs);
 
     return () => {
       isCancelled = true;
@@ -279,10 +345,16 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
   // console.log(data?.user.image);
 
   useEffect(function () {
-    getUserData().then(res => {
-      setImgSrc(res.photo);
-      setUploadImage(res.photo)
-    })
+    getUserData()
+      .then((res) => {
+        if (res?.photo) {
+          setImgSrc(res.photo);
+          setUploadImage(res.photo);
+        }
+      })
+      .catch((err) => {
+        console.warn("Could not fetch latest user data:", err);
+      });
   }, []);
 
   
@@ -512,37 +584,42 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
 
         {/* User Profile with Dropdown */}
         <div className="relative" ref={dropdownRef}>
-          <div
-            className="flex items-center gap-2.5 cursor-pointer hover:opacity-90 transition-opacity"
-            onClick={() => setShowDropdown(!showDropdown)}
-          >
-            <div className="relative w-8 h-8 rounded-full overflow-hidden shadow-xs ring-1 ring-slate-200 bg-slate-100">
-              <Image
-                src={imgSrc || "/avatar.png"}
-                alt={data?.user?.name || "user"}
-                fill
-                sizes="32px"
-                className="object-cover"
-                unoptimized
-                onError={() => {
-                  setImgSrc("/avatar.png");
-                }}
-              />
-            </div>
-            <div className={cn("hidden sm:flex min-w-0 max-w-28 lg:max-w-40 flex-col", isRTL ? "text-right" : "text-left")}>
-              <span className="truncate text-[13px] font-bold text-[#0b1c30] leading-none">
-                {data?.user?.name!}
-              </span>
-              <span className="truncate text-[11px] text-[#6d797f] mt-0.5">
-                {data?.user?.role}
-              </span>
-            </div>
-            <ChevronDown
-              className={`w-4 h-4 text-[#6d797f] transition-transform duration-200 ${
-                showDropdown ? "rotate-180" : ""
-              }`}
-            />
-          </div>
+          {(() => {
+            const currentAvatar = uploadImage || imgSrc || data?.user?.image || "/avatar.png";
+            return (
+              <div
+                className="flex items-center gap-2.5 cursor-pointer hover:opacity-90 transition-opacity"
+                onClick={() => setShowDropdown(!showDropdown)}
+              >
+                <div className="relative w-8 h-8 rounded-full overflow-hidden shadow-xs ring-1 ring-slate-200 bg-slate-100">
+                  <Image
+                    src={currentAvatar}
+                    alt={data?.user?.name || "user"}
+                    fill
+                    sizes="32px"
+                    className="object-cover"
+                    unoptimized
+                    onError={() => {
+                      setImgSrc("/avatar.png");
+                    }}
+                  />
+                </div>
+                <div className={cn("hidden sm:flex min-w-0 max-w-28 lg:max-w-40 flex-col", isRTL ? "text-right" : "text-left")}>
+                  <span className="truncate text-[13px] font-bold text-[#0b1c30] leading-none">
+                    {data?.user?.name!}
+                  </span>
+                  <span className="truncate text-[11px] text-[#6d797f] mt-0.5">
+                    {data?.user?.role}
+                  </span>
+                </div>
+                <ChevronDown
+                  className={`w-4 h-4 text-[#6d797f] transition-transform duration-200 ${
+                    showDropdown ? "rotate-180" : ""
+                  }`}
+                />
+              </div>
+            );
+          })()}
 
           {/* Dropdown Menu */}
           {showDropdown && (
@@ -556,14 +633,13 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
                 <div className="flex items-center gap-3">
                   <div className="relative w-10 h-10 rounded-full overflow-hidden shadow-xs ring-1 ring-slate-200 bg-slate-100 shrink-0">
                     <Image
-                      src={uploadImage || imgSrc || "/avatar.png"}
+                      src={uploadImage || imgSrc || data?.user?.image || "/avatar.png"}
                       alt={data?.user?.name || "user"}
                       fill
                       sizes="40px"
                       className="object-cover"
                       unoptimized
                       onError={() => {
-                        
                         setUploadImage("/avatar.png");
                       }}
                     />
@@ -605,33 +681,44 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
                   ref={inputFileRef}
                   accept="image/*"
                   onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
+                    const rawFile = e.target.files?.[0];
+                    if (!rawFile) return;
 
-                    const previewUrl = URL.createObjectURL(file);
+                    // Clear input so re-selecting same image triggers change
+                    e.target.value = "";
+
+                    const previewUrl = URL.createObjectURL(rawFile);
                     setUploadImage(previewUrl);
-                    
-                    
-                    
-                    const data = new FormData();
-                    data.append("photo", file);
-                    
-                  
+                    setImgSrc(previewUrl);
+
                     async function handlePromise() {
+                      const file = await downscaleImage(rawFile!);
+                      const data = new FormData();
+                      data.append("photo", file);
+
                       const res = await changeProfileImage(data);
-                      await update({ image: res.photo, user: { image: res.photo } });
-                      setShowDropdown(false)
-                      return res
+                      if (!res.success) {
+                        throw new Error(res.message);
+                      }
+                      const finalPhoto = res.photo || previewUrl;
+                      setImgSrc(finalPhoto);
+                      setUploadImage(finalPhoto);
+                      try {
+                        await update({ image: finalPhoto, user: { image: finalPhoto } });
+                      } catch {}
+                      setShowDropdown(false);
+                      return res;
                     }
 
-                    toast.promise(handlePromise, {
+                    toast.promise(handlePromise(), {
                       loading: isRTL ? "جاري تغيير الصورة الشخصية..." : "Changing Profile Image...",
                       success: (msg) => {
-                        setImgSrc(previewUrl);
-                        return <h1 className="text-green-500 font-medium">
-                          {isRTL ? msg.message : "Profile updated successfully."}
-                        </h1>
-                    },
+                        return (
+                          <h1 className="text-green-500 font-medium">
+                            {isRTL ? msg.message : "Profile updated successfully."}
+                          </h1>
+                        );
+                      },
                       error: (err) => (
                         <h1 className="text-red-500 font-medium">
                           {err?.message || (isRTL ? "فشل تحديث الصورة" : "Failed to update profile image.")}

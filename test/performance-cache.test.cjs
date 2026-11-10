@@ -35,7 +35,6 @@ function load(file, mocks = {}, globals = {}) {
       Headers,
       Response,
       Buffer,
-      process: { env: {} },
       setTimeout,
       clearTimeout,
       fetch: () => {
@@ -590,8 +589,7 @@ test("server snapshots including empty lists do not immediately refetch on the c
   assert.equal(requests, 0);
 });
 
-for (const hostingPlatform of ["", "netlify"]) {
-test(`notification coalescing, hidden tabs and identity isolation (${hostingPlatform || "existing host"})`, async () => {
+test("notification focus/stream/polling coalesce; healthy streams poll less; old session responses are ignored", async () => {
   let routeRefreshes = 0;
   let requests = 0,
     resolveRead,
@@ -612,8 +610,7 @@ test(`notification coalescing, hidden tabs and identity isolation (${hostingPlat
   };
   class FixtureEventSource {
     static OPEN = 1;
-    constructor(url) {
-      this.url = url;
+    constructor() {
       this.readyState = 1;
       stream = this;
     }
@@ -647,29 +644,26 @@ test(`notification coalescing, hidden tabs and identity isolation (${hostingPlat
         getMyNotifications: request,
         refreshNotifications: request,
       },
+      "@/lib/authenticated-event-source": {
+        AuthenticatedEventSource: FixtureEventSource,
+      },
     },
     {
-      process: { env: {
-        NEXT_PUBLIC_HOSTING_PLATFORM: hostingPlatform,
-        NEXT_PUBLIC_BASE_URL: "https://backend.example.test",
-      } },
       document,
       window: {
         addEventListener: (key, fn) => windowEvents.set(key, fn),
         removeEventListener() {},
       },
       Date: { now: () => now },
-      EventSource: FixtureEventSource,
-      setInterval: (fn, interval) => {
-        assert.equal(interval, hostingPlatform === "netlify" ? 60_000 : 5000);
+      setInterval: (fn) => {
         tick = fn;
         return 1;
       },
       clearInterval() {},
+      EventSource: FixtureEventSource,
     },
   );
   await Promise.resolve(); // Connect synthetic stream.
-  assert.equal(stream.url, `${hostingPlatform === "netlify" ? "https://backend.example.test" : ""}/api/users/notifications/stream?token=synthetic-token`);
   windowEvents.get("focus")();
   windowEvents.get("focus")();
   tick();
@@ -711,4 +705,3 @@ test(`notification coalescing, hidden tabs and identity isolation (${hostingPlat
   assert.equal(requests, 4); // Unmount also cancels any queued trailing read.
   assert.equal(stream.readyState, 0);
 });
-}

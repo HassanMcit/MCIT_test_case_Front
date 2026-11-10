@@ -428,15 +428,48 @@ export default function UsersClient({
                       {/* User Avatar, Name, Email */}
                       <td className="py-4 px-6 whitespace-nowrap">
                         <div className="flex items-center gap-3.5 min-w-0">
-                          <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 ring-2 ring-slate-200/80 shadow-2xs shrink-0 flex items-center justify-center">
-                            <Image
-                              src={user.profileImage || user.photo || "/avatar.png"}
-                              alt={user.name}
-                              fill
-                              sizes="40px"
-                              className="object-cover"
-                            />
-                          </div>
+                          {(() => {
+                            const isDefault =
+                              !user.photo ||
+                              user.photo.includes("default-profile.png") ||
+                              user.photo.includes("avatar.png");
+                            const initials = user.name
+                              ? user.name
+                                  .split(" ")
+                                  .map((n: string) => n[0])
+                                  .join("")
+                                  .slice(0, 2)
+                                  .toUpperCase()
+                              : "U";
+
+                            if (!isDefault && (user.profileImage || user.photo)) {
+                              return (
+                                <div className="relative w-10 h-10 rounded-full overflow-hidden bg-slate-100 ring-2 ring-slate-200/80 shadow-2xs shrink-0 flex items-center justify-center">
+                                  <Image
+                                    src={user.profileImage || user.photo}
+                                    alt={user.name}
+                                    fill
+                                    sizes="40px"
+                                    unoptimized
+                                    className="object-cover"
+                                  />
+                                </div>
+                              );
+                            }
+
+                            return (
+                              <div
+                                className={cn(
+                                  "w-10 h-10 rounded-full font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs ring-2 ring-slate-200/80 select-none",
+                                  isAdmin
+                                    ? "bg-gradient-to-br from-purple-600 to-indigo-700 text-white"
+                                    : "bg-gradient-to-br from-[#00A2D2] to-[#006685] text-white"
+                                )}
+                              >
+                                {initials}
+                              </div>
+                            );
+                          })()}
                           <div className="flex flex-col min-w-0">
                             <span className="font-bold text-slate-900 group-hover:text-[#00A2D2] transition-colors text-sm truncate" title={user.name}>
                               {user.name}

@@ -234,7 +234,11 @@ export default function AddTestCasePage({
             ? err?.message?.includes("already exists") ||
               err?.message?.includes("موجودة")
               ? `حالة الاختبار برقم ${updateUserdata.testId} موجودة مسبقاً في هذا المشروع`
+              : err?.message?.includes("Minified React error")
+              ? "حدث خطأ غير متوقع في الخادم، يرجى المحاولة مرة أخرى"
               : err?.message || "فشلت إضافة حالة الاختبار"
+            : err?.message?.includes("Minified React error")
+            ? "An unexpected server error occurred, please try again"
             : err?.message || "Failed to add test case"}
         </h1>
       ),
