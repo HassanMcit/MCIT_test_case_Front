@@ -559,9 +559,15 @@ export default function TestCasesTable({
             ...it,
             ...res.data,
             ...payload,
+            // CRITICAL: NEVER overwrite creator on update! Keep original creator (it.tester)
+            tester: it.tester,
+            testerId: it.testerId ?? it.tester?.id ?? null,
+            userId: it.userId ?? it.tester?.id ?? null,
+            createdAt: it.createdAt,
+            // Record updater correctly:
             updatedAt: res.data?.updatedAt || nowIso,
-            updatedById: res.data?.updatedById || currentUpdater?.id || it.updatedById || null,
-            updatedBy: res.data?.updatedBy || currentUpdater || it.updatedBy || it.tester,
+            updatedById: currentUpdater?.id || res.data?.updatedById || it.updatedById || null,
+            updatedBy: currentUpdater || res.data?.updatedBy || it.updatedBy || null,
           };
           if (selectedItem?.id === targetId) {
             setSelectedItem(updatedRecord);
@@ -1116,7 +1122,7 @@ export default function TestCasesTable({
                                 <Pencil className="w-2.5 h-2.5 text-amber-600 shrink-0" />
                                 <span>
                                   {isRTL ? "آخر تعديل: " : "Updated by: "}
-                                  {row.updatedBy?.name || row.tester?.name || (isRTL ? "مستخدم النظام" : "System User")}
+                                  {row.updatedBy?.name || (isRTL ? "مستخدم النظام" : "System User")}
                                 </span>
                               </span>
                               <span className="text-[10px] text-amber-700 font-mono flex items-center gap-1">
@@ -1608,7 +1614,7 @@ export default function TestCasesTable({
                     </span>
                     <span className="font-bold text-[#0b1c30] text-sm flex items-center gap-1.5">
                       <Pencil className="w-3.5 h-3.5 text-amber-600" />
-                      {selectedItem.updatedBy?.name || selectedItem.tester?.name || (isRTL ? "مستخدم النظام" : "System User")}
+                      {selectedItem.updatedBy?.name || (isRTL ? "مستخدم النظام" : "System User")}
                     </span>
                   </div>
                   <div className="text-left rtl:text-right space-y-0.5">
@@ -1711,7 +1717,7 @@ export default function TestCasesTable({
                     {isRTL ? "آخر تعديل بواسطة:" : "Last updated by:"}
                   </span>
                   <span className="font-bold">
-                    {editingItem.updatedBy?.name || editingItem.tester?.name || (isRTL ? "مستخدم النظام" : "System User")}
+                    {editingItem.updatedBy?.name || (isRTL ? "مستخدم النظام" : "System User")}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 font-mono text-amber-800">

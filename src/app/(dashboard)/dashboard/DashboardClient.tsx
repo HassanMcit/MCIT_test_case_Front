@@ -2373,7 +2373,6 @@ export default function DashboardClient({ data }: DashboardClientProps) {
                                 <span>
                                   {isRTL ? "آخر تعديل: " : "Updated by: "}
                                   {row.updatedBy?.name ||
-                                    row.tester?.name ||
                                     (isRTL ? "مستخدم النظام" : "System User")}
                                 </span>
                               </span>
@@ -2708,7 +2707,7 @@ export default function DashboardClient({ data }: DashboardClientProps) {
                     </span>
                     <span className="font-bold text-[#0b1c30] text-sm flex items-center gap-1.5">
                       <Pencil className="w-3.5 h-3.5 text-amber-600" />
-                      {selectedDefect.updatedBy?.name || selectedDefect.tester?.name || (isRTL ? "مستخدم النظام" : "System User")}
+                      {selectedDefect.updatedBy?.name || (isRTL ? "مستخدم النظام" : "System User")}
                     </span>
                   </div>
                   <div className="text-left rtl:text-right space-y-0.5">

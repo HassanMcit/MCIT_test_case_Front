@@ -217,6 +217,13 @@ export async function updateTestCase(
       };
     }
 
+    // Safety: ensure response data never overwrites the original creator with the updater
+    if (responseData && typeof responseData === "object") {
+      delete responseData.tester;
+      delete responseData.testerId;
+      delete responseData.userId;
+    }
+
     updateTag("test-cases");
     updateTag("dashboard-stats");
     updateTag("dashboard");

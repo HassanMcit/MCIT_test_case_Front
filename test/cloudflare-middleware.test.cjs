@@ -32,7 +32,12 @@ test('valid login retains route access and avoids login-page loops', async () =>
   assert.equal((await middleware(request('/login'))).location, '/dashboard');
 });
 test('all original protected-route matchers remain present', () => {
-  const original = require('node:child_process').execFileSync('git', ['show','HEAD:src/proxy.ts'], { encoding:'utf8' });
+  let original;
+  try {
+    original = require('node:child_process').execFileSync('git', ['show','main:src/proxy.ts'], { encoding:'utf8' });
+  } catch {
+    original = require('node:child_process').execFileSync('git', ['show','HEAD~1:src/proxy.ts'], { encoding:'utf8' });
+  }
   const originalMatchers = original.slice(original.indexOf('export const config'));
   const migrated = fs.readFileSync('src/middleware.ts','utf8');
   assert.equal(migrated.slice(migrated.indexOf('export const config')).replace(/\r\n/g, '\n'), originalMatchers.replace(/\r\n/g, '\n'));
