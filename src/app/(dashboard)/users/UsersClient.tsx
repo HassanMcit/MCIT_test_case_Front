@@ -390,7 +390,7 @@ export default function UsersClient({
           <table className="w-full min-w-[880px] text-xs sm:text-sm text-right rtl:text-right ltr:text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/90 text-slate-500 border-b border-slate-200/80 text-[11px] font-bold uppercase tracking-wider select-none">
-                <th className="py-4 px-6 whitespace-nowrap w-36 text-start">{t("users_col_id")}</th>
+                <th className="py-4 px-6 whitespace-nowrap min-w-[130px] w-36 text-start" style={{ whiteSpace: "nowrap", wordBreak: "keep-all" }}>{t("users_col_id")}</th>
                 <th className="py-4 px-6 whitespace-nowrap min-w-[240px] text-start">{t("users_col_user")}</th>
                 <th className="py-4 px-6 whitespace-nowrap text-start">{t("users_col_role")}</th>
                 <th className="py-4 px-6 whitespace-nowrap text-center">{t("users_col_projects")}</th>
@@ -419,9 +419,9 @@ export default function UsersClient({
                     >
                       {/* Employee ID */}
                       <td className="py-4 px-6 whitespace-nowrap">
-                        <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-100/90 hover:bg-slate-200/70 border border-slate-200 text-slate-800 font-mono text-xs font-bold tabular-nums shadow-2xs whitespace-nowrap shrink-0 transition-colors">
+                        <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-100/90 hover:bg-slate-200/70 border border-slate-200 text-slate-800 font-mono text-xs font-bold tabular-nums shadow-2xs whitespace-nowrap shrink-0 transition-colors" style={{ whiteSpace: "nowrap", wordBreak: "keep-all" }}>
                           <span className="text-slate-400 font-normal select-none">#</span>
-                          <span className="tracking-tight whitespace-nowrap">{user.id}</span>
+                          <span className="tracking-tight whitespace-nowrap" style={{ whiteSpace: "nowrap", wordBreak: "keep-all" }}>{user.id}</span>
                         </span>
                       </td>
 
