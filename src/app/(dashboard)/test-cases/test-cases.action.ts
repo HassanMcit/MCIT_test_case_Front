@@ -137,27 +137,60 @@ export async function updateTestCase(
     const sessionUser = await getCurrentUserSession();
     const token = sessionUser?.token || (await getUserToken());
     if (!token) {
-      throw new Error("يرجى تسجيل الدخول أولاً");
+      return {
+        success: false,
+        message: "يرجى تسجيل الدخول أولاً",
+      };
     }
 
     const payload: Record<string, any> = {};
-    if (data.testId !== undefined) payload.testId = data.testId;
-    if (data.module !== undefined) payload.module = data.module.slice(0, 50).trim();
-    if (data.pageName !== undefined) payload.pageName = data.pageName;
-    if (data.scenario !== undefined) payload.scenario = data.scenario;
-    if (data.preConditions !== undefined) payload.preConditions = data.preConditions;
+    if (data.module !== undefined && data.module !== null) {
+      payload.module = String(data.module).slice(0, 200).trim();
+    }
+    if (data.pageName !== undefined) {
+      payload.pageName = data.pageName ? String(data.pageName).trim() : null;
+    }
+    if (data.scenario !== undefined && data.scenario !== null) {
+      payload.scenario = String(data.scenario).trim();
+    }
+    if (data.preConditions !== undefined) {
+      payload.preConditions = data.preConditions ? String(data.preConditions).trim() : null;
+    }
     if (data.steps !== undefined) {
       payload.steps = Array.isArray(data.steps)
-        ? data.steps.filter((s: string) => s && s.trim() !== "")
+        ? data.steps
+            .map((s) => (typeof s === "string" ? s.trim() : String(s)))
+            .filter(Boolean)
         : [];
     }
-    if (data.expectedResult !== undefined) payload.expectedResult = data.expectedResult;
-    if (data.actualResult !== undefined) payload.actualResult = data.actualResult;
-    if (data.priority !== undefined) payload.priority = data.priority;
-    if (data.status !== undefined) payload.status = data.status;
-    if (data.severity !== undefined) payload.severity = data.severity;
-    if (data.notes !== undefined) payload.notes = data.notes;
-    if (data.projectId !== undefined) payload.projectId = data.projectId;
+    if (data.expectedResult !== undefined && data.expectedResult !== null) {
+      payload.expectedResult = String(data.expectedResult).trim();
+    }
+    if (data.actualResult !== undefined) {
+      payload.actualResult = data.actualResult ? String(data.actualResult).trim() : null;
+    }
+    if (data.priority !== undefined && ["critical", "high", "medium", "low"].includes(data.priority)) {
+      payload.priority = data.priority;
+    }
+    if (
+      data.status !== undefined &&
+      ["passed", "failed", "pending", "blocked", "skipped"].includes(data.status)
+    ) {
+      payload.status = data.status;
+    }
+    if (
+      data.severity !== undefined &&
+      data.severity !== null &&
+      ["critical", "high", "medium", "low"].includes(data.severity)
+    ) {
+      payload.severity = data.severity;
+    }
+    if (data.notes !== undefined) {
+      payload.notes = data.notes ? String(data.notes).trim() : null;
+    }
+    if (data.projectId !== undefined && data.projectId !== null && Number(data.projectId) > 0) {
+      payload.projectId = Number(data.projectId);
+    }
     if (sessionUser?.id) {
       payload.updatedById = Number(sessionUser.id);
     }
@@ -169,7 +202,7 @@ export async function updateTestCase(
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
-      cache: "force-cache",
+      cache: "no-store",
     });
 
     const responseData = await res.json().catch(() => ({}));
@@ -178,7 +211,17 @@ export async function updateTestCase(
       const errorMsg = Array.isArray(responseData.message)
         ? responseData.message.join(" - ")
         : responseData.message || "فشل تحديث حالة الاختبار";
-      throw new Error(errorMsg);
+      return {
+        success: false,
+        message: errorMsg,
+      };
+    }
+
+    // Safety: ensure response data never overwrites the original creator with the updater
+    if (responseData && typeof responseData === "object") {
+      delete responseData.tester;
+      delete responseData.testerId;
+      delete responseData.userId;
     }
 
     updateTag("test-cases");
@@ -194,7 +237,7 @@ export async function updateTestCase(
     recordSystemAuditLog({
       action: "تعديل حالة اختبار",
       actionCategory: "TEST_CASES",
-      description: `تعديل حالة الاختبار #${id} ${data.testId ? `(${data.testId})` : ""} - الموديول: ${data.module || "بدون تغيير"} - الحالة: ${data.status || "بدون تغيير"}`,
+      description: `تعديل حالة الاختبار #${id} - الموديول: ${payload.module || "بدون تغيير"} - الحالة: ${payload.status || "بدون تغيير"}`,
       endpoint: `/api/test-cases/${id}`,
       method: "PATCH",
     }).catch(() => {});
@@ -205,7 +248,10 @@ export async function updateTestCase(
       data: responseData,
     };
   } catch (error) {
-    throw new Error(error instanceof Error ? error.message : "حدث خطأ غير متوقع أثناء التحديث");
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "حدث خطأ غير متوقع أثناء التحديث",
+    };
   }
 }
 

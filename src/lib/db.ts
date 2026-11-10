@@ -5,17 +5,19 @@ declare global {
   var __pgPool: Pool | undefined;
 }
 
-const connectionString =
-  process.env.DATABASE_URL ||
-  "postgresql://postgres.cecxrscpuwowodogojar:D8g7y73GUTq4Bnqk@aws-1-eu-central-1.pooler.supabase.com:6543/postgres";
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) throw new Error("DATABASE_URL is required (server-only)");
 
 export const pool =
   global.__pgPool ||
   new Pool({
     connectionString,
-    max: 10,
+    max: process.env.NETLIFY === "true" ? 2 : 10,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 5000,
+    ...(process.env.NETLIFY === "true"
+      ? { query_timeout: 10000, statement_timeout: 10000 }
+      : {}),
     ssl: { rejectUnauthorized: false },
   });
 

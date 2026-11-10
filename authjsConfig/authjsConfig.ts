@@ -49,6 +49,9 @@ export const authConfig: NextAuthConfig = {
         const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/login`, {
           method: "POST",
           cache: "no-store",
+          ...(process.env.NETLIFY === "true"
+            ? { signal: AbortSignal.timeout(20000) }
+            : {}),
           headers: {
             "content-type": "application/json",
           },

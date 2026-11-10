@@ -168,13 +168,19 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
       } catch {}
 
       try {
-        const sseUrl = `/api/users/notifications/stream?token=${encodeURIComponent(token)}`;
+        // Render owns long-lived streams. Avoid holding a billed, time-limited
+        // Netlify function open for each employee. Requires exact-origin CORS.
+        const streamBase = process.env.NEXT_PUBLIC_HOSTING_PLATFORM === "netlify"
+          ? (process.env.NEXT_PUBLIC_BASE_URL || "").replace(/\/$/, "")
+          : "";
+        const sseUrl = `${streamBase}/api/users/notifications/stream?token=${encodeURIComponent(token)}`;
         eventSource = new EventSource(sseUrl);
 
         eventSource.onmessage = (e) => {
           try {
             const parsed = JSON.parse(e.data);
             if (parsed?.type === "UNAUTHORIZED") {
+              eventSource?.close();
               return;
             }
             if (parsed?.type === "NOTIFICATION") {
@@ -198,7 +204,11 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
         };
 
         eventSource.onerror = () => {
-          // Silent fallback to polling if SSE drops
+          // Avoid EventSource's rapid reconnect loop during Render outages.
+          // Visible-tab reconciliation keeps notifications available.
+          if (process.env.NEXT_PUBLIC_HOSTING_PLATFORM === "netlify") {
+            eventSource?.close();
+          }
         };
       } catch (err) {
         console.warn("SSE stream setup skipped:", err);
@@ -220,7 +230,7 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
       if (document.visibilityState !== "visible") return;
       if (eventSource?.readyState === EventSource.OPEN && Date.now() - lastNotificationReadRef.current < 60_000) return;
       void fetchNotifications();
-    }, 5000);
+    }, process.env.NEXT_PUBLIC_HOSTING_PLATFORM === "netlify" ? 60_000 : 5000);
 
     return () => {
       isCancelled = true;

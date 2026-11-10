@@ -514,11 +514,28 @@ export default function TestCasesTable({
     if (!editingItem) return;
 
     setIsUpdating(true);
-    const cleanedSteps = editSteps.filter((s) => s.trim() !== "");
-    const payload = {
-      ...editFormData,
+    const cleanedSteps = editSteps.map((s) => s.trim()).filter(Boolean);
+    const payload: Partial<TestCaseItem> = {
+      module: editFormData.module ? editFormData.module.trim() : "",
+      pageName: editFormData.pageName ? editFormData.pageName.trim() : null,
+      scenario: editFormData.scenario ? editFormData.scenario.trim() : "",
+      preConditions: editFormData.preConditions ? editFormData.preConditions.trim() : null,
+      expectedResult: editFormData.expectedResult ? editFormData.expectedResult.trim() : "",
+      actualResult: editFormData.actualResult ? editFormData.actualResult.trim() : null,
+      priority: editFormData.priority,
+      status: editFormData.status,
+      severity: editFormData.status === "failed" ? editFormData.severity || "medium" : undefined,
+      notes: editFormData.notes ? editFormData.notes.trim() : null,
       steps: cleanedSteps.length > 0 ? cleanedSteps : editSteps,
     };
+
+    if (
+      editFormData.projectId !== undefined &&
+      editFormData.projectId !== editingItem.projectId &&
+      Number(editFormData.projectId) > 0
+    ) {
+      payload.projectId = Number(editFormData.projectId);
+    }
     const targetId = editingItem.id;
 
     const nowIso = new Date().toISOString();
@@ -542,9 +559,15 @@ export default function TestCasesTable({
             ...it,
             ...res.data,
             ...payload,
+            // CRITICAL: NEVER overwrite creator on update! Keep original creator (it.tester)
+            tester: it.tester,
+            testerId: it.testerId ?? it.tester?.id ?? null,
+            userId: it.userId ?? it.tester?.id ?? null,
+            createdAt: it.createdAt,
+            // Record updater correctly:
             updatedAt: res.data?.updatedAt || nowIso,
-            updatedById: res.data?.updatedById || currentUpdater?.id || it.updatedById || null,
-            updatedBy: res.data?.updatedBy || currentUpdater || it.updatedBy || it.tester,
+            updatedById: currentUpdater?.id || res.data?.updatedById || it.updatedById || null,
+            updatedBy: currentUpdater || res.data?.updatedBy || it.updatedBy || null,
           };
           if (selectedItem?.id === targetId) {
             setSelectedItem(updatedRecord);
@@ -561,9 +584,12 @@ export default function TestCasesTable({
       {
         loading: isRTL ? "جاري حفظ التعديلات..." : "Saving changes...",
         success: isRTL ? "تم تحديث حالة الاختبار بنجاح" : "Test case updated successfully",
-        error: isRTL ? "فشل تحديث حالة الاختبار" : "Failed to update test case",
+        error: (error: any) =>
+          error?.message
+            ? error.message
+            : isRTL ? "فشل تحديث حالة الاختبار" : "Failed to update test case",
       }
-    ).finally(() => {
+    ).catch(() => {}).finally(() => {
       setIsUpdating(false);
     });
   };
@@ -1096,7 +1122,7 @@ export default function TestCasesTable({
                                 <Pencil className="w-2.5 h-2.5 text-amber-600 shrink-0" />
                                 <span>
                                   {isRTL ? "آخر تعديل: " : "Updated by: "}
-                                  {row.updatedBy?.name || row.tester?.name || (isRTL ? "مستخدم النظام" : "System User")}
+                                  {row.updatedBy?.name || (isRTL ? "مستخدم النظام" : "System User")}
                                 </span>
                               </span>
                               <span className="text-[10px] text-amber-700 font-mono flex items-center gap-1">
@@ -1588,7 +1614,7 @@ export default function TestCasesTable({
                     </span>
                     <span className="font-bold text-[#0b1c30] text-sm flex items-center gap-1.5">
                       <Pencil className="w-3.5 h-3.5 text-amber-600" />
-                      {selectedItem.updatedBy?.name || selectedItem.tester?.name || (isRTL ? "مستخدم النظام" : "System User")}
+                      {selectedItem.updatedBy?.name || (isRTL ? "مستخدم النظام" : "System User")}
                     </span>
                   </div>
                   <div className="text-left rtl:text-right space-y-0.5">
@@ -1691,7 +1717,7 @@ export default function TestCasesTable({
                     {isRTL ? "آخر تعديل بواسطة:" : "Last updated by:"}
                   </span>
                   <span className="font-bold">
-                    {editingItem.updatedBy?.name || editingItem.tester?.name || (isRTL ? "مستخدم النظام" : "System User")}
+                    {editingItem.updatedBy?.name || (isRTL ? "مستخدم النظام" : "System User")}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 font-mono text-amber-800">
@@ -1877,20 +1903,11 @@ export default function TestCasesTable({
                   <Select
                     value={editFormData.status || "pending"}
                     onValueChange={(val: any) =>
-                      setEditFormData((prev) => {
-                        let nextTestId = prev.testId;
-                        if (val === "failed" && nextTestId?.startsWith("TC-")) {
-                          nextTestId = nextTestId.replace(/^TC-/, "BUG-");
-                        } else if (val !== "failed" && nextTestId?.startsWith("BUG-")) {
-                          nextTestId = nextTestId.replace(/^BUG-/, "TC-");
-                        }
-                        return {
-                          ...prev,
-                          status: val,
-                          testId: nextTestId,
-                          severity: val === "failed" ? (prev.severity || "medium") : prev.severity,
-                        };
-                      })
+                      setEditFormData((prev) => ({
+                        ...prev,
+                        status: val,
+                        severity: val === "failed" ? (prev.severity || "medium") : prev.severity,
+                      }))
                     }
                   >
                     <SelectTrigger className="h-10 text-[13px] bg-[#f8f9ff] border-slate-200 rounded-xl">

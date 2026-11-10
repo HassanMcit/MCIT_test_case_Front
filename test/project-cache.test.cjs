@@ -25,6 +25,7 @@ function load(file, mocks = {}, globals = {}) {
       Headers,
       Response,
       Buffer,
+      process: { env: {} },
       console,
       ...globals,
     },

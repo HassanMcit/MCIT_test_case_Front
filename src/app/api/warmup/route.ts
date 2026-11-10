@@ -4,6 +4,11 @@ import { pool } from "@/lib/db";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  if (process.env.NETLIFY === "true") {
+    return NextResponse.json({ ok: true, status: "disabled" }, {
+      headers: { "Cache-Control": "private, no-store" },
+    });
+  }
   const backendUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
   // 1. Warm PostgreSQL pool in parallel (non-blocking if slow)

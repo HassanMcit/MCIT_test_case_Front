@@ -39,6 +39,7 @@ function SessionRevocationGuard({ children }: { children?: React.ReactNode }) {
 
   // Periodic background warm-up ping (every 9 mins) to prevent Render backend Cold Starts
   useEffect(() => {
+    if (process.env.NEXT_PUBLIC_HOSTING_PLATFORM === "netlify") return;
     const ping = () => {
       fetch("/api/warmup", { cache: "no-store" }).catch(() => {});
     };

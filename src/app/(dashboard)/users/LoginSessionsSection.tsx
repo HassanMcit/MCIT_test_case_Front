@@ -162,16 +162,16 @@ export default function LoginSessionsSection({ currentUserId }: { currentUserId?
 
       <CardContent className="p-0">
         <div className="overflow-x-auto">
-          <table className="w-full text-xs text-right rtl:text-right ltr:text-left border-collapse">
+          <table className="w-full min-w-[760px] text-xs text-right rtl:text-right ltr:text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/80 text-slate-500 border-b border-slate-200/80 text-[11px] font-bold uppercase tracking-wider">
-                <th className="py-3.5 px-5">{isRTL ? "المستخدم" : "User"}</th>
-                <th className="py-3.5 px-5">{isRTL ? "عنوان الـ IP" : "IP Address"}</th>
-                <th className="py-3.5 px-5">{isRTL ? "معرّف الجهاز (MAC ID)" : "Device MAC"}</th>
-                <th className="py-3.5 px-5">{isRTL ? "الموقع الجغرافي" : "Location"}</th>
-                <th className="py-3.5 px-5">{isRTL ? "نوع الجهاز والمتصفح" : "Device / OS"}</th>
-                <th className="py-3.5 px-5">{isRTL ? "وقت الدخول" : "Login Time"}</th>
-                <th className="py-3.5 px-5 text-center">{isRTL ? "الحالة والإجراء" : "Status & Action"}</th>
+              <tr className="bg-slate-50/90 text-slate-500 border-b border-slate-200/80 text-[11px] font-bold uppercase tracking-wider select-none">
+                <th className="py-3.5 px-5 whitespace-nowrap text-start">{isRTL ? "المستخدم" : "User"}</th>
+                <th className="py-3.5 px-5 whitespace-nowrap text-start">{isRTL ? "عنوان الـ IP" : "IP Address"}</th>
+                <th className="py-3.5 px-5 whitespace-nowrap text-start">{isRTL ? "معرّف الجهاز (MAC ID)" : "Device MAC"}</th>
+                <th className="py-3.5 px-5 whitespace-nowrap text-start">{isRTL ? "الموقع الجغرافي" : "Location"}</th>
+                <th className="py-3.5 px-5 whitespace-nowrap text-start">{isRTL ? "نوع الجهاز والمتصفح" : "Device / OS"}</th>
+                <th className="py-3.5 px-5 whitespace-nowrap text-start">{isRTL ? "وقت الدخول" : "Login Time"}</th>
+                <th className="py-3.5 px-5 whitespace-nowrap text-center">{isRTL ? "الحالة والإجراء" : "Status & Action"}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">

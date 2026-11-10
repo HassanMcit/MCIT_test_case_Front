@@ -36,6 +36,16 @@ function LoginFormInner() {
 
   // Pre-warm Render backend & prefetch /dashboard skeleton while user types credentials
   useEffect(() => {
+    if (process.env.NEXT_PUBLIC_HOSTING_PLATFORM === "netlify") {
+      // One bounded, direct wake request; no frontend function or DB warm-up.
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 10000);
+      fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/health`, {
+        cache: "no-store",
+        signal: controller.signal,
+      }).catch(() => {}).finally(() => clearTimeout(timer));
+      return () => { clearTimeout(timer); controller.abort(); };
+    }
     fetch("/api/warmup", { cache: "no-store" }).catch(() => {});
     router.prefetch("/dashboard");
   }, [router]);
