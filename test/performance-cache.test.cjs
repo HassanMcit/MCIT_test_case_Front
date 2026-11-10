@@ -660,6 +660,7 @@ test("notification focus/stream/polling coalesce; healthy streams poll less; old
         return 1;
       },
       clearInterval() {},
+      EventSource: FixtureEventSource,
     },
   );
   await Promise.resolve(); // Connect synthetic stream.

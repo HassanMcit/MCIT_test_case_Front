@@ -331,13 +331,27 @@ export default function AssignProjectsClient({
                         : "bg-white border-transparent hover:bg-slate-50 hover:border-slate-200"
                       }`}
                     >
-                      <div className="relative w-10 h-10 rounded-full overflow-hidden border border-slate-200 shrink-0 bg-white">
-                        <Image
-                          src={user.profileImage || user.photo || "/avatar.png"}
-                          alt={user.name}
-                          fill
-                          className="object-cover"
-                        />
+                      <div className="relative w-10 h-10 rounded-full overflow-hidden border border-slate-200 shrink-0 bg-slate-100 flex items-center justify-center">
+                        {(() => {
+                          const isDefault = !user.photo || user.photo.includes("default-profile.png") || user.photo.includes("avatar.png");
+                          const initials = user.name ? user.name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase() : "U";
+                          if (!isDefault && (user.profileImage || user.photo)) {
+                            return (
+                              <Image
+                                src={(user.profileImage || user.photo)!}
+                                alt={user.name}
+                                fill
+                                unoptimized
+                                className="object-cover"
+                              />
+                            );
+                          }
+                          return (
+                            <span className="text-xs font-bold text-[#006685] select-none">
+                              {initials}
+                            </span>
+                          );
+                        })()}
                       </div>
                       <div className={`flex flex-col flex-1 min-w-0 ${isRTL ? 'text-right' : 'text-left'}`}>
                         <span className={`text-sm font-bold truncate ${selectedUserId === user.id ? 'text-[#38CAF0]' : 'text-slate-800'}`}>
@@ -371,13 +385,27 @@ export default function AssignProjectsClient({
               <Card className="border-slate-200/60 shadow-sm flex-1">
                 <CardHeader className="pb-4 border-b border-slate-100 flex flex-row items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
-                     <div className="relative w-12 h-12 rounded-full overflow-hidden border border-slate-200 shrink-0 shadow-sm">
-                        <Image
-                          src={selectedUser.profileImage || selectedUser.photo || "/avatar.png"}
-                          alt={selectedUser.name}
-                          fill
-                          className="object-cover"
-                        />
+                     <div className="relative w-12 h-12 rounded-full overflow-hidden border border-slate-200 shrink-0 shadow-sm bg-slate-100 flex items-center justify-center">
+                        {(() => {
+                          const isDefault = !selectedUser.photo || selectedUser.photo.includes("default-profile.png") || selectedUser.photo.includes("avatar.png");
+                          const initials = selectedUser.name ? selectedUser.name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase() : "U";
+                          if (!isDefault && (selectedUser.profileImage || selectedUser.photo)) {
+                            return (
+                              <Image
+                                src={(selectedUser.profileImage || selectedUser.photo)!}
+                                alt={selectedUser.name}
+                                fill
+                                unoptimized
+                                className="object-cover"
+                              />
+                            );
+                          }
+                          return (
+                            <span className="text-sm font-bold text-[#006685] select-none">
+                              {initials}
+                            </span>
+                          );
+                        })()}
                       </div>
                       <div>
                         <CardTitle className="text-lg font-bold text-[#0b1c30]">{selectedUser.name}</CardTitle>
@@ -511,13 +539,27 @@ export default function AssignProjectsClient({
                   <TableRow key={user.id} className="hover:bg-slate-50/50">
                     <TableCell className="border-r border-slate-100 font-medium">
                       <div className="flex items-center gap-3">
-                        <div className="relative w-8 h-8 rounded-full overflow-hidden border border-slate-200 shrink-0">
-                          <Image
-                            src={user.profileImage || user.photo || "/avatar.png"}
-                            alt={user.name}
-                            fill
-                            className="object-cover"
-                          />
+                        <div className="relative w-8 h-8 rounded-full overflow-hidden border border-slate-200 shrink-0 bg-slate-100 flex items-center justify-center">
+                          {(() => {
+                            const isDefault = !user.photo || user.photo.includes("default-profile.png") || user.photo.includes("avatar.png");
+                            const initials = user.name ? user.name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase() : "U";
+                            if (!isDefault && (user.profileImage || user.photo)) {
+                              return (
+                                <Image
+                                  src={(user.profileImage || user.photo)!}
+                                  alt={user.name}
+                                  fill
+                                  unoptimized
+                                  className="object-cover"
+                                />
+                              );
+                            }
+                            return (
+                              <span className="text-[11px] font-bold text-[#006685] select-none">
+                                {initials}
+                              </span>
+                            );
+                          })()}
                         </div>
                         <div className="flex flex-col">
                           <span className="text-sm text-slate-800 font-bold">{user.name}</span>
