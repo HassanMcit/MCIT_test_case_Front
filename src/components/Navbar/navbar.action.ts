@@ -5,7 +5,9 @@ import { ChangeProfileResponseType, UserDataResponse } from "./changeProfile.int
 import { updateTag } from "next/cache";
 import { pool } from "@/lib/db";
 
-export async function changeProfileImage(data: FormData): Promise<{
+export async function changeProfileImage(
+  data: { photoBase64?: string; name?: string } | FormData
+): Promise<{
   success: boolean;
   message: string;
   photo?: string;
@@ -22,14 +24,18 @@ export async function changeProfileImage(data: FormData): Promise<{
       };
     }
 
-    const photoFile = data.get("photo") as File | null;
     let base64Photo = "";
-    if (photoFile && typeof photoFile.arrayBuffer === "function") {
-      try {
-        const buffer = Buffer.from(await photoFile.arrayBuffer());
-        const mime = photoFile.type || "image/jpeg";
-        base64Photo = `data:${mime};base64,${buffer.toString("base64")}`;
-      } catch {}
+    if (data && typeof data === "object" && !(data instanceof FormData) && "photoBase64" in data) {
+      base64Photo = String(data.photoBase64 || "");
+    } else if (data instanceof FormData) {
+      const photoFile = data.get("photo") as File | null;
+      if (photoFile && typeof photoFile.arrayBuffer === "function") {
+        try {
+          const buffer = Buffer.from(await photoFile.arrayBuffer());
+          const mime = photoFile.type || "image/jpeg";
+          base64Photo = `data:${mime};base64,${buffer.toString("base64")}`;
+        } catch {}
+      }
     }
 
     let savedPhoto = base64Photo;
@@ -39,12 +45,20 @@ export async function changeProfileImage(data: FormData): Promise<{
     // 1. Forward to Render backend
     if (token) {
       try {
+        let fetchBody: any = data;
+        let headers: Record<string, string> = {
+          Authorization: `Bearer ${token}`,
+        };
+
+        if (base64Photo) {
+          headers["content-type"] = "application/json";
+          fetchBody = JSON.stringify({ photo: base64Photo });
+        }
+
         const response = await appFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/users/profile`, {
           method: "PATCH",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: data,
+          headers,
+          body: fetchBody,
           cache: "no-store",
         });
 

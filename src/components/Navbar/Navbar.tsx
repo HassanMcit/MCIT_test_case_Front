@@ -34,9 +34,14 @@ interface NavbarProps {
   onToggleSidebar?: () => void;
 }
 
-async function downscaleImage(file: File, maxDim = 512, quality = 0.85): Promise<File> {
+async function downscaleImageToBase64(file: File, maxDim = 512, quality = 0.85): Promise<string> {
   if (typeof window === "undefined" || !file.type.startsWith("image/")) {
-    return file;
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve((e.target?.result as string) || "");
+      reader.onerror = () => resolve("");
+      reader.readAsDataURL(file);
+    });
   }
   return new Promise((resolve) => {
     const reader = new FileReader();
@@ -46,7 +51,7 @@ async function downscaleImage(file: File, maxDim = 512, quality = 0.85): Promise
         let width = img.width;
         let height = img.height;
         if (width <= maxDim && height <= maxDim && file.size < 150 * 1024) {
-          resolve(file);
+          resolve((e.target?.result as string) || "");
           return;
         }
         if (width > height) {
@@ -65,30 +70,21 @@ async function downscaleImage(file: File, maxDim = 512, quality = 0.85): Promise
         canvas.height = height;
         const ctx = canvas.getContext("2d");
         if (!ctx) {
-          resolve(file);
+          resolve((e.target?.result as string) || "");
           return;
         }
         ctx.drawImage(img, 0, 0, width, height);
-        canvas.toBlob(
-          (blob) => {
-            if (blob) {
-              const compressed = new File([blob], file.name.replace(/\.[^/.]+$/, ".jpg"), {
-                type: "image/jpeg",
-                lastModified: Date.now(),
-              });
-              resolve(compressed);
-            } else {
-              resolve(file);
-            }
-          },
-          "image/jpeg",
-          quality
-        );
+        try {
+          const dataUrl = canvas.toDataURL("image/jpeg", quality);
+          resolve(dataUrl);
+        } catch {
+          resolve((e.target?.result as string) || "");
+        }
       };
-      img.onerror = () => resolve(file);
+      img.onerror = () => resolve((e.target?.result as string) || "");
       img.src = e.target?.result as string;
     };
-    reader.onerror = () => resolve(file);
+    reader.onerror = () => resolve("");
     reader.readAsDataURL(file);
   });
 }
@@ -692,15 +688,16 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
                     setImgSrc(previewUrl);
 
                     async function handlePromise() {
-                      const file = await downscaleImage(rawFile!);
-                      const data = new FormData();
-                      data.append("photo", file);
+                      const base64 = await downscaleImageToBase64(rawFile!);
+                      const preview = base64 || previewUrl;
+                      setUploadImage(preview);
+                      setImgSrc(preview);
 
-                      const res = await changeProfileImage(data);
+                      const res = await changeProfileImage({ photoBase64: base64 });
                       if (!res.success) {
                         throw new Error(res.message);
                       }
-                      const finalPhoto = res.photo || previewUrl;
+                      const finalPhoto = res.photo || preview;
                       setImgSrc(finalPhoto);
                       setUploadImage(finalPhoto);
                       try {
@@ -721,7 +718,9 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
                       },
                       error: (err) => (
                         <h1 className="text-red-500 font-medium">
-                          {err?.message || (isRTL ? "فشل تحديث الصورة" : "Failed to update profile image.")}
+                          {err?.message?.includes("Minified React error")
+                            ? (isRTL ? "حدث خطأ غير متوقع في الخادم، يرجى المحاولة لاحقاً" : "An unexpected server error occurred, please try again")
+                            : (err?.message || (isRTL ? "فشل تحديث الصورة" : "Failed to update profile image."))}
                         </h1>
                       ),
                     });
