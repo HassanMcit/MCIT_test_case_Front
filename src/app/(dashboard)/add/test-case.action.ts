@@ -15,11 +15,43 @@ export async function addNewTestCase(data: TestCaseFormValues) {
 
     const nowIso = new Date().toISOString();
     const resolvedExecutedAt = nowIso;
-    const safePayload = {
-      ...data,
+    const safePayload: Record<string, any> = {
+      testId: data.testId?.trim() || "TC-0001",
       module: (data.module || "").slice(0, 50).trim(),
+      scenario: (data.scenario || "").trim(),
+      steps: Array.isArray(data.steps)
+        ? data.steps.map((s) => (typeof s === "string" ? s.trim() : String(s))).filter(Boolean)
+        : ["Initial Step"],
+      expectedResult: (data.expectedResult || "").trim(),
+      priority: data.priority || "medium",
+      status: data.status || "pending",
       executedAt: resolvedExecutedAt,
     };
+
+    if (data.pageName && String(data.pageName).trim()) {
+      safePayload.pageName = String(data.pageName).trim();
+    }
+    if (data.preConditions && String(data.preConditions).trim()) {
+      safePayload.preConditions = String(data.preConditions).trim();
+    }
+    if (data.actualResult && String(data.actualResult).trim()) {
+      safePayload.actualResult = String(data.actualResult).trim();
+    }
+    if (data.notes && String(data.notes).trim()) {
+      safePayload.notes = String(data.notes).trim();
+    }
+    if (data.severity && ["critical", "high", "medium", "low"].includes(data.severity)) {
+      safePayload.severity = data.severity;
+    }
+    if (data.projectId && Number(data.projectId) > 0) {
+      safePayload.projectId = Number(data.projectId);
+    }
+    if (data.testerId) {
+      safePayload.testerId = Number(data.testerId);
+    }
+    if (data.userId) {
+      safePayload.userId = Number(data.userId);
+    }
 
     let response = await appFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/test-cases`, {
       method: "POST",
@@ -66,7 +98,7 @@ export async function addNewTestCase(data: TestCaseFormValues) {
       revalidatePath("/users");
 
       // Audit Log
-      await recordSystemAuditLog({
+      recordSystemAuditLog({
         action: "إضافة حالة اختبار جديدة",
         actionCategory: "TEST_CASES",
         description: `إضافة حالة اختبار برقم (${safePayload.testId || "جديد"}) في موديول (${safePayload.module || "العام"}) - الحالة: ${safePayload.status}`,
