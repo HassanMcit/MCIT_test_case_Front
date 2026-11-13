@@ -51,8 +51,18 @@ export async function changeProfileImage(
         };
 
         if (base64Photo) {
-          headers["content-type"] = "application/json";
-          fetchBody = JSON.stringify({ photo: base64Photo });
+          const dataUrlMatch = base64Photo.match(/^data:([^;]+);base64,(.+)$/);
+          if (dataUrlMatch) {
+            const mime = dataUrlMatch[1] || "image/jpeg";
+            const bytes = Buffer.from(dataUrlMatch[2], "base64");
+            const ext = mime.includes("png") ? "png" : mime.includes("webp") ? "webp" : "jpg";
+            const form = new FormData();
+            form.append("photo", new Blob([bytes], { type: mime }), `avatar.${ext}`);
+            fetchBody = form;
+          } else {
+            headers["content-type"] = "application/json";
+            fetchBody = JSON.stringify({ photo: base64Photo });
+          }
         }
 
         const response = await appFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/users/profile`, {
