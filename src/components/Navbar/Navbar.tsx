@@ -597,6 +597,7 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
                     unoptimized
                     onError={() => {
                       setImgSrc("/avatar.png");
+                      setUploadImage("/avatar.png");
                     }}
                   />
                 </div>
@@ -636,6 +637,7 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
                       className="object-cover"
                       unoptimized
                       onError={() => {
+                        setImgSrc("/avatar.png");
                         setUploadImage("/avatar.png");
                       }}
                     />
