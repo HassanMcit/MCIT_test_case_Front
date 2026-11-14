@@ -19,9 +19,16 @@ const backendHostname = (() => {
   return "localhost";
 })();
 
+if (!process.env.NEXT_PUBLIC_BUILD_ID) {
+  process.env.NEXT_PUBLIC_BUILD_ID = String(Date.now());
+}
+
 const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
+  env: {
+    NEXT_PUBLIC_BUILD_ID: process.env.NEXT_PUBLIC_BUILD_ID,
+  },
   async headers() {
     return [
       {

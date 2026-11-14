@@ -6,6 +6,7 @@ import { GetAllUsersResponse } from "./user.interface";
 import { updateTag, revalidatePath } from "next/cache";
 import { recordSystemAuditLog } from "@/lib/audit";
 import { queryAllUsersFromDb, raceBackendFetch } from "@/lib/fast-read";
+import { normalizeApiUserPhoto } from "@/lib/avatar";
 
 export async function getAllUsers() {
   if ((await getCurrentUserSession())?.role !== "admin") return [];
@@ -28,7 +29,7 @@ export async function getAllUsers() {
     const response = await raceBackendFetch(fetchPromise, 2000);
     if (response && response.ok) {
       const resData = await response.json();
-      return Array.isArray(resData) ? resData : [];
+      return Array.isArray(resData) ? resData.map((u: any) => { const avatar = normalizeApiUserPhoto(u.id, u.photo, u.profileImage, u.updatedAt, ""); return { ...u, photo: avatar, profileImage: avatar }; }) : [];
     }
 
     // Render Cold-Start Fallback: read directly from PostgreSQL pool (~80ms)

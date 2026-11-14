@@ -17,7 +17,7 @@ export async function GET() {
   // 2. Wake up Render backend in the background; wait at most 1200ms before returning
   let backendAwake = false;
   if (backendUrl) {
-    const pingPromise = fetch(`${backendUrl}/api/health`, {
+    const pingPromise = fetch(`${backendUrl}/api/docs-json`, {
       method: "GET",
       cache: "no-store",
     })
@@ -40,7 +40,16 @@ export async function GET() {
   }
 
   return NextResponse.json(
-    { ok: true, status: backendAwake ? "awake" : "warming" },
-    { status: 200 },
+    {
+      ok: true,
+      status: backendAwake ? "awake" : "warming",
+      buildId: process.env.NEXT_PUBLIC_BUILD_ID || "",
+    },
+    {
+      status: 200,
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate",
+      },
+    },
   );
 }

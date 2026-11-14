@@ -4,6 +4,7 @@ import { unstable_rethrow } from "next/navigation";
 
 import { getUserToken, getCurrentUserSession } from "@/app/myUtil";
 import { queryProjectsFromDb, raceBackendFetch } from "@/lib/fast-read";
+import { normalizeApiUserPhoto } from "@/lib/avatar";
 
 export interface ProjectApiItem {
   id: number;
@@ -83,7 +84,7 @@ export async function getProjects(params?: {
 
     if (res && res.ok) {
       const data = await res.json();
-      return Array.isArray(data) ? data : [];
+      return Array.isArray(data) ? data.map((p: ProjectApiItem) => ({ ...p, assignedUsers: Array.isArray(p.assignedUsers) ? p.assignedUsers.map((u) => { const avatar = normalizeApiUserPhoto(u.userId || u.id, u.photo, u.profileImage, undefined, ""); return { ...u, photo: avatar, profileImage: avatar }; }) : p.assignedUsers })) : [];
     }
 
     // Render Cold-Start Fallback: read directly from PostgreSQL pool (~80ms)

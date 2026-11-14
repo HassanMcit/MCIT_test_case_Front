@@ -5,6 +5,21 @@ import { pool } from "@/lib/db";
 import * as crypto from "node:crypto";
 import { isAllowedAccountEmail } from "@/lib/account-email";
 
+function normalizeSessionAvatarUrl(raw?: unknown): string | undefined {
+  if (typeof raw !== "string") return undefined;
+  const s = raw.trim();
+  if (!s || s === "null" || s === "undefined") return undefined;
+  if (s.includes("default-profile.png") || s.endsWith("/avatar.png")) {
+    return "/avatar.png";
+  }
+  const backendMatch = s.match(/\/api\/users\/(\d+)\/photo(\?[^\s#]*)?/i);
+  if (backendMatch) {
+    return `/api/avatar/${backendMatch[1]}${backendMatch[2] || ""}`;
+  }
+  if (s.startsWith("data:")) return "/avatar.png";
+  return s;
+}
+
 export function sanitizeEnvValue(raw?: string | null): string {
   if (typeof raw !== "string") return "";
   let value = raw.trim();
@@ -203,7 +218,9 @@ export const authConfig: NextAuthConfig = {
           console.error("Error persisting login audit log:", dbErr);
         }
 
-        return { name, email, image: photo, access_token, role, id: String(id), sid: sessionId };
+        const resolvedImage = normalizeSessionAvatarUrl(photo);
+
+        return { name, email, image: resolvedImage, access_token, role, id: String(id), sid: sessionId };
       },
     }),
   ],
@@ -223,8 +240,8 @@ export const authConfig: NextAuthConfig = {
       }
       if (trigger === "update") {
         const newImage = session?.image || session?.user?.image || session?.picture;
-        if (newImage) {
-          token.picture = newImage;
+        if (typeof newImage === "string" && newImage.trim() && !newImage.trim().startsWith("data:")) {
+          token.picture = newImage.trim();
         }
       }
 
@@ -233,7 +250,9 @@ export const authConfig: NextAuthConfig = {
 
     session: async function ({ session, token }) {
       session.user.role = token.role as string;
-      session.user.image = (token.picture as string) || session.user?.image;
+      session.user.image = normalizeSessionAvatarUrl(
+        (token.picture as string) || session.user?.image
+      );
       session.user.loginAt = token.loginAt as number;
       session.user.loginDate = token.loginDate as string;
       session.user.id = token.id as string;
