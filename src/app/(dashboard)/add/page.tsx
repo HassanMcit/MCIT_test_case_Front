@@ -9,7 +9,7 @@ async function Page() {
   let allApplications: QualityApplication[] = [];
   try {
     const [projectsRes, qualityData] = await Promise.all([
-      getProjects({ assignedToMe: true }).catch(() => []),
+      getProjects().catch(() => []),
       getQualityApplications().catch(() => ({ applications: [] })),
     ]);
     allProjects = projectsRes || [];

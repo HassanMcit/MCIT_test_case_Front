@@ -40,7 +40,7 @@ function LoginFormInner() {
       // One bounded, direct wake request; no frontend function or DB warm-up.
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 10000);
-      fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/health`, {
+      fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/docs-json`, {
         cache: "no-store",
         signal: controller.signal,
       }).catch(() => {}).finally(() => clearTimeout(timer));
@@ -70,14 +70,24 @@ function LoginFormInner() {
       const telemetry = await collectLoginTelemetry();
       const res = await signIn('credentials', {
         ...data,
+        email: data.email.trim().toLowerCase(),
         ...telemetry,
         redirect: false,
         redirectTo: '/dashboard',
       });
       // console.log(res)
       
-      if (!res.error) {
+      if (res && !res.error) {
         return true;
+      }
+      if (
+        !res ||
+        (typeof res.status === "number" && res.status >= 500) ||
+        (res.error && res.error !== "CredentialsSignin")
+      ) {
+        throw new Error(
+          "Server is waking up or temporarily unavailable. Please try again in a few seconds."
+        );
       }
       throw new Error("Incorrect Email or Password");
     }

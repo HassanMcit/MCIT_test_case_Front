@@ -11,7 +11,7 @@ export async function appFetch(
     next?: { tags?: string[]; revalidate?: number | false };
   } = {},
 ) {
-  if (process.env.NETLIFY === "true" && !init.signal) {
+  if (typeof process !== "undefined" && process.env?.NETLIFY === "true" && !init.signal) {
     // Bound upstream work within the host's request budget. Never retry writes.
     init = { ...init, signal: AbortSignal.timeout(20000) };
   }

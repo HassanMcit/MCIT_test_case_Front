@@ -6,13 +6,14 @@ import { LoginResponseType, LoginSchemaType } from "./login.interface";
 export async function sendUserLogin(userData:LoginSchemaType):Promise<LoginResponseType> {
 
     try {
+        const normalizedEmail = (userData.email || "").trim().toLowerCase();
         const response = await appFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/login`, {
             method: "POST",
             cache: "no-store",
             headers: {
                 "content-type" : "application/json",
             },
-            body: JSON.stringify(userData)
+            body: JSON.stringify({ ...userData, email: normalizedEmail })
         })
         const data:LoginResponseType = await response.json();
 

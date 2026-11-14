@@ -19,6 +19,57 @@ function normalizeSessionAvatarUrl(raw?: unknown): string | undefined {
   return s;
 }
 
+function sanitizeEnvValue(raw?: string | null): string {
+  if (typeof raw !== "string") return "";
+  let value = raw.trim();
+  value = value.replace(/^(?:export\s+)?(?:AUTH_URL|NEXTAUTH_URL|NEXT_PUBLIC_BASE_URL)\s*=\s*/i, "");
+  while (
+    value.length >= 2 &&
+    ((value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'")))
+  ) {
+    value = value.slice(1, -1).trim();
+  }
+  return value;
+}
+
+function normalizeOriginUrl(raw?: string | null): string | undefined {
+  const cleaned = sanitizeEnvValue(raw).replace(/\/+$/, "");
+  if (!cleaned) return undefined;
+  try {
+    const parsed = new URL(cleaned);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return undefined;
+    }
+    const pathPart =
+      parsed.pathname && parsed.pathname !== "/"
+        ? parsed.pathname.replace(/\/+$/, "")
+        : "";
+    return `${parsed.origin}${pathPart}`;
+  } catch {
+    return undefined;
+  }
+}
+
+function sanitizeAuthProcessEnv(
+  env: Record<string, string | undefined> = process.env,
+): void {
+  for (const key of ["AUTH_URL", "NEXTAUTH_URL", "NEXT_PUBLIC_BASE_URL"] as const) {
+    const raw = env[key];
+    if (typeof raw !== "string") continue;
+    const normalized = normalizeOriginUrl(raw);
+    if (normalized) {
+      env[key] = normalized;
+    } else if (key === "AUTH_URL" || key === "NEXTAUTH_URL") {
+      delete env[key];
+    } else {
+      env[key] = sanitizeEnvValue(raw).replace(/\/+$/, "");
+    }
+  }
+}
+
+sanitizeAuthProcessEnv();
+
 declare module "next-auth" {
   interface User {
     access_token: string;
@@ -41,6 +92,7 @@ declare module "next-auth" {
 }
 
 export const authConfig: NextAuthConfig = {
+  trustHost: true,
   session: {
     strategy: "jwt",
     maxAge: 60 * 60 * 24 * 7,
@@ -61,17 +113,68 @@ export const authConfig: NextAuthConfig = {
         userAgent: { label: "User Agent", type: "text" },
       },
       authorize: async function (credential) {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/login`, {
-          method: "POST",
-          cache: "no-store",
-          ...(process.env.NETLIFY === "true"
-            ? { signal: AbortSignal.timeout(20000) }
-            : {}),
-          headers: {
-            "content-type": "application/json",
-          },
-          body: JSON.stringify(credential),
-        });
+        sanitizeAuthProcessEnv();
+        const baseUrl =
+          normalizeOriginUrl(process.env.NEXT_PUBLIC_BASE_URL) ||
+          sanitizeEnvValue(process.env.NEXT_PUBLIC_BASE_URL).replace(/\/+$/, "");
+        if (!baseUrl) {
+          return null;
+        }
+
+        const normalizedEmail =
+          typeof credential?.email === "string"
+            ? credential.email.trim().toLowerCase()
+            : "";
+        const loginPayload = {
+          ...(credential as Record<string, unknown>),
+          email: normalizedEmail,
+        };
+        const isNetlify = process.env.NETLIFY === "true";
+
+        let response: Response | null = null;
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          try {
+            const timeoutMs = isNetlify ? 20000 : attempt === 1 ? 35000 : 25000;
+            const timeoutSignal =
+              typeof AbortSignal !== "undefined" &&
+              typeof AbortSignal.timeout === "function"
+                ? AbortSignal.timeout(timeoutMs)
+                : undefined;
+            response = await fetch(`${baseUrl}/api/auth/login`, {
+              method: "POST",
+              cache: "no-store",
+              ...(timeoutSignal ? { signal: timeoutSignal } : {}),
+              headers: {
+                "content-type": "application/json",
+              },
+              body: JSON.stringify(loginPayload),
+            });
+            if (
+              !isNetlify &&
+              (response.status === 502 ||
+                response.status === 503 ||
+                response.status === 504) &&
+              attempt < 2
+            ) {
+              if (typeof setTimeout === "function") {
+                await new Promise((resolve) => setTimeout(resolve, 1500));
+              }
+              continue;
+            }
+            break;
+          } catch {
+            if (isNetlify || attempt >= 2) {
+              throw new Error("BACKEND_UNAVAILABLE");
+            }
+            if (typeof setTimeout === "function") {
+              await new Promise((resolve) => setTimeout(resolve, 1500));
+            }
+          }
+        }
+
+        if (!response || response.status >= 500) {
+          throw new Error("BACKEND_UNAVAILABLE");
+        }
 
         if (!response.ok) {
           return null;
@@ -179,29 +282,31 @@ export const authConfig: NextAuthConfig = {
 
       let isRevoked = false;
 
-      if (sid) {
-        try {
-          const sessRes = await pool.query(
-            'SELECT "isActive" FROM user_login_sessions WHERE "sessionId" = $1',
-            [sid]
-          );
-          if (sessRes.rows[0] && sessRes.rows[0].isActive === false) {
-            isRevoked = true;
-          }
-        } catch {}
+      const [sessRes, userRes] = await Promise.all([
+        sid
+          ? pool
+              .query(
+                'SELECT "isActive" FROM user_login_sessions WHERE "sessionId" = $1',
+                [sid]
+              )
+              .catch(() => null)
+          : Promise.resolve(null),
+        userId
+          ? pool
+              .query('SELECT "minTokenIat" FROM users WHERE id = $1', [userId])
+              .catch(() => null)
+          : Promise.resolve(null),
+      ]);
+
+      if (sessRes?.rows[0] && sessRes.rows[0].isActive === false) {
+        isRevoked = true;
       }
 
-      if (!isRevoked && userId) {
-        try {
-          const userRes = await pool.query(
-            'SELECT "minTokenIat" FROM users WHERE id = $1',
-            [userId]
-          );
-          const minIat = Number(userRes.rows[0]?.minTokenIat || 0);
-          if (minIat > 0 && tokenIat > 0 && tokenIat < minIat) {
-            isRevoked = true;
-          }
-        } catch {}
+      if (!isRevoked && userRes) {
+        const minIat = Number(userRes.rows[0]?.minTokenIat || 0);
+        if (minIat > 0 && tokenIat > 0 && tokenIat < minIat) {
+          isRevoked = true;
+        }
       }
 
       // Auto-register & keep presence in user_login_sessions for any active session
