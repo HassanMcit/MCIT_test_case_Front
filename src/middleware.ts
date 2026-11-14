@@ -47,7 +47,15 @@ export default async function middleware(req: NextRequest) {
   const isAuth = pathName === "/login";
 
   let token: any = null;
+  const hasCookieApi = typeof req.cookies?.has === "function";
   for (const cookieName of SESSION_COOKIES) {
+    if (
+      hasCookieApi &&
+      !req.cookies.has(cookieName) &&
+      !req.cookies.has(`${cookieName}.0`)
+    ) {
+      continue;
+    }
     try {
       const candidate = await getToken({
         req,

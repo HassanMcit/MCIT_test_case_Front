@@ -61,6 +61,7 @@ function loadTsModule(relFile, mocks, extraGlobals = {}) {
   const customRequire = (name) => {
     if (name in mocks) return mocks[name];
     if (name === '@/lib/account-email') return loadTsModule('src/lib/account-email.ts', {});
+    if (name === '@/lib/avatar') return loadTsModule('src/lib/avatar.ts', {});
     if (name === 'node:crypto' || name === 'crypto') return crypto;
     if (name === 'node:zlib' || name === 'zlib') return require('node:zlib');
     if (name === 'node:fs' || name === 'fs') return fs;

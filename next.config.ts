@@ -62,6 +62,12 @@ const nextConfig: NextConfig = {
       "./node_modules/pg-cloudflare/esm/**/*",
     ],
   },
+  outputFileTracingExcludes: {
+    "/*": [
+      "./node_modules/react-dom/cjs/*development*",
+      "./node_modules/react-dom/cjs/*profiling*",
+    ],
+  },
   experimental: {
     staleTimes: {
       dynamic: 60,

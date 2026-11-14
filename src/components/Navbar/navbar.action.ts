@@ -3,7 +3,7 @@ import { appFetch } from "@/lib/app-fetch";
 import { getUserToken, getCurrentUserSession } from "@/app/myUtil";
 import { ChangeProfileResponseType, UserDataResponse } from "./changeProfile.interface";
 import { revalidatePath, updateTag } from "next/cache";
-import { extractSafeDataUrl, resolveAvatarForDisplay } from "@/lib/avatar";
+import { extractSafeDataUrl, resolveAvatarForDisplay, safeAvatarSqlExpr } from "@/lib/avatar";
 import { pool } from "@/lib/db";
 
 export async function changeProfileImage(
@@ -156,7 +156,7 @@ export async function getUserData(): Promise<UserDataResponse | null> {
     if (sessionUser?.id) {
       try {
         const res = await pool.query(
-          'SELECT id, name, email, role, photo, "profileImage", "createdAt", "updatedAt" FROM users WHERE id = $1 LIMIT 1',
+          `SELECT id, name, email, role, ${safeAvatarSqlExpr("photo")} AS photo, ${safeAvatarSqlExpr('"profileImage"')} AS "profileImage", "createdAt", "updatedAt" FROM users WHERE id = $1 LIMIT 1`,
           [sessionUser.id],
         );
         const row = res.rows[0];

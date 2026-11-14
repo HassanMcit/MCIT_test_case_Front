@@ -146,3 +146,19 @@ export function normalizeApiUserPhoto(
     fallback
   );
 }
+
+/**
+ * SQL projection that leaves short URLs intact and collapses large `data:image/*;base64,...`
+ * columns to a 26-byte sentinel so PostgreSQL/pg never ships or parses full base64 blobs
+ * on list/SSR queries (binary bytes are served solely by `/api/avatar/:id`).
+ */
+export function safeAvatarSqlExpr(colExpr: string): string {
+  return `CASE
+    WHEN ${colExpr} IS NULL THEN NULL
+    WHEN length(${colExpr}) <= 2048 THEN ${colExpr}
+    WHEN left(ltrim(${colExpr}), 128) ~* '^data:image/(jpeg|jpg|png|webp|gif|avif);base64,[A-Za-z0-9+/=[:space:]]+'
+      AND POSITION('${DUMMY_PIXEL_PREFIX}' IN left(ltrim(${colExpr}), 160)) = 0
+      THEN 'data:image/png;base64,REF'
+    ELSE NULL
+  END`;
+}

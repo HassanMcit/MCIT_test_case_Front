@@ -42,7 +42,6 @@ function SessionRevocationGuard({ children }: { children?: React.ReactNode }) {
     const ping = () => {
       fetch("/api/warmup", { cache: "no-store" }).catch(() => {});
     };
-    ping();
     const interval = setInterval(ping, 9 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
@@ -75,7 +74,7 @@ function SessionRevocationGuard({ children }: { children?: React.ReactNode }) {
 
 function MySession({ children }: { children?: React.ReactNode }) {
   return (
-    <SessionProvider refetchInterval={30} refetchOnWindowFocus={true}>
+    <SessionProvider refetchInterval={300} refetchOnWindowFocus={false}>
       <SessionRevocationGuard>{children}</SessionRevocationGuard>
     </SessionProvider>
   );
