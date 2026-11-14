@@ -1,55 +1,8 @@
 import { scopedCache as unstable_cache } from "@/lib/scoped-cache";
+import { resolveAvatarForDisplay, safeAvatarSqlExpr } from "@/lib/avatar";
 import { pool } from "@/lib/db";
 
-const DATA_IMAGE_RE = /^data:image\/(?:jpeg|jpg|png|webp|gif|avif);base64,[A-Za-z0-9+/=\s]+$/i;
 
-function resolveFastReadAvatar(
-  userId: unknown,
-  photo?: unknown,
-  profileImage?: unknown,
-  updatedAt?: unknown
-): string {
-  const uid = Number(userId);
-  const isDefault = (v: unknown): boolean => {
-    if (typeof v !== "string") return true;
-    const s = v.trim();
-    return (
-      !s ||
-      s === "null" ||
-      s === "undefined" ||
-      s === "/avatar.png" ||
-      s.endsWith("/avatar.png") ||
-      s.includes("default-profile.png") ||
-      s.includes("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk")
-    );
-  };
-  for (const candidate of [photo, profileImage]) {
-    if (typeof candidate !== "string") continue;
-    const trimmed = candidate.trim();
-    if (!isDefault(trimmed) && DATA_IMAGE_RE.test(trimmed)) {
-      if (Number.isInteger(uid) && uid > 0) {
-        const ts =
-          updatedAt instanceof Date
-            ? updatedAt.getTime()
-            : typeof updatedAt === "string"
-              ? Date.parse(updatedAt)
-              : NaN;
-        const v = Number.isFinite(ts) && ts > 0 ? String(Math.floor(ts)) : "1";
-        return `/api/avatar/${uid}?v=${v}`;
-      }
-      return trimmed;
-    }
-  }
-  for (const candidate of [photo, profileImage]) {
-    if (typeof candidate !== "string") continue;
-    const s = candidate.trim();
-    if (isDefault(s) || /\/api\/users\/\d+\/photo\b/i.test(s)) continue;
-    if (s.startsWith("https://") || s.startsWith("http://") || s.startsWith("/")) {
-      return s;
-    }
-  }
-  return "";
-}
 import type { ProjectApiItem } from "@/app/(dashboard)/projects/getProjects.action";
 import type {
   TestCaseItem,
@@ -119,7 +72,11 @@ async function queryProjectsFromDbRaw(params?: {
   const [projRes, assignRes, tcStatsRes] = await Promise.all([
     pool.query(`SELECT to_jsonb(p) AS p_json FROM projects p ORDER BY p.id DESC`),
     pool.query(`
-      SELECT pa.id AS pa_id, pa."projectId", pa."userId", to_jsonb(pa) AS pa_json, to_jsonb(u) AS u_json
+      SELECT pa.id AS pa_id, pa."projectId", pa."userId", to_jsonb(pa) AS pa_json,
+        u.id AS u_id, u.name AS u_name, u.email AS u_email, u.role AS u_role,
+        u."updatedAt" AS u_updated_at,
+        ${safeAvatarSqlExpr("u.photo")} AS u_photo,
+        ${safeAvatarSqlExpr('u."profileImage"')} AS u_profile_image
       FROM project_assignments pa
       INNER JOIN users u ON pa."userId" = u.id
       ORDER BY pa.id ASC
@@ -134,16 +91,16 @@ async function queryProjectsFromDbRaw(params?: {
   const assignmentsByProject = new Map<number, NonNullable<ProjectApiItem["assignedUsers"]>>();
   for (const row of assignRes.rows) {
     const pid = Number(row.projectId);
-    const u = row.u_json || {};
     const pa = row.pa_json || {};
-    const photo = resolveFastReadAvatar(Number(u.id), u.photo, u.profileImage, u.updatedAt);
+    const uid = Number(row.u_id);
+    const photo = resolveAvatarForDisplay(uid, row.u_photo, row.u_profile_image, row.u_updated_at, "");
     const list = assignmentsByProject.get(pid) || [];
     list.push({
-      id: Number(row.pa_id) || Number(u.id),
-      userId: Number(row.userId) || Number(u.id),
-      name: u.name || "",
-      email: u.email || "",
-      role: u.role || "tester",
+      id: Number(row.pa_id) || uid,
+      userId: Number(row.userId) || uid,
+      name: row.u_name || "",
+      email: row.u_email || "",
+      role: row.u_role || "tester",
       photo,
       profileImage: photo,
       assignedAt: toIsoString(pa.assignedAt || pa.createdAt),
@@ -288,29 +245,46 @@ async function queryTestCasesFromDbRaw(
   const [countRes, rowsRes, usersRes] = await Promise.all([
     pool.query(`SELECT COUNT(*)::int AS total FROM test_cases tc WHERE ${whereSql}`, sqlParams),
     pool.query(
-      `SELECT to_jsonb(tc) AS tc_json, to_jsonb(u) AS tester_json, to_jsonb(p) AS proj_json, to_jsonb(imported) AS import_json
+      `SELECT to_jsonb(tc) AS tc_json, to_jsonb(p) AS proj_json, to_jsonb(imported) AS import_json
        FROM test_cases tc
        LEFT JOIN test_case_imports imported ON imported."testCaseId" = tc.id
-       LEFT JOIN users u ON tc."testerId" = u.id
        LEFT JOIN projects p ON tc."projectId" = p.id
        WHERE ${whereSql}
        ORDER BY COALESCE(tc."executedAt", tc."createdAt") DESC, tc.id DESC
        LIMIT $${idx} OFFSET $${idx + 1}`,
       [...sqlParams, limit, (page - 1) * limit]
     ),
-    pool.query(`SELECT id, to_jsonb(u) AS u_json FROM users u`),
+    pool.query(
+      `SELECT u.id, u.name, u.email, u."updatedAt",
+         ${safeAvatarSqlExpr("u.photo")} AS photo,
+         ${safeAvatarSqlExpr('u."profileImage"')} AS "profileImage"
+       FROM users u`
+    ),
   ]);
 
-  const userMap = new Map<number, any>();
+  const userMap = new Map<
+    number,
+    { id: number; userId: number; name: string; email: string; photo?: string }
+  >();
   for (const ur of usersRes.rows) {
-    userMap.set(Number(ur.id), ur.u_json || {});
+    const uid = Number(ur.id);
+    const photo =
+      resolveAvatarForDisplay(uid, ur.photo, ur.profileImage, ur.updatedAt, "") ||
+      undefined;
+    userMap.set(uid, {
+      id: uid,
+      userId: uid,
+      name: ur.name || "",
+      email: ur.email || "",
+      photo,
+    });
   }
 
   const total = Number(countRes.rows[0]?.total) || 0;
   const data: TestCaseItem[] = rowsRes.rows.map((r: any) => {
     const tc = r.tc_json || {};
-    const u = r.tester_json || (tc.testerId ? userMap.get(Number(tc.testerId)) : null);
-    const updU = tc.updatedById ? userMap.get(Number(tc.updatedById)) : null;
+    const tester = tc.testerId ? (userMap.get(Number(tc.testerId)) ?? null) : null;
+    const updU = tc.updatedById ? (userMap.get(Number(tc.updatedById)) ?? null) : null;
     const p = r.proj_json || null;
 
     return {
@@ -335,24 +309,8 @@ async function queryTestCasesFromDbRaw(
       projectId: tc.projectId ? Number(tc.projectId) : null,
       createdAt: toIsoString(tc.createdAt),
       updatedAt: toIsoString(tc.updatedAt || tc.createdAt),
-      tester: u
-        ? {
-            id: Number(u.id),
-            userId: Number(u.id),
-            name: u.name || "",
-            email: u.email || "",
-            photo: resolveFastReadAvatar(u.id, u.photo, u.profileImage, u.updatedAt) || undefined,
-          }
-        : null,
-      updatedBy: updU
-        ? {
-            id: Number(updU.id),
-            userId: Number(updU.id),
-            name: updU.name || "",
-            email: updU.email || "",
-            photo: resolveFastReadAvatar(updU.id, updU.photo, updU.profileImage, updU.updatedAt) || undefined,
-          }
-        : null,
+      tester,
+      updatedBy: updU,
       project: p ? { id: Number(p.id), name: p.name || "" } : null,
     };
   });
@@ -382,7 +340,13 @@ export const queryTestCasesFromDb = unstable_cache(
  */
 async function queryAllUsersFromDbRaw() {
   const [usersRes, assignRes, tcCountRes] = await Promise.all([
-    pool.query(`SELECT to_jsonb(u) AS u_json FROM users u ORDER BY u.id DESC`),
+    pool.query(
+      `SELECT u.id, u.name, u.email, u.role, u."createdAt", u."updatedAt",
+         ${safeAvatarSqlExpr("u.photo")} AS photo,
+         ${safeAvatarSqlExpr('u."profileImage"')} AS "profileImage"
+       FROM users u
+       ORDER BY u.id DESC`
+    ),
     pool.query(`
       SELECT pa.id AS pa_id, pa."userId", pa."projectId", to_jsonb(pa) AS pa_json, to_jsonb(p) AS p_json
       FROM project_assignments pa
@@ -421,10 +385,9 @@ async function queryAllUsersFromDbRaw() {
     projectsByUser.set(uid, list);
   }
 
-  return usersRes.rows.map((r: any) => {
-    const u = r.u_json || {};
+  return usersRes.rows.map((u: any) => {
     const uid = Number(u.id);
-    const photo = resolveFastReadAvatar(Number(u.id), u.photo, u.profileImage, u.updatedAt);
+    const photo = resolveAvatarForDisplay(uid, u.photo, u.profileImage, u.updatedAt, "");
     const assignedProjects = projectsByUser.get(uid) || [];
     const testCasesCount = tcByUser.get(uid) || 0;
 

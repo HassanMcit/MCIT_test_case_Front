@@ -38,12 +38,12 @@ function SessionRevocationGuard({ children }: { children?: React.ReactNode }) {
   }, [identity, status, scope, router]);
 
   // Periodic background warm-up ping (every 9 mins) to prevent Render backend Cold Starts
+  // Initial load is already served cleanly by SSR and idle resumes are covered by ResumeGuard.
   useEffect(() => {
     if (process.env.NEXT_PUBLIC_HOSTING_PLATFORM === "netlify") return;
     const ping = () => {
       fetch("/api/warmup", { cache: "no-store" }).catch(() => {});
     };
-    ping();
     const interval = setInterval(ping, 9 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
@@ -76,7 +76,7 @@ function SessionRevocationGuard({ children }: { children?: React.ReactNode }) {
 
 function MySession({ children }: { children?: React.ReactNode }) {
   return (
-    <SessionProvider refetchInterval={30} refetchOnWindowFocus={true}>
+    <SessionProvider refetchInterval={300} refetchOnWindowFocus={false}>
       <SessionRevocationGuard>{children}</SessionRevocationGuard>
     </SessionProvider>
   );

@@ -5,8 +5,25 @@ import { pool } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
+const SESSION_COOKIE_NAMES = [
+  "__Secure-authjs.session-token",
+  "authjs.session-token",
+  "__Secure-next-auth.session-token",
+  "next-auth.session-token",
+];
+
+function hasAnySessionCookie(req: NextRequest): boolean {
+  if (typeof req.cookies?.has !== "function") return true;
+  return SESSION_COOKIE_NAMES.some(
+    (name) => req.cookies.has(name) || req.cookies.has(`${name}.0`),
+  );
+}
+
 function decodeBase64ToBytes(base64Body: string): Uint8Array | null {
   try {
+    if (typeof Buffer !== "undefined") {
+      return Buffer.from(base64Body, "base64");
+    }
     const binary = atob(base64Body);
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) {
@@ -22,6 +39,10 @@ export async function GET(
   req: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
+  if (!hasAnySessionCookie(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const session = await getCurrentUserSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
