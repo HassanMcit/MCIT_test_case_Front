@@ -7,7 +7,8 @@ import { LoginResponseType, LoginSchemaType } from "./login.interface";
 export async function sendUserLogin(userData:LoginSchemaType):Promise<LoginResponseType> {
 
     try {
-        if (!isAllowedAccountEmail(userData.email)) {
+        const normalizedEmail = (userData.email || "").trim().toLowerCase();
+        if (!isAllowedAccountEmail(normalizedEmail)) {
             throw new Error("Email domain is not allowed");
         }
         const response = await appFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/login`, {
@@ -16,7 +17,7 @@ export async function sendUserLogin(userData:LoginSchemaType):Promise<LoginRespo
             headers: {
                 "content-type" : "application/json",
             },
-            body: JSON.stringify(userData)
+            body: JSON.stringify({ ...userData, email: normalizedEmail })
         })
         const data:LoginResponseType = await response.json();
 

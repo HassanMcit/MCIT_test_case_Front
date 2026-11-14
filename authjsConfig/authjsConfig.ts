@@ -117,7 +117,11 @@ export const authConfig: NextAuthConfig = {
         userAgent: { label: "User Agent", type: "text" },
       },
       authorize: async function (credential) {
-        if (!isAllowedAccountEmail(credential.email)) return null;
+        const normalizedEmail =
+          typeof credential?.email === "string"
+            ? credential.email.trim().toLowerCase()
+            : "";
+        if (!isAllowedAccountEmail(normalizedEmail)) return null;
 
         sanitizeAuthProcessEnv();
         const baseUrl =
@@ -127,14 +131,54 @@ export const authConfig: NextAuthConfig = {
           return null;
         }
 
-        const response = await fetch(`${baseUrl}/api/auth/login`, {
-          method: "POST",
-          cache: "no-store",
-          headers: {
-            "content-type": "application/json",
-          },
-          body: JSON.stringify(credential),
-        });
+        const loginPayload = {
+          ...(credential as Record<string, unknown>),
+          email: normalizedEmail,
+        };
+
+        let response: Response | null = null;
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          try {
+            const timeoutMs = attempt === 1 ? 35000 : 25000;
+            const timeoutSignal =
+              typeof AbortSignal !== "undefined" &&
+              typeof AbortSignal.timeout === "function"
+                ? AbortSignal.timeout(timeoutMs)
+                : undefined;
+            response = await fetch(`${baseUrl}/api/auth/login`, {
+              method: "POST",
+              cache: "no-store",
+              ...(timeoutSignal ? { signal: timeoutSignal } : {}),
+              headers: {
+                "content-type": "application/json",
+              },
+              body: JSON.stringify(loginPayload),
+            });
+            if (
+              (response.status === 502 ||
+                response.status === 503 ||
+                response.status === 504) &&
+              attempt < 2
+            ) {
+              if (typeof setTimeout === "function") {
+                await new Promise((resolve) => setTimeout(resolve, 1500));
+              }
+              continue;
+            }
+            break;
+          } catch {
+            if (attempt >= 2) {
+              throw new Error("BACKEND_UNAVAILABLE");
+            }
+            if (typeof setTimeout === "function") {
+              await new Promise((resolve) => setTimeout(resolve, 1500));
+            }
+          }
+        }
+
+        if (!response || response.status >= 500) {
+          throw new Error("BACKEND_UNAVAILABLE");
+        }
 
         if (!response.ok) {
           return null;
@@ -265,29 +309,31 @@ export const authConfig: NextAuthConfig = {
 
       let isRevoked = false;
 
-      if (sid) {
-        try {
-          const sessRes = await pool.query(
-            'SELECT "isActive" FROM user_login_sessions WHERE "sessionId" = $1',
-            [sid]
-          );
-          if (sessRes.rows[0] && sessRes.rows[0].isActive === false) {
-            isRevoked = true;
-          }
-        } catch {}
+      const [sessRes, userRes] = await Promise.all([
+        sid
+          ? pool
+              .query(
+                'SELECT "isActive" FROM user_login_sessions WHERE "sessionId" = $1',
+                [sid]
+              )
+              .catch(() => null)
+          : Promise.resolve(null),
+        userId
+          ? pool
+              .query('SELECT "minTokenIat" FROM users WHERE id = $1', [userId])
+              .catch(() => null)
+          : Promise.resolve(null),
+      ]);
+
+      if (sessRes?.rows[0] && sessRes.rows[0].isActive === false) {
+        isRevoked = true;
       }
 
-      if (!isRevoked && userId) {
-        try {
-          const userRes = await pool.query(
-            'SELECT "minTokenIat" FROM users WHERE id = $1',
-            [userId]
-          );
-          const minIat = Number(userRes.rows[0]?.minTokenIat || 0);
-          if (minIat > 0 && tokenIat > 0 && tokenIat < minIat) {
-            isRevoked = true;
-          }
-        } catch {}
+      if (!isRevoked && userRes) {
+        const minIat = Number(userRes.rows[0]?.minTokenIat || 0);
+        if (minIat > 0 && tokenIat > 0 && tokenIat < minIat) {
+          isRevoked = true;
+        }
       }
 
       // Auto-register & keep presence in user_login_sessions for any active session

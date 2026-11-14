@@ -60,14 +60,24 @@ function LoginFormInner() {
       const telemetry = await collectLoginTelemetry();
       const res = await signIn('credentials', {
         ...data,
+        email: data.email.trim().toLowerCase(),
         ...telemetry,
         redirect: false,
         redirectTo: '/dashboard',
       });
       // console.log(res)
       
-      if (!res.error) {
+      if (res && !res.error) {
         return true;
+      }
+      if (
+        !res ||
+        (typeof res.status === "number" && res.status >= 500) ||
+        (res.error && res.error !== "CredentialsSignin")
+      ) {
+        throw new Error(
+          "Server is waking up or temporarily unavailable. Please try again in a few seconds."
+        );
       }
       throw new Error("Incorrect Email or Password");
     }

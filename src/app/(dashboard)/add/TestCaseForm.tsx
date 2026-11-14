@@ -991,7 +991,7 @@ export default function AddTestCasePage({
                     (p) => String(p.id) === selectedProjectId
                   );
                   reset({
-                    module: currentProj?.name || "",
+                    module: currentProj?.application || currentProj?.name || "",
                     testId: "TC-0001",
                     pageName: "",
                     scenario: "",
