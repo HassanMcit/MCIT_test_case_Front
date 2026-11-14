@@ -5,6 +5,7 @@ import { revalidatePath, updateTag } from "next/cache";
 import { getProjects } from "../projects/getProjects.action";
 import { getTestCases } from "../test-cases/test-cases.action";
 import { getAllUsers } from "../users/user.action";
+import { resolveAvatarForDisplay } from "@/lib/avatar";
 import type {
   DashboardChartItem,
   DashboardDataPayload,
@@ -242,8 +243,8 @@ export async function getDashboardFullData(): Promise<DashboardDataPayload> {
           name: u.name,
           email: u.email,
           role: u.role,
-          photo: u.photo || u.profileImage || null,
-          profileImage: u.profileImage || u.photo || null,
+          photo: resolveAvatarForDisplay(u.id, u.photo, u.profileImage, (u as { updatedAt?: string }).updatedAt, "") || undefined,
+          profileImage: resolveAvatarForDisplay(u.id, u.photo, u.profileImage, (u as { updatedAt?: string }).updatedAt, "") || null,
           createdAt: u.createdAt,
           assignedProjects: enrichedAssigned,
           _count: {

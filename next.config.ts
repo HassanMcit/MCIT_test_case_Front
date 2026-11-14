@@ -1,8 +1,15 @@
 import type { NextConfig } from "next";
 
+if (!process.env.NEXT_PUBLIC_BUILD_ID) {
+  process.env.NEXT_PUBLIC_BUILD_ID = String(Date.now());
+}
+
 const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
+  env: {
+    NEXT_PUBLIC_BUILD_ID: process.env.NEXT_PUBLIC_BUILD_ID,
+  },
   experimental: {
     staleTimes: {
       dynamic: 60,

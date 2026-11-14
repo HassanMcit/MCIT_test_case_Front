@@ -1,5 +1,55 @@
 import { scopedCache as unstable_cache } from "@/lib/scoped-cache";
 import { pool } from "@/lib/db";
+
+const DATA_IMAGE_RE = /^data:image\/(?:jpeg|jpg|png|webp|gif|avif);base64,[A-Za-z0-9+/=\s]+$/i;
+
+function resolveFastReadAvatar(
+  userId: unknown,
+  photo?: unknown,
+  profileImage?: unknown,
+  updatedAt?: unknown
+): string {
+  const uid = Number(userId);
+  const isDefault = (v: unknown): boolean => {
+    if (typeof v !== "string") return true;
+    const s = v.trim();
+    return (
+      !s ||
+      s === "null" ||
+      s === "undefined" ||
+      s === "/avatar.png" ||
+      s.endsWith("/avatar.png") ||
+      s.includes("default-profile.png") ||
+      s.includes("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk")
+    );
+  };
+  for (const candidate of [photo, profileImage]) {
+    if (typeof candidate !== "string") continue;
+    const trimmed = candidate.trim();
+    if (!isDefault(trimmed) && DATA_IMAGE_RE.test(trimmed)) {
+      if (Number.isInteger(uid) && uid > 0) {
+        const ts =
+          updatedAt instanceof Date
+            ? updatedAt.getTime()
+            : typeof updatedAt === "string"
+              ? Date.parse(updatedAt)
+              : NaN;
+        const v = Number.isFinite(ts) && ts > 0 ? String(Math.floor(ts)) : "1";
+        return `/api/avatar/${uid}?v=${v}`;
+      }
+      return trimmed;
+    }
+  }
+  for (const candidate of [photo, profileImage]) {
+    if (typeof candidate !== "string") continue;
+    const s = candidate.trim();
+    if (isDefault(s) || /\/api\/users\/\d+\/photo\b/i.test(s)) continue;
+    if (s.startsWith("https://") || s.startsWith("http://") || s.startsWith("/")) {
+      return s;
+    }
+  }
+  return "";
+}
 import type { ProjectApiItem } from "@/app/(dashboard)/projects/getProjects.action";
 import type {
   TestCaseItem,
@@ -86,7 +136,7 @@ async function queryProjectsFromDbRaw(params?: {
     const pid = Number(row.projectId);
     const u = row.u_json || {};
     const pa = row.pa_json || {};
-    const photo = u.photo || u.profileImage || "";
+    const photo = resolveFastReadAvatar(Number(u.id), u.photo, u.profileImage, u.updatedAt);
     const list = assignmentsByProject.get(pid) || [];
     list.push({
       id: Number(row.pa_id) || Number(u.id),
@@ -95,7 +145,7 @@ async function queryProjectsFromDbRaw(params?: {
       email: u.email || "",
       role: u.role || "tester",
       photo,
-      profileImage: u.profileImage || photo,
+      profileImage: photo,
       assignedAt: toIsoString(pa.assignedAt || pa.createdAt),
     });
     assignmentsByProject.set(pid, list);
@@ -291,7 +341,7 @@ async function queryTestCasesFromDbRaw(
             userId: Number(u.id),
             name: u.name || "",
             email: u.email || "",
-            photo: u.photo || u.profileImage || undefined,
+            photo: resolveFastReadAvatar(u.id, u.photo, u.profileImage, u.updatedAt) || undefined,
           }
         : null,
       updatedBy: updU
@@ -300,7 +350,7 @@ async function queryTestCasesFromDbRaw(
             userId: Number(updU.id),
             name: updU.name || "",
             email: updU.email || "",
-            photo: updU.photo || updU.profileImage || undefined,
+            photo: resolveFastReadAvatar(updU.id, updU.photo, updU.profileImage, updU.updatedAt) || undefined,
           }
         : null,
       project: p ? { id: Number(p.id), name: p.name || "" } : null,
@@ -374,7 +424,7 @@ async function queryAllUsersFromDbRaw() {
   return usersRes.rows.map((r: any) => {
     const u = r.u_json || {};
     const uid = Number(u.id);
-    const photo = u.photo || u.profileImage || "";
+    const photo = resolveFastReadAvatar(Number(u.id), u.photo, u.profileImage, u.updatedAt);
     const assignedProjects = projectsByUser.get(uid) || [];
     const testCasesCount = tcByUser.get(uid) || 0;
 
@@ -385,7 +435,7 @@ async function queryAllUsersFromDbRaw() {
       email: u.email || "",
       role: u.role || "tester",
       photo,
-      profileImage: u.profileImage || photo,
+      profileImage: photo,
       createdAt: toIsoString(u.createdAt),
       updatedAt: toIsoString(u.updatedAt || u.createdAt),
       _count: {

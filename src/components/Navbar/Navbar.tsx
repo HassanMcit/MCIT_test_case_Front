@@ -20,6 +20,7 @@ import {
 import { cn } from "@/lib/utils";
 import { signOut, useSession } from "next-auth/react";
 import { changeProfileImage, getUserData } from "./navbar.action";
+import { normalizeApiUserPhoto } from "@/lib/avatar";
 import {
   getMyNotifications,
   refreshNotifications,
@@ -113,14 +114,14 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
   const isLoggingOutRef = useRef(false);
 
   const [imgSrc, setImgSrc] = useState<string>(() => {
-    return data?.user?.image || "/avatar.png";
+    return normalizeApiUserPhoto(data?.user?.id, data?.user?.image, undefined, undefined, "/avatar.png");
   });
 
   useEffect(() => {
-    if (data?.user?.image) {
-      setImgSrc(data.user.image);
+    if (data?.user?.image && !uploadImage) {
+      setImgSrc(normalizeApiUserPhoto(data?.user?.id, data.user.image, undefined, undefined, "/avatar.png"));
     }
-  }, [data?.user?.image]);
+  }, [data?.user?.id, data?.user?.image, uploadImage]);
 
   const notificationRequestRef = useRef<Promise<void> | null>(null);
   const pendingNotificationRefreshRef = useRef(false);
@@ -341,6 +342,7 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
   // console.log(data?.user.image);
 
   useEffect(function () {
+    if (status !== "authenticated") return;
     getUserData()
       .then((res) => {
         if (res?.photo) {
@@ -351,7 +353,7 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
       .catch((err) => {
         console.warn("Could not fetch latest user data:", err);
       });
-  }, []);
+  }, [status, data?.user?.id]);
 
   
   return (
@@ -703,7 +705,9 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
                       setImgSrc(finalPhoto);
                       setUploadImage(finalPhoto);
                       try {
-                        await update({ image: finalPhoto, user: { image: finalPhoto } });
+                        if (finalPhoto && !finalPhoto.startsWith("data:") && !finalPhoto.startsWith("blob:")) {
+                          await update({ image: finalPhoto, user: { image: finalPhoto } });
+                        }
                       } catch {}
                       setShowDropdown(false);
                       return res;
