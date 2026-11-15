@@ -6,6 +6,12 @@ import { revalidatePath, updateTag } from "next/cache";
 import { recordSystemAuditLog } from "@/lib/audit";
 import { getAllUsers } from "../users/user.action";
 import { getProjects } from "../projects/getProjects.action";
+import {
+  extractBackendErrorMessage,
+  fetchWithWakeRetry,
+  isAbortLikeError,
+  sanitizeBackendOrigin,
+} from "@/lib/backend-wake";
 
 export async function fetchAssignData() {
   try {
@@ -28,21 +34,39 @@ export async function fetchAssignData() {
 
 export async function assignProjectToUser(userId: number, projectId: number) {
   try {
-    const res = await appFetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/api/users/${userId}/assign-project`,
+    const token = await getUserToken();
+    if (!token) return { success: false, error: "يرجى تسجيل الدخول أولاً" };
+    const baseUrl = sanitizeBackendOrigin(process.env.NEXT_PUBLIC_BASE_URL);
+    if (!baseUrl) return { success: false, error: "تعذر الاتصال بالخادم" };
+
+    const res = await fetchWithWakeRetry(
+      appFetch,
+      `${baseUrl}/api/users/${userId}/assign-project`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${await getUserToken()}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ projectId }),
         cache: "no-store",
-      }
+      },
+      {
+        maxAttempts: 3,
+        timeoutsMs: [25000, 25000, 20000],
+        retryOnTimeout: false,
+        retryStatuses: new Set([502, 503]),
+        baseUrl,
+      },
     );
 
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) return { success: false, error: data.message || "Failed to assign project" };
+    if (!res.ok) {
+      return {
+        success: false,
+        error: extractBackendErrorMessage(res.status, data, "Failed to assign project"),
+      };
+    }
 
     updateTag("projects");
     updateTag("users");
@@ -67,25 +91,47 @@ export async function assignProjectToUser(userId: number, projectId: number) {
 
     return { success: true, message: data.message };
   } catch (error: any) {
-    return { success: false, error: "Network error" };
+    return {
+      success: false,
+      error: isAbortLikeError(error)
+        ? "استغرق الخادم وقتاً أطول من المعتاد أثناء الاستيقاظ، يرجى المحاولة مرة أخرى"
+        : "Network error",
+    };
   }
 }
 
 export async function unassignProjectFromUser(userId: number, projectId: number) {
   try {
-    const res = await appFetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/api/users/${userId}/assign-project/${projectId}`,
+    const token = await getUserToken();
+    if (!token) return { success: false, error: "يرجى تسجيل الدخول أولاً" };
+    const baseUrl = sanitizeBackendOrigin(process.env.NEXT_PUBLIC_BASE_URL);
+    if (!baseUrl) return { success: false, error: "تعذر الاتصال بالخادم" };
+
+    const res = await fetchWithWakeRetry(
+      appFetch,
+      `${baseUrl}/api/users/${userId}/assign-project/${projectId}`,
       {
         method: "DELETE",
         headers: {
-          Authorization: `Bearer ${await getUserToken()}`,
+          Authorization: `Bearer ${token}`,
         },
-        cache: "force-cache",
-      }
+        cache: "no-store",
+      },
+      {
+        maxAttempts: 3,
+        timeoutsMs: [20000, 25000, 20000],
+        retryOnTimeout: true,
+        baseUrl,
+      },
     );
 
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) return { success: false, error: data.message || "Failed to unassign project" };
+    if (!res.ok) {
+      return {
+        success: false,
+        error: extractBackendErrorMessage(res.status, data, "Failed to unassign project"),
+      };
+    }
 
     updateTag("projects");
     updateTag("users");
@@ -109,6 +155,11 @@ export async function unassignProjectFromUser(userId: number, projectId: number)
 
     return { success: true, message: data.message };
   } catch (error: any) {
-    return { success: false, error: "Network error" };
+    return {
+      success: false,
+      error: isAbortLikeError(error)
+        ? "استغرق الخادم وقتاً أطول من المعتاد أثناء الاستيقاظ، يرجى المحاولة مرة أخرى"
+        : "Network error",
+    };
   }
 }

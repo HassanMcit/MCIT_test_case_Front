@@ -62,6 +62,7 @@ function loadTsModule(relFile, mocks, extraGlobals = {}) {
     if (name in mocks) return mocks[name];
     if (name === '@/lib/account-email') return loadTsModule('src/lib/account-email.ts', {});
     if (name === '@/lib/avatar') return loadTsModule('src/lib/avatar.ts', {});
+    if (name === '@/lib/backend-wake') return loadTsModule('src/lib/backend-wake.ts', {});
     if (name === 'node:crypto' || name === 'crypto') return crypto;
     if (name === 'node:zlib' || name === 'zlib') return require('node:zlib');
     if (name === 'node:fs' || name === 'fs') return fs;
@@ -513,6 +514,229 @@ test('isolated local PostgreSQL verifies schema, triggers, auth, session revocat
     assert.equal(excelResult.passedCount, 1);
     assert.equal(excelResult.failedCount, 1);
     assert.ok(excelResult.base64.length > 100);
+
+    // 9b. Verify fast-read & export read latest status from test_cases_current while preserving base_tc."testerId" creator
+    const hasExecTable = Boolean(
+      (await pool.query(`SELECT to_regclass('public.test_executions') AS reg`)).rows[0]?.reg,
+    );
+    if (!hasExecTable) {
+      await pool.query(`
+        CREATE TABLE test_executions (
+          id SERIAL PRIMARY KEY,
+          "testCaseId" INTEGER NOT NULL REFERENCES test_cases(id) ON DELETE CASCADE,
+          "projectId" INTEGER REFERENCES projects(id) ON DELETE SET NULL,
+          "testerId" INTEGER REFERENCES users(id) ON DELETE SET NULL,
+          "testerName" TEXT,
+          status TEXT NOT NULL,
+          "actualResult" TEXT,
+          notes TEXT,
+          environment VARCHAR(200),
+          "executedAt" TIMESTAMPTZ,
+          "recordedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          source TEXT DEFAULT 'compatibility'
+        );
+      `);
+    }
+    const hasCurrentView = Boolean(
+      (await pool.query(`SELECT to_regclass('public.test_cases_current') AS reg`)).rows[0]?.reg,
+    );
+    if (!hasCurrentView) {
+      await pool.query(`
+        CREATE VIEW test_cases_current AS
+        SELECT tc.id, tc."testId", tc.module, tc."pageName", tc.scenario, tc."preConditions", tc.steps, tc."expectedResult",
+          CASE WHEN e.id IS NOT NULL THEN e."actualResult" ELSE tc."actualResult" END AS "actualResult",
+          tc.priority,
+          CASE WHEN e.id IS NOT NULL THEN CASE WHEN e.status='not_run' THEN 'pending' ELSE e.status END ELSE tc.status END AS status,
+          tc.severity,
+          CASE WHEN e.id IS NOT NULL THEN e.notes ELSE tc.notes END AS notes,
+          CASE WHEN e.id IS NOT NULL THEN e."executedAt" ELSE tc."executedAt" END AS "executedAt",
+          CASE WHEN e.id IS NOT NULL THEN e."testerId" ELSE tc."testerId" END AS "testerId",
+          tc."updatedById", tc."projectId", tc."createdAt", tc."updatedAt"
+        FROM test_cases tc
+        LEFT JOIN LATERAL (SELECT * FROM test_executions WHERE "testCaseId" = tc.id ORDER BY id DESC LIMIT 1) e ON true;
+      `);
+    }
+    await pool.query(
+      `INSERT INTO test_executions ("testCaseId", "projectId", "testerId", "testerName", status, "actualResult", notes, "executedAt", snapshot, source)
+       VALUES (101, 1, 1, 'Synthetic Admin', 'failed', 'Updated failure in execution projection', 'Re-tested by Admin', '2026-11-05T12:00:00Z', '{"id":101,"testId":"TC_SYN_001"}'::jsonb, 'compatibility')`,
+    );
+    await pool.query(
+      `UPDATE test_cases SET "updatedById" = 1, "updatedAt" = '2026-11-05T12:00:00Z' WHERE id = 101`,
+    );
+
+    const updatedAdminCases = await fastRead.queryTestCasesFromDb({ page: 1, limit: 50 }, { id: 1, role: 'admin' });
+    const updatedTc101 = updatedAdminCases.data.find((tc) => tc.id === 101);
+    assert.equal(updatedTc101.status, 'failed');
+    assert.equal(updatedTc101.actualResult, 'Updated failure in execution projection');
+    assert.equal(updatedTc101.testerId, 2); // Creator preserved via base_tc."testerId"
+    assert.equal(updatedTc101.tester.name, 'Synthetic Tester One');
+    assert.equal(updatedTc101.updatedById, 1);
+    assert.equal(updatedTc101.updatedBy.name, 'Synthetic Admin');
+
+    const updatedProjects = await fastRead.queryProjectsFromDb({});
+    const updatedPortalProj = updatedProjects.find((p) => p.id === 1);
+    assert.deepEqual(updatedPortalProj.stats, {
+      total: 2,
+      passed: 0,
+      failed: 2,
+      pending: 0,
+      successRate: 0,
+    });
+
+    const updatedExcel = await exportAction.exportProjectExcelAction({
+      projectId: 1,
+      fromDate: '2026-11-01',
+      toDate: '2026-11-06',
+      tzOffsetMinutes: -120,
+    });
+    assert.equal(updatedExcel.success, true);
+    assert.equal(updatedExcel.passedCount, 0);
+    assert.equal(updatedExcel.failedCount, 2);
+
+    // 9c. Verify addNewTestCase & updateTestCase seamlessly fall back to ACID PostgreSQL transactions when Render returns 503
+    const prevGlobalFetch = global.fetch;
+    global.fetch = async () => new Response("Service Waking", { status: 503 });
+    try {
+      const outageFetch = async () => new Response("<html>Bad Gateway</html>", { status: 503 });
+      const revBeforeOutage = Number(
+        (await pool.query('SELECT revision FROM app_cache_revision WHERE id = 1')).rows[0].revision,
+      );
+
+      const addActionsOutage = loadTsModule('src/app/(dashboard)/add/test-case.action.ts', {
+        '@/lib/app-fetch': { appFetch: outageFetch },
+        '@/lib/db': { pool },
+        '@/app/myUtil': {
+          getCurrentUserSession: async () => ({ id: '2', role: 'tester', token: 'tok-2' }),
+        },
+        './test-case-interface': {},
+        'next/cache': {
+          revalidatePath: (p) => revalidatedPaths.push(p),
+          updateTag: (t) => invalidatedTags.push(t),
+        },
+        '@/lib/audit': auditMod,
+      });
+
+      const longModule = 'Extended Digital Governance Portal Module Over Fifty Characters Long Validation Check';
+      const createdDuringOutage = await addActionsOutage.addNewTestCase({
+        testId: 'TC-0901',
+        module: longModule,
+        pageName: 'Submissions',
+        scenario: 'Create defect cleanly even while Render backend sleeps',
+        preConditions: 'Tester assigned to project 1',
+        steps: ['Open form', 'Submit defect'],
+        expectedResult: 'Persists via direct PostgreSQL transaction',
+        actualResult: 'Saved during 503 outage',
+        priority: 'high',
+        status: 'failed',
+        severity: 'high',
+        projectId: 1,
+      });
+      assert.equal(createdDuringOutage.success, true, createdDuringOutage.message);
+      assert.equal(createdDuringOutage.data.module, longModule);
+      assert.equal(createdDuringOutage.data.testerId, 2);
+
+      const createdBaseRow = (
+        await pool.query('SELECT * FROM test_cases WHERE id = $1', [createdDuringOutage.data.id])
+      ).rows[0];
+      assert.equal(createdBaseRow.status, 'pending');
+      assert.equal(createdBaseRow.testerId, 2);
+      assert.equal(createdBaseRow.module, longModule);
+
+      const createdProjRow = (
+        await pool.query('SELECT status, "actualResult" FROM test_cases_current WHERE id = $1', [
+          createdDuringOutage.data.id,
+        ])
+      ).rows[0];
+      assert.equal(createdProjRow.status, 'failed');
+      assert.equal(createdProjRow.actualResult, 'Saved during 503 outage');
+
+      const updateActionsAdminOutage = loadTsModule(
+        'src/app/(dashboard)/test-cases/test-cases.action.ts',
+        {
+          '@/lib/app-fetch': { appFetch: outageFetch },
+          '@/lib/db': { pool },
+          '@/lib/fast-read': fastRead,
+          '@/app/myUtil': {
+            getCurrentUserSession: async () => ({ id: '1', role: 'admin', token: 'tok-1' }),
+            getUserToken: async () => 'tok-1',
+          },
+          './test-cases.interface': {},
+          'next/cache': {
+            revalidatePath: (p) => revalidatedPaths.push(p),
+            updateTag: (t) => invalidatedTags.push(t),
+          },
+          'next/navigation': { unstable_rethrow: () => {} },
+          '@/lib/audit': auditMod,
+        },
+      );
+
+      const orig101Before = (
+        await pool.query('SELECT "testerId", "createdAt" FROM test_cases WHERE id = 101')
+      ).rows[0];
+      const updatedDuringOutage = await updateActionsAdminOutage.updateTestCase(101, {
+        status: 'passed',
+        actualResult: 'Verified fix during Render outage',
+        notes: 'Cleared after retest',
+        pageName: null,
+      });
+      assert.equal(updatedDuringOutage.success, true, updatedDuringOutage.message);
+      assert.equal('testerId' in updatedDuringOutage.data, false);
+      assert.equal('createdAt' in updatedDuringOutage.data, false);
+
+      const orig101After = (
+        await pool.query('SELECT "testerId", "createdAt", "updatedById", "pageName" FROM test_cases WHERE id = 101')
+      ).rows[0];
+      assert.equal(orig101After.testerId, orig101Before.testerId);
+      assert.equal(
+        new Date(orig101After.createdAt).toISOString(),
+        new Date(orig101Before.createdAt).toISOString(),
+      );
+      assert.equal(orig101After.updatedById, 1);
+      assert.equal(orig101After.pageName, '');
+
+      const proj101After = (
+        await pool.query('SELECT status, "actualResult", notes FROM test_cases_current WHERE id = 101')
+      ).rows[0];
+      assert.equal(proj101After.status, 'passed');
+      assert.equal(proj101After.actualResult, 'Verified fix during Render outage');
+      assert.equal(proj101After.notes, 'Cleared after retest');
+
+      // Unauthorized tester (user 3 is assigned to project 2, NOT project 1) must be rejected without DB mutation
+      const updateActionsUnauthOutage = loadTsModule(
+        'src/app/(dashboard)/test-cases/test-cases.action.ts',
+        {
+          '@/lib/app-fetch': { appFetch: outageFetch },
+          '@/lib/db': { pool },
+          '@/lib/fast-read': fastRead,
+          '@/app/myUtil': {
+            getCurrentUserSession: async () => ({ id: '3', role: 'tester', token: 'tok-3' }),
+            getUserToken: async () => 'tok-3',
+          },
+          './test-cases.interface': {},
+          'next/cache': {
+            revalidatePath: (p) => revalidatedPaths.push(p),
+            updateTag: (t) => invalidatedTags.push(t),
+          },
+          'next/navigation': { unstable_rethrow: () => {} },
+          '@/lib/audit': auditMod,
+        },
+      );
+      const deniedOutageUpdate = await updateActionsUnauthOutage.updateTestCase(101, {
+        status: 'failed',
+      });
+      assert.equal(deniedOutageUpdate.success, false);
+      const proj101StillPassed = (
+        await pool.query('SELECT status FROM test_cases_current WHERE id = 101')
+      ).rows[0];
+      assert.equal(proj101StillPassed.status, 'passed');
+
+      const revAfterOutage = Number(
+        (await pool.query('SELECT revision FROM app_cache_revision WHERE id = 1')).rows[0].revision,
+      );
+      assert.ok(revAfterOutage > revBeforeOutage);
+    } finally {
+      global.fetch = prevGlobalFetch;
+    }
 
     // 10. Verify clear_project_primary_tester trigger on project_assignments DELETE
     await pool.query('DELETE FROM project_assignments WHERE "projectId" = 2 AND "userId" = 3');

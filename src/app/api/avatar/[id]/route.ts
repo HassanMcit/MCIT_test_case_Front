@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUserSession } from "@/app/myUtil";
-import { extractSafeDataUrl, parseSafeDataUrl } from "@/lib/avatar";
+import {
+  extractSafeDataUrl,
+  isBackendPhotoProxyUrl,
+  isDummyOrDefaultPhoto,
+  parseSafeDataUrl,
+} from "@/lib/avatar";
 import { pool } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -43,7 +48,16 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const session = await getCurrentUserSession();
+  let session: Awaited<ReturnType<typeof getCurrentUserSession>> = null;
+  try {
+    session = await getCurrentUserSession();
+  } catch (err) {
+    console.error("[avatar route] Session verification error:", err);
+    return NextResponse.json(
+      { error: "Service temporarily unavailable" },
+      { status: 503, headers: { "Cache-Control": "no-store", "Retry-After": "1" } },
+    );
+  }
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -62,24 +76,43 @@ export async function GET(
     const row = res.rows[0];
     if (row) {
       const safeDataUrl = extractSafeDataUrl(row.photo, row.profileImage);
+      const versionParam = ((req.nextUrl ?? new URL(req.url)).searchParams.get("v") || "").trim();
+      const hasStrongVersion = versionParam.length > 0 && versionParam !== "1";
+      const cacheControl = hasStrongVersion
+        ? "private, max-age=604800, immutable"
+        : versionParam
+          ? "private, max-age=300, stale-while-revalidate=600"
+          : "private, no-cache, must-revalidate";
+
       if (safeDataUrl) {
         const parsed = parseSafeDataUrl(safeDataUrl);
         if (parsed) {
           const bytes = decodeBase64ToBytes(parsed.base64Body);
           if (bytes && bytes.byteLength > 0) {
-            const hasVersion = Boolean(req.nextUrl.searchParams.get("v"));
             return new NextResponse(new Uint8Array(bytes), {
               status: 200,
               headers: {
                 "Content-Type": parsed.mimeType,
                 "Content-Length": String(bytes.byteLength),
                 "X-Content-Type-Options": "nosniff",
-                "Cache-Control": hasVersion
-                  ? "private, max-age=300, stale-while-revalidate=600"
-                  : "private, no-cache, must-revalidate",
+                "Cache-Control": cacheControl,
               },
             });
           }
+        }
+      }
+
+      for (const candidate of [row.photo, row.profileImage]) {
+        if (typeof candidate !== "string") continue;
+        const trimmed = candidate.trim();
+        if (!trimmed || isDummyOrDefaultPhoto(trimmed) || isBackendPhotoProxyUrl(trimmed)) {
+          continue;
+        }
+        if (trimmed.startsWith("https://")) {
+          return NextResponse.redirect(trimmed, {
+            status: 302,
+            headers: { "Cache-Control": cacheControl },
+          });
         }
       }
     }

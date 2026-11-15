@@ -18,13 +18,14 @@ import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/context/language-context";
 import { ProjectApiItem } from "../projects/getProjects.action";
 import { useSession } from "next-auth/react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, type FieldErrors } from "react-hook-form";
 import { TestCaseFormValues } from "./test-case-interface";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { getTestCaseSchema } from "./test-case.zod";
 import { addNewTestCase, getNextTestCaseId } from "./test-case.action";
 import toast from "react-hot-toast";
 import { cn, formatActionTimestamp } from "@/lib/utils";
+import { formatTestCaseActionError } from "@/lib/backend-wake";
 import type { QualityApplication } from "../quality/quality.interface";
 
 interface Step {
@@ -60,11 +61,15 @@ export default function AddTestCasePage({
     allProjects[0] ? String(allProjects[0].id) : ""
   );
   const [isCustomApp, setIsCustomApp] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [liveTimestamp, setLiveTimestamp] = useState<string>(() =>
     new Date().toISOString()
   );
 
   useEffect(() => {
+    if (typeof fetch === "function") {
+      fetch("/api/warmup", { cache: "no-store" }).catch(() => {});
+    }
     // Immediately synchronize to user's real local time on mount
     setLiveTimestamp(new Date().toISOString());
     const timer = setInterval(() => {
@@ -113,7 +118,7 @@ export default function AddTestCasePage({
       executedAt: "",
       testerId: 1,
       userId: 1,
-      projectId: allProjects[0]?.id || 1,
+      projectId: allProjects[0]?.id ?? (undefined as unknown as number),
     },
     mode: "all",
     resolver: zodResolver(schema),
@@ -155,11 +160,45 @@ export default function AddTestCasePage({
     }
   }, [allProjects, selectedProjectId, setValue, watch]);
 
+  function handleInvalidSubmit(validationErrors: FieldErrors<TestCaseFormValues>) {
+    if (allProjects.length === 0) {
+      toast.error(
+        isRTL
+          ? "لا توجد مشاريع مسندة إليك حالياً، يرجى مراجعة مدير النظام"
+          : "No assigned projects are available for your account",
+      );
+      return;
+    }
+    const firstError = Object.values(validationErrors).find(
+      (item) => item && typeof item.message === "string" && item.message.trim() !== "",
+    );
+    toast.error(
+      firstError?.message ||
+        (isRTL
+          ? "يرجى استكمال الحقول المطلوبة قبل الحفظ"
+          : "Please complete all required fields before saving"),
+    );
+  }
+
   function handleAddNewTestCase(userData: TestCaseFormValues) {
+    if (isSubmitting) return;
+    if (allProjects.length === 0) {
+      toast.error(
+        isRTL
+          ? "لا توجد مشاريع مسندة إليك حالياً، يرجى مراجعة مدير النظام"
+          : "No assigned projects are available for your account",
+      );
+      return;
+    }
     const targetProjId =
       Number(selectedProjectId) ||
       allProjects.find((e) => e.name === userData.module)?.id ||
-      1;
+      allProjects[0]?.id ||
+      undefined;
+    if (!targetProjId) {
+      toast.error(isRTL ? "يرجى اختيار المشروع أولاً" : "Please select a project first");
+      return;
+    }
 
     const validSteps = steps
       .filter((e) => e.value.trim() !== "")
@@ -181,6 +220,7 @@ export default function AddTestCasePage({
       projectId: targetProjId,
     };
 
+    setIsSubmitting(true);
     const addPromise = addNewTestCase(updateUserdata).then((res) => {
       if (!res.success) {
         throw new Error(res.message);
@@ -188,61 +228,70 @@ export default function AddTestCasePage({
       return res;
     });
 
-    toast.promise(addPromise, {
-      loading: isRTL ? "جاري إضافة حالة الاختبار..." : "Adding test case...",
-      success: () => {
-        const currentMod = userData.module;
-        const currentPid = targetProjId;
-        reset({
-          module: currentMod,
-          testId: "TC-0001",
-          pageName: "",
-          scenario: "",
-          preConditions: "",
-          steps: ["", "", ""],
-          expectedResult: "",
-          actualResult: "",
-          priority: undefined,
-          status: undefined,
-          severity: undefined,
-          notes: "",
-          executedAt: "",
-          testerId: Number(data?.user.id) || 1,
-          userId: Number(data?.user.id) || 1,
-          projectId: currentPid,
-        });
-        setSteps([
-          { id: 1, value: "" },
-          { id: 2, value: "" },
-        ]);
-        if (currentPid) {
-          getNextTestCaseId(currentMod, currentPid).then((nextId) => {
-            setValue("testId", nextId, { shouldValidate: true });
+    toast
+      .promise(addPromise, {
+        loading: isRTL ? "جاري إضافة حالة الاختبار..." : "Adding test case...",
+        success: () => {
+          const currentMod = userData.module;
+          const currentPid = targetProjId;
+          reset({
+            module: currentMod,
+            testId: "TC-0001",
+            pageName: "",
+            scenario: "",
+            preConditions: "",
+            steps: ["", "", ""],
+            expectedResult: "",
+            actualResult: "",
+            priority: undefined,
+            status: undefined,
+            severity: undefined,
+            notes: "",
+            executedAt: "",
+            testerId: Number(data?.user.id) || 1,
+            userId: Number(data?.user.id) || 1,
+            ...(currentPid ? { projectId: currentPid } : {}),
           });
-        }
-        return (
-          <h1 className="text-emerald-500 font-bold">
-            {isRTL
-              ? "تمت إضافة حالة الاختبار بنجاح"
-              : "Test case created successfully"}
-          </h1>
-        );
-      },
-      error: (err) => (
-        <h1 className="text-red-500 font-bold">
-          {isRTL
-            ? err?.message?.includes("already exists") ||
-              err?.message?.includes("موجودة")
+          setSteps([
+            { id: 1, value: "" },
+            { id: 2, value: "" },
+          ]);
+          if (currentPid) {
+            getNextTestCaseId(currentMod, currentPid).then((nextId) => {
+              setValue("testId", nextId, { shouldValidate: true });
+            });
+          }
+          return (
+            <h1 className="text-emerald-500 font-bold">
+              {isRTL
+                ? "تمت إضافة حالة الاختبار بنجاح"
+                : "Test case created successfully"}
+            </h1>
+          );
+        },
+        error: (err) => {
+          const message = formatTestCaseActionError(
+            err,
+            isRTL,
+            "فشلت إضافة حالة الاختبار",
+            "Failed to add test case",
+          );
+          const displayMessage = isRTL
+            ? message.includes("already exists") || message.includes("موجودة")
               ? `حالة الاختبار برقم ${updateUserdata.testId} موجودة مسبقاً في هذا المشروع`
-              : err?.message?.includes("Minified React error")
+              : message.includes("Minified React error")
               ? "حدث خطأ غير متوقع في الخادم، يرجى المحاولة مرة أخرى"
-              : err?.message || "فشلت إضافة حالة الاختبار"
-            : err?.message?.includes("Minified React error")
+              : message
+            : message.includes("Minified React error")
             ? "An unexpected server error occurred, please try again"
-            : err?.message || "Failed to add test case"}
-        </h1>
-      ),
-    });
+            : message;
+          return <h1 className="text-red-500 font-bold">{displayMessage}</h1>;
+        },
+      })
+      .catch(() => {})
+      .finally(() => {
+        setIsSubmitting(false);
+      });
   }
 
   return (
@@ -283,9 +332,16 @@ export default function AddTestCasePage({
         <CardContent className="p-4 sm:p-6">
           <form
             className="space-y-6"
-            onSubmit={handleSubmit(handleAddNewTestCase)}
+            onSubmit={handleSubmit(handleAddNewTestCase, handleInvalidSubmit)}
             noValidate
           >
+            {allProjects.length === 0 && (
+              <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-xs font-semibold text-amber-900">
+                {isRTL
+                  ? "تنبيه: لا توجد مشاريع مسندة لحسابك حالياً، ولن يتمكن النظام من حفظ حالات جديدة حتى يتم إسناد مشروع."
+                  : "Notice: No projects are currently assigned to your account. Contact an administrator before creating test cases."}
+              </div>
+            )}
             {/* Row 1: ID, Project, Application, Page */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
               {/* Test ID */}
@@ -1025,10 +1081,17 @@ export default function AddTestCasePage({
               </Button>
               <Button
                 type="submit"
+                disabled={isSubmitting || allProjects.length === 0}
                 className="gap-2 rounded-xl bg-[#00A2D2] hover:bg-[#008eb8] text-white cursor-pointer shadow-xs transition-colors"
               >
                 <Save className="w-4 h-4" />{" "}
-                {isRTL ? "حفظ حالة الاختبار" : "Save Test Case"}
+                {isSubmitting
+                  ? isRTL
+                    ? "جاري الحفظ..."
+                    : "Saving..."
+                  : isRTL
+                  ? "حفظ حالة الاختبار"
+                  : "Save Test Case"}
               </Button>
             </div>
           </form>

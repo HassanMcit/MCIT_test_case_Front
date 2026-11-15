@@ -29,6 +29,11 @@ export class AuthenticatedEventSource {
         headers: { Accept: "text/event-stream", Authorization: `Bearer ${token}` },
         signal: this.controller.signal,
       });
+      if (response.status === 401 || response.status === 403) {
+        this.readyState = AuthenticatedEventSource.CLOSED;
+        this.onmessage?.({ data: JSON.stringify({ type: "UNAUTHORIZED" }) } as MessageEvent<string>);
+        return;
+      }
       if (!response.ok || !response.body) throw new Error("SSE stream unavailable");
       this.readyState = AuthenticatedEventSource.OPEN;
 
@@ -45,12 +50,12 @@ export class AuthenticatedEventSource {
       }
       if (buffer) this.dispatch(buffer);
       if (this.readyState !== AuthenticatedEventSource.CLOSED) {
-        this.readyState = AuthenticatedEventSource.CONNECTING;
+        this.readyState = AuthenticatedEventSource.CLOSED;
         this.onerror?.(new Event("error"));
       }
     } catch {
       if (this.readyState !== AuthenticatedEventSource.CLOSED) {
-        this.readyState = AuthenticatedEventSource.CONNECTING;
+        this.readyState = AuthenticatedEventSource.CLOSED;
         this.onerror?.(new Event("error"));
       }
     }

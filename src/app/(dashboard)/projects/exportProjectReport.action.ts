@@ -100,6 +100,21 @@ export async function exportProjectExcelAction(params: {
       ? params.applicationModule.trim()
       : undefined;
 
+    let useCurrentView = false;
+    try {
+      const viewRes = await pool.query(`SELECT to_regclass('public.test_cases_current') AS reg`);
+      useCurrentView = Boolean(viewRes?.rows?.[0]?.reg);
+    } catch {
+      useCurrentView = false;
+    }
+    const baseTableSql = useCurrentView ? "test_cases_current tc" : "test_cases tc";
+    const baseCreatorJoinSql = useCurrentView
+      ? "LEFT JOIN test_cases base_tc ON base_tc.id = tc.id"
+      : "";
+    const testerIdExpr = useCurrentView
+      ? 'COALESCE(base_tc."testerId", tc."testerId")'
+      : 'tc."testerId"';
+
     let projectName = "All_Projects";
     let projectApp: string | undefined = applicationModule;
     let assignedLead = "";
@@ -135,7 +150,7 @@ export async function exportProjectExcelAction(params: {
       conditions.push(`(
         (tc."projectId" IS NOT NULL AND tc."projectId" IN (SELECT pa."projectId" FROM project_assignments pa WHERE pa."userId" = $${pidx}))
         OR (tc."projectId" IS NULL AND tc.module IS NOT NULL AND tc.module IN (SELECT p.name FROM projects p INNER JOIN project_assignments pa ON p.id = pa."projectId" WHERE pa."userId" = $${pidx + 1}))
-        OR tc."testerId" = $${pidx + 2}
+        OR ${testerIdExpr} = $${pidx + 2}
       )`);
       sqlParams.push(Number(sessionUser.id), Number(sessionUser.id), Number(sessionUser.id));
       pidx += 3;
@@ -176,8 +191,9 @@ export async function exportProjectExcelAction(params: {
         COALESCE(u.name, 'Hassan Ali') as tester_name,
         p.name as proj_name,
         p.application as proj_app
-      FROM test_cases tc
-      LEFT JOIN users u ON tc."testerId" = u.id
+      FROM ${baseTableSql}
+      ${baseCreatorJoinSql}
+      LEFT JOIN users u ON ${testerIdExpr} = u.id
       LEFT JOIN projects p ON tc."projectId" = p.id
       WHERE ${conditions.join(" AND ")}
       ORDER BY COALESCE(tc."executedAt", tc."createdAt") ASC, tc.id ASC

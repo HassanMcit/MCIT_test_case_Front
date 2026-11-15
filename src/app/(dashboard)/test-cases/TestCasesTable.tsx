@@ -46,6 +46,14 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { useLanguage } from "@/context/language-context";
+import {
+  getTestCaseCreatedTimestamp,
+  getTestCaseModalCreatedTimestamp,
+  getTestCaseSortTimestamp,
+  hasTestCaseBeenUpdated,
+  mergeUpdatedTestCaseRecord,
+  normalizeOptionalTextField,
+} from "@/lib/test-case-timestamps";
 import type { TestCaseItem, TestCaseListResponse } from "./test-cases.interface";
 import type { ProjectApiItem } from "../projects/getProjects.action";
 import type { QualityApplication } from "../quality/quality.interface";
@@ -54,6 +62,8 @@ import toast from "react-hot-toast";
 import { toLocalDateKey } from "@/lib/utils";
 import { getTeamsCallUrl } from "@/lib/teams";
 import ExportReportModal from "@/components/ExportReportModal";
+import { formatTestCaseActionError } from "@/lib/backend-wake";
+export { formatTestCaseActionError };
 
 
 interface TestCasesTableProps {
@@ -144,7 +154,7 @@ export default function TestCasesTable({
   const dateActivityMap = useMemo(() => {
     const map = new Map<string, { total: number; failed: number }>();
     for (const tc of items) {
-      const k = toLocalDateKey(tc.importMetadata?.plannedAt || tc.importMetadata?.importedAt || tc.executedAt || tc.createdAt);
+      const k = toLocalDateKey(getTestCaseCreatedTimestamp(tc));
       if (!k) continue;
       const prev = map.get(k) || { total: 0, failed: 0 };
       prev.total += 1;
@@ -222,7 +232,7 @@ export default function TestCasesTable({
 
     // Date range filter (from date to to date)
     if (fromDateFilter !== "all" || toDateFilter !== "all") {
-      const tcDate = tc.importMetadata?.plannedAt || tc.importMetadata?.importedAt || tc.executedAt || tc.createdAt;
+      const tcDate = getTestCaseCreatedTimestamp(tc);
       if (!tcDate) {
         return false;
       }
@@ -252,8 +262,8 @@ export default function TestCasesTable({
 
     return true;
   }).sort((a, b) => {
-    const timeA = new Date(a.importMetadata?.importedAt || a.executedAt || a.createdAt || 0).getTime();
-    const timeB = new Date(b.importMetadata?.importedAt || b.executedAt || b.createdAt || 0).getTime();
+    const timeA = new Date(getTestCaseSortTimestamp(a) || 0).getTime();
+    const timeB = new Date(getTestCaseSortTimestamp(b) || 0).getTime();
     if (
       a.importMetadata?.batchHash &&
       a.importMetadata.batchHash === b.importMetadata?.batchHash &&
@@ -466,9 +476,13 @@ export default function TestCasesTable({
       {
         loading: isRTL ? "جاري حذف حالة الاختبار..." : "Deleting test case...",
         success: isRTL ? "تم حذف حالة الاختبار بنجاح" : "Test case deleted successfully",
-        error: (error) => error instanceof Error && error.message
-          ? error.message
-          : isRTL ? "فشل حذف حالة الاختبار" : "Failed to delete test case",
+        error: (error) =>
+          formatTestCaseActionError(
+            error,
+            isRTL,
+            "فشل حذف حالة الاختبار",
+            "Failed to delete test case",
+          ),
       }
     ).catch(() => {}).finally(() => {
       setIsDeleting(false);
@@ -478,6 +492,9 @@ export default function TestCasesTable({
 
   // Open Edit Modal
   const handleStartEdit = (row: TestCaseItem) => {
+    if (typeof fetch === "function") {
+      fetch("/api/warmup", { cache: "no-store" }).catch(() => {});
+    }
     setEditingItem(row);
     setEditFormData({
       testId: row.testId,
@@ -497,36 +514,78 @@ export default function TestCasesTable({
   };
 
   // Helper to check if a test case has been updated after creation
-  const isCaseUpdated = (tc: TestCaseItem): boolean => {
-    if (tc.updatedAt && toLocalDateKey(tc.updatedAt) === "2026-10-22") {
-      return false;
-    }
-    if (tc.updatedBy || tc.updatedById) return true;
-    if (!tc.updatedAt || !tc.createdAt) return false;
-    const createdMs = new Date(tc.createdAt).getTime();
-    const updatedMs = new Date(tc.updatedAt).getTime();
-    return !isNaN(createdMs) && !isNaN(updatedMs) && Math.abs(updatedMs - createdMs) > 2000;
-  };
+  const isCaseUpdated = (tc: TestCaseItem): boolean => hasTestCaseBeenUpdated(tc);
 
   // Handle Edit Submit
   const handleUpdateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingItem) return;
+    if (!editingItem || isUpdating) return;
+
+    const cleanedSteps = editSteps.map((s) => s.trim()).filter(Boolean);
+    const prevSteps = Array.isArray(editingItem.steps)
+      ? editingItem.steps.map((s) => String(s).trim()).filter(Boolean)
+      : [];
+    const nextModule = normalizeOptionalTextField(editFormData.module);
+    const prevModule = normalizeOptionalTextField(editingItem.module);
+    const nextPageName = normalizeOptionalTextField(editFormData.pageName);
+    const prevPageName = normalizeOptionalTextField(editingItem.pageName);
+    const nextScenario = normalizeOptionalTextField(editFormData.scenario);
+    const prevScenario = normalizeOptionalTextField(editingItem.scenario);
+    const nextPreConditions = normalizeOptionalTextField(editFormData.preConditions);
+    const prevPreConditions = normalizeOptionalTextField(editingItem.preConditions);
+    const nextExpected = normalizeOptionalTextField(editFormData.expectedResult);
+    const prevExpected = normalizeOptionalTextField(editingItem.expectedResult);
+
+    if (prevScenario !== "" && nextScenario === "") {
+      toast.error(isRTL ? "سيناريو الاختبار مطلوب" : "Test scenario is required");
+      return;
+    }
+    if (nextScenario !== "" && nextScenario !== prevScenario && nextScenario.length < 5) {
+      toast.error(
+        isRTL
+          ? "سيناريو الاختبار يجب ألا يقل عن 5 أحرف"
+          : "Scenario must be at least 5 characters",
+      );
+      return;
+    }
+    if (prevExpected !== "" && nextExpected === "") {
+      toast.error(isRTL ? "النتيجة المتوقعة مطلوبة" : "Expected Result is required");
+      return;
+    }
 
     setIsUpdating(true);
-    const cleanedSteps = editSteps.map((s) => s.trim()).filter(Boolean);
+    const nextActual = normalizeOptionalTextField(editFormData.actualResult);
+    const prevActual = normalizeOptionalTextField(editingItem.actualResult);
+    const nextNotes = normalizeOptionalTextField(editFormData.notes);
+    const prevNotes = normalizeOptionalTextField(editingItem.notes);
+    const statusChanged =
+      editFormData.status !== undefined &&
+      editFormData.status !== editingItem.status;
+    const actualChanged = nextActual !== prevActual;
+    const notesChanged = nextNotes !== prevNotes;
+    const executionChanged = statusChanged || actualChanged || notesChanged;
+
     const payload: Partial<TestCaseItem> = {
-      module: editFormData.module ? editFormData.module.trim() : "",
-      pageName: editFormData.pageName ? editFormData.pageName.trim() : null,
-      scenario: editFormData.scenario ? editFormData.scenario.trim() : "",
-      preConditions: editFormData.preConditions ? editFormData.preConditions.trim() : null,
-      expectedResult: editFormData.expectedResult ? editFormData.expectedResult.trim() : "",
-      actualResult: editFormData.actualResult ? editFormData.actualResult.trim() : null,
-      priority: editFormData.priority,
-      status: editFormData.status,
-      severity: editFormData.status === "failed" ? editFormData.severity || "medium" : undefined,
-      notes: editFormData.notes ? editFormData.notes.trim() : null,
-      steps: cleanedSteps.length > 0 ? cleanedSteps : editSteps,
+      ...(nextModule !== prevModule && nextModule !== "" ? { module: nextModule } : {}),
+      ...(nextPageName !== prevPageName ? { pageName: nextPageName } : {}),
+      ...(nextScenario !== prevScenario && nextScenario !== "" ? { scenario: nextScenario } : {}),
+      ...(nextPreConditions !== prevPreConditions ? { preConditions: nextPreConditions } : {}),
+      ...(nextExpected !== prevExpected && nextExpected !== ""
+        ? { expectedResult: nextExpected }
+        : {}),
+      ...(editFormData.priority !== undefined && editFormData.priority !== editingItem.priority
+        ? { priority: editFormData.priority }
+        : {}),
+      ...(editFormData.status === "failed" &&
+      (statusChanged || editFormData.severity !== editingItem.severity)
+        ? { severity: editFormData.severity || "medium" }
+        : {}),
+      ...(cleanedSteps.length > 0 && JSON.stringify(cleanedSteps) !== JSON.stringify(prevSteps)
+        ? { steps: cleanedSteps }
+        : {}),
+      ...(statusChanged ? { status: editFormData.status } : {}),
+      ...(actualChanged ? { actualResult: nextActual } : {}),
+      ...(notesChanged ? { notes: nextNotes } : {}),
     };
 
     if (
@@ -555,20 +614,16 @@ export default function TestCasesTable({
       setItems((prev) =>
         prev.map((it) => {
           if (it.id !== targetId) return it;
-          const updatedRecord: TestCaseItem = {
-            ...it,
-            ...res.data,
-            ...payload,
-            // CRITICAL: NEVER overwrite creator on update! Keep original creator (it.tester)
-            tester: it.tester,
-            testerId: it.testerId ?? it.tester?.id ?? null,
-            userId: it.userId ?? it.tester?.id ?? null,
-            createdAt: it.createdAt,
-            // Record updater correctly:
-            updatedAt: res.data?.updatedAt || nowIso,
-            updatedById: currentUpdater?.id || res.data?.updatedById || it.updatedById || null,
-            updatedBy: currentUpdater || res.data?.updatedBy || it.updatedBy || null,
-          };
+          const updatedRecord: TestCaseItem = mergeUpdatedTestCaseRecord(
+            it,
+            res.data,
+            payload,
+            {
+              nowIso,
+              currentUpdater,
+              executionChanged,
+            }
+          );
           if (selectedItem?.id === targetId) {
             setSelectedItem(updatedRecord);
           }
@@ -585,9 +640,12 @@ export default function TestCasesTable({
         loading: isRTL ? "جاري حفظ التعديلات..." : "Saving changes...",
         success: isRTL ? "تم تحديث حالة الاختبار بنجاح" : "Test case updated successfully",
         error: (error: any) =>
-          error?.message
-            ? error.message
-            : isRTL ? "فشل تحديث حالة الاختبار" : "Failed to update test case",
+          formatTestCaseActionError(
+            error,
+            isRTL,
+            "فشل تحديث حالة الاختبار",
+            "Failed to update test case",
+          ),
       }
     ).catch(() => {}).finally(() => {
       setIsUpdating(false);
@@ -1107,10 +1165,7 @@ export default function TestCasesTable({
                             <Clock className="w-3 h-3 text-slate-400 shrink-0" />
                             <span>
                               {formatActionTimestamp(
-                                row.importMetadata?.plannedAt ||
-                                  row.importMetadata?.importedAt ||
-                                  row.executedAt ||
-                                  row.createdAt,
+                                getTestCaseCreatedTimestamp(row),
                                 lang
                               )}
                             </span>
@@ -1601,7 +1656,7 @@ export default function TestCasesTable({
                   </span>
                   <span className="font-mono text-slate-700 text-xs flex items-center gap-1">
                     <Clock className="w-3 h-3 text-slate-400" />
-                    {formatActionTimestamp(selectedItem.importMetadata?.importedAt || selectedItem.executedAt || selectedItem.createdAt, lang)}
+                    {formatActionTimestamp(getTestCaseModalCreatedTimestamp(selectedItem), lang)}
                   </span>
                 </div>
               </div>

@@ -69,6 +69,9 @@ const nextConfig: NextConfig = {
     ],
   },
   experimental: {
+    serverActions: {
+      bodySizeLimit: "4mb",
+    },
     staleTimes: {
       dynamic: 60,
       // Full, intent-prefetched workflow pages may be reused briefly in this

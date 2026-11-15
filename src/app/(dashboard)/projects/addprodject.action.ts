@@ -4,6 +4,11 @@ import { revalidatePath, updateTag } from "next/cache";
 import { getUserToken } from "@/app/myUtil";
 import { appFetch } from "@/lib/app-fetch";
 import { recordSystemAuditLog } from "@/lib/audit";
+import {
+  extractBackendErrorMessage,
+  fetchWithWakeRetry,
+  sanitizeBackendOrigin,
+} from "@/lib/backend-wake";
 import type { AddProjectResponse } from "./add-project.interface";
 import { createProjectApiSchema } from "./project-schedule.zod";
 
@@ -22,26 +27,37 @@ export async function addNewProject(data: {
     throw new Error(
       "Check project fields and dates / راجع بيانات المشروع والتواريخ",
     );
-  const response = await appFetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/api/projects`,
+  const token = await getUserToken();
+  if (!token) throw new Error("يرجى تسجيل الدخول أولاً");
+  const baseUrl = sanitizeBackendOrigin(process.env.NEXT_PUBLIC_BASE_URL);
+  if (!baseUrl) throw new Error("تعذر الاتصال بالخادم، يرجى المحاولة مرة أخرى");
+
+  const response = await fetchWithWakeRetry(
+    appFetch,
+    `${baseUrl}/api/projects`,
     {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${await getUserToken()}`,
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(parsed.data),
       cache: "no-store",
     },
+    {
+      maxAttempts: 3,
+      timeoutsMs: [25000, 25000, 20000],
+      retryOnTimeout: false,
+      retryStatuses: new Set([502, 503]),
+      baseUrl,
+    },
   );
 
   const userData: AddProjectResponse & { message?: string | string[] } =
-    await response.json();
+    await response.json().catch(() => ({} as AddProjectResponse));
   if (!response.ok)
     throw new Error(
-      Array.isArray(userData.message)
-        ? userData.message.join(" - ")
-        : userData.message || "Could not create project",
+      extractBackendErrorMessage(response.status, userData, "Could not create project"),
     );
   updateTag("notifications");
   updateTag("projects");

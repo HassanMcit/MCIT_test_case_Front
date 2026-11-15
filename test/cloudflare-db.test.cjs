@@ -145,3 +145,26 @@ test('pg-cloudflare socket-close error events during and after client.end() neve
     process.removeListener('unhandledRejection', captureUnhandled);
   }
 });
+
+test('pool.connect runs short request-scoped transactions on one client and closes idempotently on release', async () => {
+  const { pool, clients } = load({
+    env: { MCIT_CLOUDFLARE: 'true' },
+    binding: { connectionString: 'local-hyperdrive' },
+    emitErrorOnEnd: true,
+    emitPostEndError: true,
+  });
+  const txClient = await pool.connect();
+  assert.equal(clients.length, 1);
+  assert.equal(clients[0].closed, undefined);
+
+  await txClient.query('BEGIN');
+  await txClient.query('INSERT INTO t VALUES ($1)', [7]);
+  await txClient.query('COMMIT');
+  assert.equal(clients.length, 1);
+
+  await txClient.release();
+  await txClient.release();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(clients.length, 1);
+  assert.equal(clients[0].closed, true);
+});

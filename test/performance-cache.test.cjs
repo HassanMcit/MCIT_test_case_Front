@@ -663,14 +663,28 @@ test("notification focus/stream/polling coalesce; healthy streams poll less; old
       EventSource: FixtureEventSource,
     },
   );
-  await Promise.resolve(); // Connect synthetic stream.
+  await Promise.resolve(); // Connect synthetic stream and start initial mount read.
+  assert.equal(requests, 1);
+  // Rapid duplicate focus immediately on mount or within 15s cooldown is debounced.
   windowEvents.get("focus")();
   windowEvents.get("focus")();
   tick();
   assert.equal(requests, 1);
+  // After the 15s focus cooldown, focus coalesces with an intervening stream event cleanly.
+  now += 15_000;
+  windowEvents.get("focus")();
+  assert.equal(requests, 1);
+  assert.equal(routeRefreshes, 0); // Focus/poll reads never call router.refresh().
+  stream.onmessage({
+    data: JSON.stringify({
+      type: "NOTIFICATION",
+      payload: { titleEn: "Assignment" },
+    }),
+  });
+  assert.equal(routeRefreshes, 1); // Genuine remote writes do refresh the tab.
   resolveRead({ notifications: [], unreadCount: 0 });
   await new Promise((resolve) => setImmediate(resolve));
-  assert.equal(requests, 2); // One trailing read preserves intervening events.
+  assert.equal(requests, 2); // One trailing read preserves intervening notification events.
   resolveRead({ notifications: [], unreadCount: 0 });
   await new Promise((resolve) => setImmediate(resolve));
   now += 5000;
@@ -688,15 +702,10 @@ test("notification focus/stream/polling coalesce; healthy streams poll less; old
   stream.readyState = 0;
   now += 5000;
   tick();
-  assert.equal(requests, 4); // Disconnected streams retain the 5s fallback.
-  assert.equal(routeRefreshes, 0); // Poll/focus reads do not discard ready pages.
-  stream.onmessage({
-    data: JSON.stringify({
-      type: "NOTIFICATION",
-      payload: { titleEn: "Assignment" },
-    }),
-  });
-  assert.equal(routeRefreshes, 1); // Genuine remote writes do refresh the tab.
+  assert.equal(requests, 3); // Disconnected streams never hammer the Worker every 5s.
+  now += 60_000;
+  tick();
+  assert.equal(requests, 4); // Reconciles cleanly after 60s when still visible.
   const oldResponse = [{ id: 1, title: "Old session response" }];
   mounted.unmount();
   resolveRead({ notifications: oldResponse, unreadCount: 1 });

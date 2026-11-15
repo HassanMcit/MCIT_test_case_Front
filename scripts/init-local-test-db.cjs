@@ -110,6 +110,46 @@ async function createIsolatedLocalPostgres({ dataDir = 'memory://', seed = true 
       );
       return next;
     },
+    connect() {
+      let releaseLock;
+      const lockDone = new Promise((resolve) => {
+        releaseLock = resolve;
+      });
+      const acquired = queue.then(async () => {
+        const client = new Client(createPgConfig(pglite));
+        try {
+          await client.connect();
+        } catch (error) {
+          try {
+            await client.end();
+          } catch {
+            // ignore failed-connect cleanup error
+          }
+          releaseLock();
+          throw error;
+        }
+        let released = false;
+        return {
+          query(text, values) {
+            return client.query(text, values);
+          },
+          async release() {
+            if (released) return;
+            released = true;
+            try {
+              await client.end();
+            } finally {
+              releaseLock();
+            }
+          },
+        };
+      });
+      queue = acquired.then(
+        () => lockDone,
+        () => {},
+      );
+      return acquired;
+    },
   };
 
   return {

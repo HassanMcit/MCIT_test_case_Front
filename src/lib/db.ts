@@ -128,66 +128,108 @@ CMTyZKG3XEu5Ghl1LEnI3QmEKsqaCLv12BnVjbkSeZsMnevJPs1Ye6TjjJwdik5P
 o/bKiIz+Fq8=
 -----END CERTIFICATE-----`;
 
-// A query facade, never a live socket shared between Worker requests.
-// Hyperdrive pools origin connections; every query owns its local client.
+export interface RequestScopedDbClient {
+  query<R extends QueryResultRow = any>(
+    text: string | QueryConfig,
+    values?: any[],
+  ): Promise<QueryResult<R>>;
+  release(): Promise<void>;
+}
+
+async function openRequestDatabaseClient(): Promise<{
+  client: Client;
+  close: () => Promise<void>;
+}> {
+  let connectionString: string;
+  let sslOption: ClientConfig["ssl"] | undefined;
+  const cloudflare = process.env.MCIT_CLOUDFLARE === "true";
+  if (cloudflare) {
+    const { getCloudflareContext } = await import("@opennextjs/cloudflare");
+    const { env } = getCloudflareContext();
+    if (!env.HYPERDRIVE?.connectionString) {
+      throw new Error(
+        "HYPERDRIVE binding is required; database fallback is disabled",
+      );
+    }
+    connectionString = env.HYPERDRIVE.connectionString;
+  } else {
+    const direct = resolveDirectDatabaseConfig(process.env.DATABASE_URL);
+    connectionString = direct.connectionString;
+    sslOption = direct.ssl;
+  }
+
+  const client = new Client({
+    connectionString,
+    connectionTimeoutMillis: 5000,
+    query_timeout: 10000,
+    statement_timeout: 10000,
+    // Hyperdrive terminates verified TLS to the origin itself. Its Worker-side
+    // connection is the Cloudflare socket transport, so don't let PGSSLMODE
+    // or an inherited sslmode trigger a second TLS negotiation on that hop.
+    // Direct remote connections always use verified TLS; only explicit local
+    // loopback/sslmode=disable targets may opt out in resolveDirectDatabaseConfig.
+    ssl: cloudflare ? false : sslOption,
+  });
+
+  let closing = false;
+  if (typeof client.on === "function") {
+    client.on("error", (error: unknown) => {
+      // pg-cloudflare can reject its socket.closed promise after Client.end().
+      // Keep that late teardown event handled. Connect/query failures still
+      // propagate through their returned promises; don't synthesize socket
+      // events such as `end`, which can corrupt node-postgres state.
+      if (!closing) return;
+      void error;
+    });
+  }
+
+  const close = async (): Promise<void> => {
+    closing = true;
+    try {
+      await client.end();
+    } catch {
+      // Ignore post-query socket close errors during client teardown.
+    }
+  };
+
+  try {
+    await client.connect();
+    return { client, close };
+  } catch (error) {
+    await close();
+    throw error;
+  }
+}
+
+// A request-scoped query/transaction facade, never a live socket shared between Worker requests.
+// Hyperdrive pools origin connections; every query or short transaction owns and closes its local client.
 export const pool = {
   async query<R extends QueryResultRow = any>(
     text: string | QueryConfig,
     values?: any[],
   ): Promise<QueryResult<R>> {
-    let connectionString: string;
-    let sslOption: ClientConfig["ssl"] | undefined;
-    const cloudflare = process.env.MCIT_CLOUDFLARE === "true";
-    if (cloudflare) {
-      const { getCloudflareContext } = await import("@opennextjs/cloudflare");
-      const { env } = getCloudflareContext();
-      if (!env.HYPERDRIVE?.connectionString) {
-        throw new Error(
-          "HYPERDRIVE binding is required; database fallback is disabled",
-        );
-      }
-      connectionString = env.HYPERDRIVE.connectionString;
-    } else {
-      const direct = resolveDirectDatabaseConfig(process.env.DATABASE_URL);
-      connectionString = direct.connectionString;
-      sslOption = direct.ssl;
-    }
-
-    const client = new Client({
-      connectionString,
-      connectionTimeoutMillis: 5000,
-      query_timeout: 10000,
-      statement_timeout: 10000,
-      // Hyperdrive terminates verified TLS to the origin itself. Its Worker-side
-      // connection is the Cloudflare socket transport, so don't let PGSSLMODE
-      // or an inherited sslmode trigger a second TLS negotiation on that hop.
-      // Direct remote connections always use verified TLS; only explicit local
-      // loopback/sslmode=disable targets may opt out in resolveDirectDatabaseConfig.
-      ssl: cloudflare ? false : sslOption,
-    });
-
-    let closing = false;
-    if (typeof client.on === "function") {
-      client.on("error", (error: unknown) => {
-        // pg-cloudflare can reject its socket.closed promise after Client.end().
-        // Keep that late teardown event handled. Connect/query failures still
-        // propagate through their returned promises; don't synthesize socket
-        // events such as `end`, which can corrupt node-postgres state.
-        if (!closing) return;
-        void error;
-      });
-    }
-
+    const { client, close } = await openRequestDatabaseClient();
     try {
-      await client.connect();
       return await client.query<R>(text, values);
     } finally {
-      closing = true;
-      try {
-        await client.end();
-      } catch {
-        // Ignore post-query socket close errors during client teardown.
-      }
+      await close();
     }
+  },
+  async connect(): Promise<RequestScopedDbClient> {
+    const { client, close } = await openRequestDatabaseClient();
+    let released = false;
+    return {
+      query<R extends QueryResultRow = any>(
+        text: string | QueryConfig,
+        values?: any[],
+      ): Promise<QueryResult<R>> {
+        return client.query<R>(text, values);
+      },
+      async release(): Promise<void> {
+        if (released) return;
+        released = true;
+        await close();
+      },
+    };
   },
 };

@@ -49,6 +49,7 @@ import { useLanguage } from "@/context/language-context";
 import type { TestCaseItem } from "../test-cases.interface";
 import toast from "react-hot-toast";
 import { getTeamsCallUrl } from "@/lib/teams";
+import { getTestCaseCreatedTimestamp } from "@/lib/test-case-timestamps";
 
 interface EmailComposerProps {
   initialTestCase: TestCaseItem | null;
@@ -224,7 +225,7 @@ export function generateBugTextTemplate(
   const projectName = tc.project?.name || tc.module || (isAr ? "مشروع الاختبار" : "Test Project");
   const modulePage = tc.pageName ? `${tc.module} / ${tc.pageName}` : tc.module;
   const reporterName = tc.tester?.name || "Tester Name";
-  const dateFormatted = formatReportDate(tc.executedAt, lang);
+  const dateFormatted = formatReportDate(tc.executedAt || getTestCaseCreatedTimestamp(tc), lang);
   const preConditions = (tc.preConditions || (isAr ? "لا توجد شروط مسبقة" : "None"))
     .replace(/(\r?\n)+/g, " - ")
     .trim();
@@ -325,7 +326,7 @@ export function generateBugHtmlTemplate(
   const projectName = tc.project?.name || tc.module || (isAr ? "مشروع الاختبار" : "Test Project");
   const modulePage = tc.pageName ? `${tc.module} / ${tc.pageName}` : tc.module;
   const reporterName = tc.tester?.name || "Tester Name";
-  const dateFormatted = formatReportDate(tc.executedAt, lang);
+  const dateFormatted = formatReportDate(tc.executedAt || getTestCaseCreatedTimestamp(tc), lang);
   const preConditions = (tc.preConditions || (isAr ? "لا توجد شروط مسبقة" : "None")).replace(/\r?\n/g, "<br/>");
   const scenario = (tc.scenario || (isAr ? "سيناريو الاختبار" : "Test Scenario")).replace(/\r?\n/g, "<br/>");
   const expectedResult = (tc.expectedResult || (isAr ? "النتيجة المتوقعة" : "Expected Result")).replace(/\r?\n/g, "<br/>");

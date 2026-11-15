@@ -16,19 +16,37 @@ export const getTestCaseSchema = (lang: Language | boolean = "ar") => {
       message: isArabic ? "يجب أن يكون المعرف بالصيغة TC-XXXX أو BUG-XXXX" : "ID must be in TC-XXXX or BUG-XXXX format",
     }),
 
-    module: z.string().min(1, {
-      message: isArabic
-        ? "يرجى تحديد أو اختيار التطبيق / الموديول"
-        : "Please select or enter the Application / Module",
-    }),
+    module: z
+      .string()
+      .trim()
+      .min(2, {
+        message: isArabic
+          ? "اسم الوحدة / التطبيق يجب ألا يقل عن حرفين"
+          : "Application / Module must be at least 2 characters",
+      })
+      .max(200, {
+        message: isArabic
+          ? "اسم الوحدة / التطبيق يجب ألا يتجاوز 200 حرف"
+          : "Application / Module cannot exceed 200 characters",
+      })
+      .regex(/^[\p{L}\p{N}\s\-_.,()&/:'"+–—]{2,200}$/u, {
+        message: isArabic
+          ? "اسم الوحدة / التطبيق يحتوي على رموز غير مسموح بها"
+          : "Application / Module contains unsupported characters",
+      }),
 
     pageName: z.string().min(1, {
       message: isArabic ? "اسم الصفحة مطلوب" : "Page Name is required",
     }),
 
-    scenario: z.string().min(1, {
-      message: isArabic ? "سيناريو الاختبار مطلوب" : "Scenario is required",
-    }),
+    scenario: z
+      .string()
+      .trim()
+      .min(5, {
+        message: isArabic
+          ? "سيناريو الاختبار يجب ألا يقل عن 5 أحرف"
+          : "Scenario must be at least 5 characters",
+      }),
 
     preConditions: z.string().optional(),
 

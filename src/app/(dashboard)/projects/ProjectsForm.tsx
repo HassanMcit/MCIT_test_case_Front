@@ -89,6 +89,7 @@ function hasCustomPhoto(photo?: string | null): boolean {
   if (
     p === "" ||
     p.includes("default-profile") ||
+    p.includes("avatar.png") ||
     p.includes("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk")
   ) {
     return false;
@@ -1098,6 +1099,13 @@ export default function ProjectsForm({
                                 alt={u.name || "User"}
                                 title={`${u.name} (${u.role || (isRTL ? "مختبر" : "Tester")})`}
                                 className="w-6 h-6 rounded-full object-cover ring-2 ring-white shadow-2xs shrink-0"
+                                onError={(e) => {
+                                  const img = e.currentTarget;
+                                  if (!img.dataset.fallbackApplied) {
+                                    img.dataset.fallbackApplied = "1";
+                                    img.src = "/avatar.png";
+                                  }
+                                }}
                               />
                             ) : (
                               <div
@@ -1296,6 +1304,13 @@ export default function ProjectsForm({
                                           alt={u.name || "User"}
                                           title={`${u.name} (${u.role || (isRTL ? "مختبر" : "Tester")})`}
                                           className="w-5 h-5 rounded-full object-cover ring-1 ring-white shrink-0"
+                                          onError={(e) => {
+                                            const img = e.currentTarget;
+                                            if (!img.dataset.fallbackApplied) {
+                                              img.dataset.fallbackApplied = "1";
+                                              img.src = "/avatar.png";
+                                            }
+                                          }}
                                         />
                                       ) : (
                                         <div
@@ -2013,6 +2028,13 @@ export default function ProjectsForm({
                               src={photoUrl}
                               alt={user.name}
                               className="w-8 h-8 rounded-full object-cover ring-1 ring-slate-200 shrink-0"
+                              onError={(e) => {
+                                const img = e.currentTarget;
+                                if (!img.dataset.fallbackApplied) {
+                                  img.dataset.fallbackApplied = "1";
+                                  img.src = "/avatar.png";
+                                }
+                              }}
                             />
                           ) : (
                             <div className="w-8 h-8 rounded-full bg-[#eff4ff] text-[#006685] font-bold flex items-center justify-center text-xs shrink-0 ring-1 ring-slate-200">

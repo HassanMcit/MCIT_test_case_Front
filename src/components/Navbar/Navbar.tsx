@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { signOut, useSession } from "next-auth/react";
 import { changeProfileImage, getUserData } from "./navbar.action";
 import { normalizeApiUserPhoto } from "@/lib/avatar";
+import { AuthenticatedEventSource } from "@/lib/authenticated-event-source";
 import {
   getMyNotifications,
   refreshNotifications,
@@ -35,55 +36,91 @@ interface NavbarProps {
   onToggleSidebar?: () => void;
 }
 
-async function downscaleImageToBase64(file: File, maxDim = 512, quality = 0.85): Promise<string> {
-  if (typeof window === "undefined" || !file.type.startsWith("image/")) {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = (e) => resolve((e.target?.result as string) || "");
-      reader.onerror = () => resolve("");
-      reader.readAsDataURL(file);
-    });
+const SAFE_RASTER_INPUT_TYPES = new Set([
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+]);
+const MAX_UPLOAD_RAW_BYTES = 15 * 1024 * 1024;
+const MAX_AVATAR_DATA_URL_LENGTH = 280_000;
+
+async function downscaleImageToBase64(file: File, maxDim = 384, quality = 0.82): Promise<string> {
+  if (typeof window === "undefined" || file.size <= 0 || file.size > MAX_UPLOAD_RAW_BYTES) {
+    return "";
+  }
+  const mime = (file.type || "").toLowerCase();
+  if (mime === "image/svg+xml") {
+    return "";
   }
   return new Promise((resolve) => {
     const reader = new FileReader();
     reader.onload = (e) => {
+      const rawDataUrl = (e.target?.result as string) || "";
+      if (!rawDataUrl) {
+        resolve("");
+        return;
+      }
       const img = new window.Image();
       img.onload = () => {
-        let width = img.width;
-        let height = img.height;
-        if (width <= maxDim && height <= maxDim && file.size < 150 * 1024) {
-          resolve((e.target?.result as string) || "");
+        const origW = img.width;
+        const origH = img.height;
+        if (!origW || !origH) {
+          resolve("");
           return;
         }
-        if (width > height) {
-          if (width > maxDim) {
-            height = Math.round((height * maxDim) / width);
-            width = maxDim;
-          }
-        } else {
-          if (height > maxDim) {
-            width = Math.round((width * maxDim) / height);
-            height = maxDim;
-          }
+        if (
+          SAFE_RASTER_INPUT_TYPES.has(mime) &&
+          origW <= maxDim &&
+          origH <= maxDim &&
+          file.size < 120 * 1024 &&
+          rawDataUrl.length <= MAX_AVATAR_DATA_URL_LENGTH
+        ) {
+          resolve(rawDataUrl);
+          return;
         }
+
+        const attempts: Array<{ dim: number; q: number }> = [
+          { dim: maxDim, q: quality },
+          { dim: maxDim, q: 0.65 },
+          { dim: 256, q: 0.6 },
+        ];
         const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
         const ctx = canvas.getContext("2d");
         if (!ctx) {
-          resolve((e.target?.result as string) || "");
+          resolve("");
           return;
         }
-        ctx.drawImage(img, 0, 0, width, height);
-        try {
-          const dataUrl = canvas.toDataURL("image/jpeg", quality);
-          resolve(dataUrl);
-        } catch {
-          resolve((e.target?.result as string) || "");
+
+        for (const step of attempts) {
+          let width = origW;
+          let height = origH;
+          if (width >= height && width > step.dim) {
+            height = Math.max(1, Math.round((height * step.dim) / width));
+            width = step.dim;
+          } else if (height > width && height > step.dim) {
+            width = Math.max(1, Math.round((width * step.dim) / height));
+            height = step.dim;
+          }
+          canvas.width = width;
+          canvas.height = height;
+          ctx.clearRect(0, 0, width, height);
+          ctx.drawImage(img, 0, 0, width, height);
+          try {
+            const candidate = canvas.toDataURL("image/jpeg", step.q);
+            if (candidate && candidate.length <= MAX_AVATAR_DATA_URL_LENGTH) {
+              resolve(candidate);
+              return;
+            }
+          } catch {
+            // Try next downscale step
+          }
         }
+        resolve("");
       };
-      img.onerror = () => resolve((e.target?.result as string) || "");
-      img.src = e.target?.result as string;
+      img.onerror = () => resolve("");
+      img.src = rawDataUrl;
     };
     reader.onerror = () => resolve("");
     reader.readAsDataURL(file);
@@ -205,50 +242,40 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
       }
     } catch {}
 
-    // 3. Connect to real-time Server-Sent Events (SSE) via same-origin proxy (no CORS issues)
-    //    and schedule exact timer for JWT expiration
-    let eventSource: EventSource | null = null;
+    // 3. Connect to real-time Server-Sent Events (SSE) with Authorization header
+    //    directly to Render when configured so Workers/serverless stay unpinned.
+    let eventSource: AuthenticatedEventSource | null = null;
     let expiryTimer: ReturnType<typeof setTimeout> | null = null;
     let isCancelled = false;
+    let sseUnauthorized = false;
+    let lastVisibilitySyncAt = Date.now();
 
-    getClientToken().then((token) => {
-      if (isCancelled || !token) return;
-
-      // Decode JWT exp claim to schedule automatic redirect the moment token expires
+    const connectSse = (token: string) => {
+      if (isCancelled || sseUnauthorized) return;
+      if (
+        eventSource &&
+        eventSource.readyState !== AuthenticatedEventSource.CLOSED
+      ) {
+        return;
+      }
       try {
-        const parts = token.split(".");
-        if (parts.length === 3) {
-          const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-          const payload = JSON.parse(atob(base64));
-          if (payload.exp && typeof payload.exp === "number") {
-            const msRemaining = payload.exp * 1000 - Date.now();
-            if (msRemaining <= 0) {
-              return;
-            }
-          }
-        }
-      } catch {}
+        const backendBase =
+          (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_BASE_URL) || "";
+        const streamBase = backendBase.trim().replace(/\/+$/, "");
+        const sseUrl = `${streamBase}/api/users/notifications/stream`;
+        const source = new AuthenticatedEventSource(sseUrl, token);
+        eventSource = source;
 
-      try {
-        // Render owns long-lived streams. Avoid holding a billed, time-limited
-        // Netlify function open for each employee. Requires exact-origin CORS.
-        const isNetlifyPlatform = typeof process !== "undefined" && process.env?.NEXT_PUBLIC_HOSTING_PLATFORM === "netlify";
-        const backendBase = (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_BASE_URL) || "";
-        const streamBase = isNetlifyPlatform ? backendBase.replace(/\/$/, "") : "";
-        const sseUrl = `${streamBase}/api/users/notifications/stream?token=${encodeURIComponent(token)}`;
-        eventSource = new EventSource(sseUrl);
-
-        eventSource.onmessage = (e) => {
+        source.onmessage = (e) => {
           try {
             const parsed = JSON.parse(e.data);
             if (parsed?.type === "UNAUTHORIZED") {
-              eventSource?.close();
+              sseUnauthorized = true;
+              source.close();
               return;
             }
             if (parsed?.type === "NOTIFICATION") {
               fetchNotifications(true);
-              // Genuine remote writes invalidate this tab's ready route
-              // snapshots; routine notification reads must not do so.
               router.refresh();
               const isRTL = notificationLocaleRef.current;
               toast(
@@ -265,35 +292,73 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
           } catch {}
         };
 
-        eventSource.onerror = () => {
-          // Avoid EventSource's rapid reconnect loop during Render outages.
-          // Visible-tab reconciliation keeps notifications available.
-          if (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_HOSTING_PLATFORM === "netlify") {
-            eventSource?.close();
+        source.onerror = () => {
+          if (eventSource === source) {
+            source.close();
           }
         };
       } catch (err) {
         console.warn("SSE stream setup skipped:", err);
       }
+    };
+
+    let cachedToken: string | null = null;
+    getClientToken().then((token) => {
+      if (isCancelled || !token) return;
+
+      // Decode JWT exp claim to skip connecting with an expired token
+      try {
+        const parts = token.split(".");
+        if (parts.length === 3) {
+          const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+          const payload = JSON.parse(atob(base64));
+          if (payload.exp && typeof payload.exp === "number") {
+            const msRemaining = payload.exp * 1000 - Date.now();
+            if (msRemaining <= 0) {
+              return;
+            }
+          }
+        }
+      } catch {}
+
+      cachedToken = token;
+      connectSse(token);
     });
 
-    // 4. Refetch on tab focus or visibility change
+    // 4. Refetch once on tab focus/visibility change (coalesced across events)
     const handleVisibility = () => {
-      if (document.visibilityState === "visible") {
-        fetchNotifications(true);
+      if (document.visibilityState !== "visible") return;
+      const now = Date.now();
+      if (now - lastVisibilitySyncAt < 15_000) return;
+      lastVisibilitySyncAt = now;
+      fetchNotifications(true);
+      if (
+        cachedToken &&
+        !sseUnauthorized &&
+        (!eventSource || eventSource.readyState === AuthenticatedEventSource.CLOSED)
+      ) {
+        connectSse(cachedToken);
       }
     };
     window.addEventListener("focus", handleVisibility);
     document.addEventListener("visibilitychange", handleVisibility);
 
-    // SSE supplies immediate updates; reconcile healthy streams once a minute.
-    // Keep the existing 5s fallback when disconnected, and pause hidden tabs.
-    const pollIntervalMs = (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_HOSTING_PLATFORM === "netlify") ? 60_000 : 5000;
+    // SSE supplies immediate updates; reconcile visible tabs once a minute
+    // so offline/dropped SSE never creates a 5-second Worker request storm.
     const interval = setInterval(() => {
       if (document.visibilityState !== "visible") return;
-      if (typeof EventSource !== "undefined" && eventSource?.readyState === EventSource.OPEN && Date.now() - lastNotificationReadRef.current < 60_000) return;
+      if (
+        cachedToken &&
+        !sseUnauthorized &&
+        (!eventSource || eventSource.readyState === AuthenticatedEventSource.CLOSED)
+      ) {
+        connectSse(cachedToken);
+      }
+      if (Date.now() - lastNotificationReadRef.current < 60_000) {
+        return;
+      }
       void fetchNotifications();
-    }, pollIntervalMs);
+    }, 60_000);
 
     return () => {
       isCancelled = true;
@@ -345,9 +410,12 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
     if (status !== "authenticated") return;
     getUserData()
       .then((res) => {
-        if (res?.photo) {
+        if (!res?.photo) return;
+        if (res.photo !== "/avatar.png") {
           setImgSrc(res.photo);
-          setUploadImage(res.photo);
+          setUploadImage((prev) => (prev && prev.startsWith("data:") ? prev : null));
+        } else if (!uploadImage) {
+          setImgSrc("/avatar.png");
         }
       })
       .catch((err) => {
@@ -598,8 +666,8 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
                     className="object-cover"
                     unoptimized
                     onError={() => {
+                      setUploadImage((prev) => (prev && prev.startsWith("data:") ? prev : null));
                       setImgSrc("/avatar.png");
-                      setUploadImage("/avatar.png");
                     }}
                   />
                 </div>
@@ -639,8 +707,8 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
                       className="object-cover"
                       unoptimized
                       onError={() => {
+                        setUploadImage((prev) => (prev && prev.startsWith("data:") ? prev : null));
                         setImgSrc("/avatar.png");
-                        setUploadImage("/avatar.png");
                       }}
                     />
                   </div>
@@ -692,25 +760,47 @@ export default function Navbar({ onToggleSidebar }: NavbarProps = {}) {
                     setImgSrc(previewUrl);
 
                     async function handlePromise() {
-                      const base64 = await downscaleImageToBase64(rawFile!);
-                      const preview = base64 || previewUrl;
-                      setUploadImage(preview);
-                      setImgSrc(preview);
-
-                      const res = await changeProfileImage({ photoBase64: base64 });
-                      if (!res.success) {
-                        throw new Error(res.message);
-                      }
-                      const finalPhoto = res.photo || preview;
-                      setImgSrc(finalPhoto);
-                      setUploadImage(finalPhoto);
                       try {
-                        if (finalPhoto && !finalPhoto.startsWith("data:") && !finalPhoto.startsWith("blob:")) {
-                          await update({ image: finalPhoto, user: { image: finalPhoto } });
+                        const base64 = await downscaleImageToBase64(rawFile!);
+                        if (!base64) {
+                          throw new Error(
+                            isRTL
+                              ? "تعذر قراءة أو ضغط الصورة، يرجى اختيار صورة JPG أو PNG أو WebP أصغر"
+                              : "Unable to process image. Please choose a valid JPG, PNG, or WebP photo.",
+                          );
                         }
-                      } catch {}
-                      setShowDropdown(false);
-                      return res;
+                        setUploadImage(base64);
+                        setImgSrc(base64);
+
+                        const res = await changeProfileImage({ photoBase64: base64 });
+                        if (!res.success) {
+                          throw new Error(res.message);
+                        }
+                        const finalPhoto = res.photo || base64;
+                        try {
+                          if (finalPhoto && !finalPhoto.startsWith("data:") && !finalPhoto.startsWith("blob:")) {
+                            await update({ image: finalPhoto, user: { image: finalPhoto } });
+                          }
+                        } catch {}
+                        if (finalPhoto && !finalPhoto.startsWith("data:") && typeof window !== "undefined") {
+                          const preload = new window.Image();
+                          preload.onload = () => {
+                            setImgSrc(finalPhoto);
+                            setUploadImage(null);
+                          };
+                          preload.src = finalPhoto;
+                        }
+                        setShowDropdown(false);
+                        return res;
+                      } catch (err) {
+                        setUploadImage(null);
+                        setImgSrc(
+                          normalizeApiUserPhoto(data?.user?.id, data?.user?.image, undefined, undefined, "/avatar.png"),
+                        );
+                        throw err;
+                      } finally {
+                        URL.revokeObjectURL(previewUrl);
+                      }
                     }
 
                     toast.promise(handlePromise(), {
