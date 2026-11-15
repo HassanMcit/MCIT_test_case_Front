@@ -3,7 +3,7 @@ import { appFetch } from "@/lib/app-fetch";
 import { getUserToken, getCurrentUserSession } from "@/app/myUtil";
 import { ChangeProfileResponseType, UserDataResponse } from "./changeProfile.interface";
 import { revalidatePath, updateTag } from "next/cache";
-import { extractSafeDataUrl, resolveAvatarForDisplay, safeAvatarSqlExpr } from "@/lib/avatar";
+import { extractSafeDataUrl, normalizeApiUserPhoto, resolveAvatarForDisplay, safeAvatarSqlExpr } from "@/lib/avatar";
 import { pool } from "@/lib/db";
 
 export async function changeProfileImage(
@@ -191,7 +191,11 @@ export async function getUserData(): Promise<UserDataResponse | null> {
           Authorization: `Bearer ${token}`,
         },
         cache: "no-store",
-        signal: AbortSignal.timeout(5000),
+        signal:
+          typeof AbortSignal !== "undefined" &&
+          typeof AbortSignal.timeout === "function"
+            ? AbortSignal.timeout(4000)
+            : undefined,
       }).catch(() => null);
 
       if (response && response.ok) {
@@ -200,7 +204,7 @@ export async function getUserData(): Promise<UserDataResponse | null> {
         if (resData) {
           return {
             ...resData,
-            photo: resolveAvatarForDisplay(
+            photo: normalizeApiUserPhoto(
               resData.id,
               resData.photo,
               resData.profileImage,

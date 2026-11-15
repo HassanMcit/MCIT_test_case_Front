@@ -3,6 +3,11 @@ import { appFetch } from "@/lib/app-fetch";
 import { getUserToken } from "@/app/myUtil";
 import { revalidatePath, updateTag } from "next/cache";
 import { unstable_rethrow } from "next/navigation";
+import {
+  extractBackendErrorMessage,
+  fetchWithWakeRetry,
+  sanitizeBackendOrigin,
+} from "@/lib/backend-wake";
 
 export async function workflowRequest<T>(
   path: string,
@@ -19,31 +24,51 @@ export async function workflowRequest<T>(
       throw new Error("Invalid workflow resource");
     const token = await getUserToken();
     if (!token) throw new Error("Please sign in / يرجى تسجيل الدخول");
-    const response = await appFetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/api/${path}`,
-      {
-        method,
-        cache: "force-cache",
-        ...(method === "GET"
-          ? {
-              next: {
-                tags: ["test-cases", "dashboard", "dashboard-stats", "projects"],
-              },
-            }
-          : {}),
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
-      },
-    );
+    const baseUrl = sanitizeBackendOrigin(process.env.NEXT_PUBLIC_BASE_URL);
+    if (!baseUrl) throw new Error("Backend service is not configured");
+    const requestUrl = `${baseUrl}/api/${path}`;
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    };
+    const response =
+      method === "GET"
+        ? await appFetch(requestUrl, {
+            method,
+            cache: "force-cache",
+            next: {
+              tags: ["test-cases", "dashboard", "dashboard-stats", "projects"],
+            },
+            headers,
+          })
+        : await fetchWithWakeRetry(
+            appFetch,
+            requestUrl,
+            {
+              method,
+              cache: "no-store",
+              headers,
+              ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+            },
+            method === "PATCH"
+              ? {
+                  maxAttempts: 3,
+                  timeoutsMs: [20000, 25000, 20000],
+                  retryOnTimeout: true,
+                  baseUrl,
+                }
+              : {
+                  maxAttempts: 3,
+                  timeoutsMs: [25000, 25000, 20000],
+                  retryOnTimeout: false,
+                  retryStatuses: new Set([502, 503]),
+                  baseUrl,
+                },
+          );
     const data = await response.json().catch(() => ({}));
     if (!response.ok)
       throw new Error(
-        Array.isArray(data.message)
-          ? data.message.join(" · ")
-          : data.message || `Request failed (${response.status})`,
+        extractBackendErrorMessage(response.status, data, `Request failed (${response.status})`),
       );
     if (method !== "GET") {
       for (const tag of [

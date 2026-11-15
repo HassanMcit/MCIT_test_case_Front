@@ -43,9 +43,24 @@ export default function ResumeGuard() {
   const hiddenAt = useRef<number | null>(null);
   const lastActiveAt = useRef<number>(Date.now());
   const lastCheckAt = useRef<number>(0);
+  const lastRefreshAt = useRef<number>(0);
+  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inFlight = useRef<boolean>(false);
 
   useEffect(() => {
+    const scheduleRefresh = () => {
+      const now = Date.now();
+      if (now - lastRefreshAt.current < CHECK_THROTTLE_MS) return;
+      lastRefreshAt.current = now;
+      if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+      // Stagger RSC refresh slightly so wakeup warmup & Navbar sync don't peak memory concurrently.
+      refreshTimerRef.current = setTimeout(() => {
+        refreshTimerRef.current = null;
+        router.refresh();
+      }, 250);
+    };
+
     const resumeSync = async (forceRefresh: boolean) => {
       if (inFlight.current) return;
       const now = Date.now();
@@ -55,16 +70,18 @@ export default function ResumeGuard() {
       hiddenAt.current = null;
       lastActiveAt.current = now;
 
-      const longIdle = forceRefresh || away >= IDLE_REFRESH_MS;
-      if (!longIdle && now - lastCheckAt.current < CHECK_THROTTLE_MS) {
+      const longIdle = away >= IDLE_REFRESH_MS;
+      if (now - lastCheckAt.current < CHECK_THROTTLE_MS) {
         return;
       }
 
       inFlight.current = true;
       lastCheckAt.current = now;
+      let warmupOk = false;
       try {
         const res = await fetch("/api/warmup", { cache: "no-store" });
         if (res.ok) {
+          warmupOk = true;
           const data: { buildId?: string } = await res.json().catch(() => ({}));
           if (CLIENT_BUILD_ID && data.buildId && data.buildId !== CLIENT_BUILD_ID) {
             if (canAutoReload()) {
@@ -76,11 +93,23 @@ export default function ResumeGuard() {
       } catch {
         // Ignore transient offline errors; next focus/online event will retry.
       } finally {
+        lastCheckAt.current = Date.now();
         inFlight.current = false;
       }
 
-      if (longIdle) {
-        router.refresh();
+      if (!warmupOk) {
+        if (!retryTimerRef.current && (forceRefresh || longIdle)) {
+          retryTimerRef.current = setTimeout(() => {
+            retryTimerRef.current = null;
+            lastCheckAt.current = 0;
+            void resumeSync(false);
+          }, 2000);
+        }
+        return;
+      }
+
+      if (longIdle || forceRefresh) {
+        scheduleRefresh();
       }
     };
 
@@ -114,6 +143,8 @@ export default function ResumeGuard() {
     window.addEventListener("online", onOnline);
     window.addEventListener("unhandledrejection", onUnhandledRejection);
     return () => {
+      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+      if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("focus", onFocus);
       window.removeEventListener("online", onOnline);

@@ -7,6 +7,11 @@ import { updateTag, revalidatePath } from "next/cache";
 import { recordSystemAuditLog } from "@/lib/audit";
 import { queryAllUsersFromDb, raceBackendFetch } from "@/lib/fast-read";
 import { normalizeApiUserPhoto } from "@/lib/avatar";
+import {
+  extractBackendErrorMessage,
+  fetchWithWakeRetry,
+  sanitizeBackendOrigin,
+} from "@/lib/backend-wake";
 
 export async function getAllUsers() {
   if ((await getCurrentUserSession())?.role !== "admin") return [];
@@ -40,13 +45,37 @@ export async function getAllUsers() {
 }
 
 export async function deleteThisUser(id: number) {
-  await appFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/users/${id}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${await getUserToken()}`,
+  const token = await getUserToken();
+  if (!token) {
+    throw new Error("يرجى تسجيل الدخول أولاً");
+  }
+  const baseUrl = sanitizeBackendOrigin(process.env.NEXT_PUBLIC_BASE_URL);
+  if (!baseUrl) {
+    throw new Error("تعذر الاتصال بالخادم، يرجى المحاولة مرة أخرى");
+  }
+
+  const response = await fetchWithWakeRetry(
+    appFetch,
+    `${baseUrl}/api/users/${id}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
     },
-    cache: "no-store",
-  });
+    {
+      maxAttempts: 3,
+      timeoutsMs: [20000, 25000, 20000],
+      retryOnTimeout: true,
+      baseUrl,
+    },
+  );
+
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(extractBackendErrorMessage(response.status, result, "فشل حذف المستخدم"));
+  }
 
   updateTag("users");
   updateTag("projects");

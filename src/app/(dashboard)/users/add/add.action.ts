@@ -5,22 +5,43 @@ import { getUserToken } from "@/app/myUtil";
 import { AddNewUserResponse, AddUserType } from "./adduser.interface";
 import { revalidatePath, updateTag } from "next/cache";
 import { recordSystemAuditLog } from "@/lib/audit";
+import {
+  extractBackendErrorMessage,
+  fetchWithWakeRetry,
+  sanitizeBackendOrigin,
+} from "@/lib/backend-wake";
 
 export async function addNewUser(data: AddUserType) {
   const token = await getUserToken();
-  const response = await appFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/users`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(data),
-    cache: "no-store"
-  });
+  if (!token) throw new Error("يرجى تسجيل الدخول أولاً");
+  const baseUrl = sanitizeBackendOrigin(process.env.NEXT_PUBLIC_BASE_URL);
+  if (!baseUrl) throw new Error("تعذر الاتصال بالخادم، يرجى المحاولة مرة أخرى");
 
-  const result: AddNewUserResponse = await response.json();
-  if(result.error) {
-    throw new Error(result.message)
+  const response = await fetchWithWakeRetry(
+    appFetch,
+    `${baseUrl}/api/users`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+      cache: "no-store",
+    },
+    {
+      maxAttempts: 3,
+      timeoutsMs: [25000, 25000, 20000],
+      retryOnTimeout: false,
+      retryStatuses: new Set([502, 503]),
+      baseUrl,
+    },
+  );
+
+  const result: AddNewUserResponse & { error?: string; message?: string | string[] } =
+    await response.json().catch(() => ({} as AddNewUserResponse));
+  if (!response.ok || result.error) {
+    throw new Error(extractBackendErrorMessage(response.status, result, "فشل إضافة المستخدم"));
   }
   updateTag("users");
   updateTag("dashboard");

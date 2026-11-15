@@ -37,6 +37,12 @@ import type { TestCaseItem } from "../test-cases/test-cases.interface";
 import { formatActionTimestamp } from "../test-cases/TestCasesTable";
 import { revalidateDashboardAction } from "./dashboard.action";
 import { toLocalDateKey } from "@/lib/utils";
+import {
+  getTestCaseCreatedTimestamp,
+  getTestCaseModalCreatedTimestamp,
+  getTestCaseSortTimestamp,
+  hasTestCaseBeenUpdated,
+} from "@/lib/test-case-timestamps";
 
 interface DashboardClientProps {
   data: DashboardDataPayload;
@@ -61,7 +67,7 @@ export default function DashboardClient({ data }: DashboardClientProps) {
     );
     const hasOlderFailed = (data.testCases || []).some((tc) => {
       if (tc.status !== "failed") return false;
-      const k = toLocalDateKey(tc.executedAt || tc.createdAt);
+      const k = toLocalDateKey(getTestCaseCreatedTimestamp(tc));
       return Boolean(k && cutoff14 && k < cutoff14);
     });
     return hasOlderFailed ? 30 : 14;
@@ -131,7 +137,7 @@ export default function DashboardClient({ data }: DashboardClientProps) {
   const dateFilteredAllCases = useMemo(() => {
     if (!selectedDate) return data.testCases;
     return data.testCases.filter(
-      (tc) => toLocalDateKey(tc.executedAt || tc.createdAt) === selectedDate
+      (tc) => toLocalDateKey(getTestCaseCreatedTimestamp(tc)) === selectedDate
     );
   }, [data.testCases, selectedDate]);
 
@@ -182,7 +188,7 @@ export default function DashboardClient({ data }: DashboardClientProps) {
   const dateActivityMap = useMemo(() => {
     const map = new Map<string, { total: number; failed: number }>();
     for (const tc of userAndProjectScopedCases) {
-      const k = toLocalDateKey(tc.executedAt || tc.createdAt);
+      const k = toLocalDateKey(getTestCaseCreatedTimestamp(tc));
       if (!k) continue;
       const prev = map.get(k) || { total: 0, failed: 0 };
       prev.total += 1;
@@ -196,7 +202,7 @@ export default function DashboardClient({ data }: DashboardClientProps) {
   const scopedTestCases = useMemo(() => {
     if (!selectedDate) return userAndProjectScopedCases;
     return userAndProjectScopedCases.filter(
-      (tc) => toLocalDateKey(tc.executedAt || tc.createdAt) === selectedDate
+      (tc) => toLocalDateKey(getTestCaseCreatedTimestamp(tc)) === selectedDate
     );
   }, [userAndProjectScopedCases, selectedDate]);
 
@@ -389,7 +395,7 @@ export default function DashboardClient({ data }: DashboardClientProps) {
     // Pre-compute each case's LOCAL day key once (not UTC)
     const caseDayKeys = userAndProjectScopedCases.map((tc) => ({
       tc,
-      key: toLocalDateKey(tc.executedAt || tc.createdAt),
+      key: toLocalDateKey(getTestCaseCreatedTimestamp(tc)),
     }));
 
     for (let i = daysCount - 1; i >= 0; i--) {
@@ -503,8 +509,8 @@ export default function DashboardClient({ data }: DashboardClientProps) {
         );
       })
       .sort((a, b) => {
-        const timeA = new Date(a.executedAt || a.createdAt || 0).getTime();
-        const timeB = new Date(b.executedAt || b.createdAt || 0).getTime();
+        const timeA = new Date(getTestCaseSortTimestamp(a) || 0).getTime() || 0;
+        const timeB = new Date(getTestCaseSortTimestamp(b) || 0).getTime() || 0;
         if (timeA !== timeB) {
           return timeB - timeA;
         }
@@ -1977,13 +1983,13 @@ export default function DashboardClient({ data }: DashboardClientProps) {
                     const bugId = bug.testId?.startsWith("TC-")
                       ? bug.testId.replace(/^TC-/, "BUG-")
                       : bug.testId;
-                    const bugDate =
-                      bug.executedAt || bug.createdAt
-                        ? new Date(bug.executedAt || bug.createdAt).toLocaleDateString(
-                            isRTL ? "ar-EG" : "en-US",
-                            { month: "short", day: "numeric" }
-                          )
-                        : "";
+                    const bugCreatedAt = getTestCaseCreatedTimestamp(bug);
+                    const bugDate = bugCreatedAt
+                      ? new Date(bugCreatedAt).toLocaleDateString(
+                          isRTL ? "ar-EG" : "en-US",
+                          { month: "short", day: "numeric" }
+                        )
+                      : "";
                     const sev = bug.severity || bug.priority || "medium";
                     return (
                       <button
@@ -2273,16 +2279,17 @@ export default function DashboardClient({ data }: DashboardClientProps) {
                           .toUpperCase()
                       : "QA";
 
-                  const dateStr =
-                    row.executedAt || row.createdAt
-                      ? new Date(
-                          row.executedAt || row.createdAt
-                        ).toLocaleDateString(isRTL ? "ar-EG" : "en-US", {
+                  const rowCreatedTs = getTestCaseCreatedTimestamp(row);
+                  const dateStr = rowCreatedTs
+                    ? new Date(rowCreatedTs).toLocaleDateString(
+                        isRTL ? "ar-EG" : "en-US",
+                        {
                           month: "short",
                           day: "numeric",
                           year: "numeric",
-                        })
-                      : "-";
+                        }
+                      )
+                    : "-";
 
                   return (
                     <tr
@@ -2360,13 +2367,7 @@ export default function DashboardClient({ data }: DashboardClientProps) {
                               {testerName}
                             </span>
                           </div>
-                          {(Boolean(row.updatedBy || row.updatedById) ||
-                            (row.updatedAt &&
-                              row.createdAt &&
-                              Math.abs(
-                                new Date(row.updatedAt).getTime() -
-                                  new Date(row.createdAt).getTime()
-                              ) > 2000)) && (
+                          {hasTestCaseBeenUpdated(row) && (
                             <div className="px-2 py-0.5 rounded-md bg-amber-50/90 border border-amber-200/80 flex flex-col gap-0.5 w-fit">
                               <span className="text-[10px] font-bold text-amber-800 flex items-center gap-1">
                                 <Pencil className="w-2.5 h-2.5 text-amber-600 shrink-0" />
@@ -2688,18 +2689,12 @@ export default function DashboardClient({ data }: DashboardClientProps) {
                   </span>
                   <span className="font-mono text-slate-700 text-xs flex items-center gap-1">
                     <Clock className="w-3 h-3 text-slate-400" />
-                    {formatActionTimestamp(selectedDefect.executedAt || selectedDefect.createdAt, lang)}
+                    {formatActionTimestamp(getTestCaseModalCreatedTimestamp(selectedDefect), lang)}
                   </span>
                 </div>
               </div>
 
-              {(Boolean(selectedDefect.updatedBy || selectedDefect.updatedById) ||
-                (selectedDefect.updatedAt &&
-                  selectedDefect.createdAt &&
-                  Math.abs(
-                    new Date(selectedDefect.updatedAt).getTime() -
-                      new Date(selectedDefect.createdAt).getTime()
-                  ) > 2000)) && (
+              {hasTestCaseBeenUpdated(selectedDefect) && (
                 <div className="p-3.5 bg-amber-50/80 border border-amber-200 rounded-xl flex items-center justify-between text-xs">
                   <div className="space-y-0.5">
                     <span className="text-[11px] font-bold text-amber-800 block">

@@ -3,10 +3,9 @@ import { NextRequest } from "next/server";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  const token = req.nextUrl.searchParams.get("token") || "";
-  const backendBase = (
-    process.env.NEXT_PUBLIC_BASE_URL || "https://mcit-test-case-backend.onrender.com"
-  ).replace(/\/$/, "");
+  const authorization = req.headers.get("authorization") || "";
+  const token = authorization.startsWith("Bearer ") ? authorization.slice(7).trim() : "";
+  const backendBase = (process.env.NEXT_PUBLIC_BASE_URL || "").trim().replace(/\/+$/, "");
 
   const headers = {
     "Content-Type": "text/event-stream; charset=utf-8",
@@ -21,9 +20,16 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  if (!backendBase) {
+    return new Response(`data: ${JSON.stringify({ type: "PING" })}\n\n`, {
+      status: 200,
+      headers,
+    });
+  }
+
   try {
     const upstream = await fetch(
-      `${backendBase}/api/users/notifications/stream?token=${encodeURIComponent(token)}`,
+      `${backendBase}/api/users/notifications/stream`,
       {
         method: "GET",
         cache: "no-store",

@@ -343,6 +343,13 @@ export default function AssignProjectsClient({
                                 fill
                                 unoptimized
                                 className="object-cover"
+                                onError={(e) => {
+                                  const img = e.currentTarget;
+                                  if (!img.dataset.fallbackApplied) {
+                                    img.dataset.fallbackApplied = "1";
+                                    img.src = "/avatar.png";
+                                  }
+                                }}
                               />
                             );
                           }
@@ -397,6 +404,13 @@ export default function AssignProjectsClient({
                                 fill
                                 unoptimized
                                 className="object-cover"
+                                onError={(e) => {
+                                  const img = e.currentTarget;
+                                  if (!img.dataset.fallbackApplied) {
+                                    img.dataset.fallbackApplied = "1";
+                                    img.src = "/avatar.png";
+                                  }
+                                }}
                               />
                             );
                           }
@@ -551,6 +565,13 @@ export default function AssignProjectsClient({
                                   fill
                                   unoptimized
                                   className="object-cover"
+                                  onError={(e) => {
+                                    const img = e.currentTarget;
+                                    if (!img.dataset.fallbackApplied) {
+                                      img.dataset.fallbackApplied = "1";
+                                      img.src = "/avatar.png";
+                                    }
+                                  }}
                                 />
                               );
                             }

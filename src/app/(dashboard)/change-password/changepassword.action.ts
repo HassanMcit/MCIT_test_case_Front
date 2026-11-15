@@ -8,6 +8,12 @@ import {
   ChangePasswordForm,
 } from "./changepassword.interface";
 import { recordSystemAuditLog } from "@/lib/audit";
+import {
+  GATEWAY_RETRY_STATUSES,
+  fetchWithWakeRetry,
+  isAbortLikeError,
+  sanitizeBackendOrigin,
+} from "@/lib/backend-wake";
 
 export async function handleUserChangePassword(
   data: ChangePasswordForm
@@ -24,25 +30,36 @@ export async function handleUserChangePassword(
   }
 
   const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_URL?.trim() ||
+    sanitizeBackendOrigin(process.env.NEXT_PUBLIC_BASE_URL) ||
     "https://mcit-test-case-backend.onrender.com";
 
   try {
-    const res = await appFetch(`${baseUrl}/api/auth/change-password`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+    const res = await fetchWithWakeRetry(
+      appFetch,
+      `${baseUrl}/api/auth/change-password`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+        cache: "no-store",
       },
-      body: JSON.stringify(data),
-      cache: "no-store",
-    });
+      {
+        maxAttempts: 3,
+        timeoutsMs: [25000, 25000, 20000],
+        retryOnTimeout: false,
+        retryStatuses: new Set([502, 503]),
+        baseUrl,
+      },
+    );
 
     let result: any = null;
     try {
       result = await res.json();
     } catch {
-      result = { message: res.statusText };
+      result = null;
     }
 
     if (res.ok) {

@@ -11,6 +11,9 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_BUILD_ID: process.env.NEXT_PUBLIC_BUILD_ID,
   },
   experimental: {
+    serverActions: {
+      bodySizeLimit: "4mb",
+    },
     staleTimes: {
       dynamic: 60,
       // Full, intent-prefetched workflow pages may be reused briefly in this

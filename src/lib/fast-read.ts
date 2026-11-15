@@ -19,8 +19,10 @@ import type {
  */
 export async function raceBackendFetch(
   fetchPromise: Promise<Response>,
-  timeoutMs = 2000
+  timeoutMs = 2000,
+  keepAliveInBackground = true
 ): Promise<Response | null> {
+  void keepAliveInBackground;
   // Prevent unhandled rejection if fetch fails later in background
   const safeFetch = fetchPromise.catch(() => null);
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -58,6 +60,15 @@ function parseStepsArray(rawSteps: any): string[] {
   return [];
 }
 
+async function hasTestCasesCurrentView(): Promise<boolean> {
+  try {
+    const res = await pool.query(`SELECT to_regclass('public.test_cases_current') AS reg`);
+    return Boolean(res?.rows?.[0]?.reg);
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Fast direct PostgreSQL fallback for `getProjects` (~80ms on Supabase Pooler)
  */
@@ -69,6 +80,9 @@ async function queryProjectsFromDbRaw(params?: {
   currentUserId?: number;
   assignedToUserId?: number;
 }): Promise<ProjectApiItem[]> {
+  const useCurrentView = await hasTestCasesCurrentView();
+  const tcStatsTable = useCurrentView ? "test_cases_current" : "test_cases";
+
   const [projRes, assignRes, tcStatsRes] = await Promise.all([
     pool.query(`SELECT to_jsonb(p) AS p_json FROM projects p ORDER BY p.id DESC`),
     pool.query(`
@@ -83,7 +97,7 @@ async function queryProjectsFromDbRaw(params?: {
     `),
     pool.query(`
       SELECT "projectId", LOWER(TRIM(COALESCE(module, ''))) AS mod_key, status, COUNT(*)::int AS cnt
-      FROM test_cases
+      FROM ${tcStatsTable}
       GROUP BY "projectId", LOWER(TRIM(COALESCE(module, ''))), status
     `),
   ]);
@@ -199,6 +213,18 @@ async function queryTestCasesFromDbRaw(
   const page = Math.max(1, Number(params?.page) || 1);
   const limit = Math.max(1, Math.min(2000, Number(params?.limit) || 50));
 
+  const useCurrentView = await hasTestCasesCurrentView();
+  const baseTableSql = useCurrentView ? "test_cases_current tc" : "test_cases tc";
+  const baseCreatorJoinSql = useCurrentView
+    ? "LEFT JOIN test_cases base_tc ON base_tc.id = tc.id"
+    : "";
+  const testerIdExpr = useCurrentView
+    ? 'COALESCE(base_tc."testerId", tc."testerId")'
+    : 'tc."testerId"';
+  const creatorSelectSql = useCurrentView
+    ? ', COALESCE(base_tc."testerId", tc."testerId") AS creator_tester_id'
+    : "";
+
   const conditions: string[] = ["1=1"];
   const sqlParams: any[] = [];
   let idx = 1;
@@ -207,7 +233,7 @@ async function queryTestCasesFromDbRaw(
     conditions.push(`(
       (tc."projectId" IS NOT NULL AND tc."projectId" IN (SELECT pa."projectId" FROM project_assignments pa WHERE pa."userId" = $${idx}))
       OR (tc."projectId" IS NULL AND tc.module IS NOT NULL AND tc.module IN (SELECT p.name FROM projects p INNER JOIN project_assignments pa ON p.id = pa."projectId" WHERE pa."userId" = $${idx + 1}))
-      OR tc."testerId" = $${idx + 2}
+      OR ${testerIdExpr} = $${idx + 2}
     )`);
     sqlParams.push(Number(sessionUser.id), Number(sessionUser.id), Number(sessionUser.id));
     idx += 3;
@@ -243,14 +269,18 @@ async function queryTestCasesFromDbRaw(
   const whereSql = conditions.join(" AND ");
 
   const [countRes, rowsRes, usersRes] = await Promise.all([
-    pool.query(`SELECT COUNT(*)::int AS total FROM test_cases tc WHERE ${whereSql}`, sqlParams),
     pool.query(
-      `SELECT to_jsonb(tc) AS tc_json, to_jsonb(p) AS proj_json, to_jsonb(imported) AS import_json
-       FROM test_cases tc
+      `SELECT COUNT(*)::int AS total FROM ${baseTableSql} ${baseCreatorJoinSql} WHERE ${whereSql}`,
+      sqlParams
+    ),
+    pool.query(
+      `SELECT to_jsonb(tc) AS tc_json, to_jsonb(p) AS proj_json, to_jsonb(imported) AS import_json${creatorSelectSql}
+       FROM ${baseTableSql}
+       ${baseCreatorJoinSql}
        LEFT JOIN test_case_imports imported ON imported."testCaseId" = tc.id
        LEFT JOIN projects p ON tc."projectId" = p.id
        WHERE ${whereSql}
-       ORDER BY COALESCE(tc."executedAt", tc."createdAt") DESC, tc.id DESC
+       ORDER BY COALESCE(tc."createdAt", tc."executedAt") DESC, tc.id DESC
        LIMIT $${idx} OFFSET $${idx + 1}`,
       [...sqlParams, limit, (page - 1) * limit]
     ),
@@ -283,7 +313,9 @@ async function queryTestCasesFromDbRaw(
   const total = Number(countRes.rows[0]?.total) || 0;
   const data: TestCaseItem[] = rowsRes.rows.map((r: any) => {
     const tc = r.tc_json || {};
-    const tester = tc.testerId ? (userMap.get(Number(tc.testerId)) ?? null) : null;
+    const rawTesterId = r.creator_tester_id ?? tc.testerId;
+    const testerId = rawTesterId ? Number(rawTesterId) : null;
+    const tester = testerId ? (userMap.get(testerId) ?? null) : null;
     const updU = tc.updatedById ? (userMap.get(Number(tc.updatedById)) ?? null) : null;
     const p = r.proj_json || null;
 
@@ -303,8 +335,8 @@ async function queryTestCasesFromDbRaw(
       severity: tc.severity ?? null,
       notes: tc.notes ?? null,
       executedAt: tc.executedAt ? toIsoString(tc.executedAt) : null,
-      testerId: tc.testerId ? Number(tc.testerId) : null,
-      userId: tc.userId ? Number(tc.userId) : tc.testerId ? Number(tc.testerId) : null,
+      testerId,
+      userId: testerId ?? (tc.userId ? Number(tc.userId) : null),
       updatedById: tc.updatedById ? Number(tc.updatedById) : null,
       projectId: tc.projectId ? Number(tc.projectId) : null,
       createdAt: toIsoString(tc.createdAt),

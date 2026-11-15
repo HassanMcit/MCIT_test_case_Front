@@ -8,6 +8,317 @@ import type { TestCaseItem, TestCaseListResponse, TestCaseQueryParams } from "./
 import { recordSystemAuditLog } from "@/lib/audit";
 import { queryTestCasesFromDb, raceBackendFetch } from "@/lib/fast-read";
 import { pool } from "@/lib/db";
+import {
+  GATEWAY_RETRY_STATUSES,
+  extractBackendErrorMessage,
+  fetchWithWakeRetry,
+  isAbortLikeError,
+  sanitizeBackendOrigin,
+} from "@/lib/backend-wake";
+
+const TEST_ID_PATTERN = /^(TC|BUG)-\d{4,}$/;
+const MODULE_PATTERN = /^[\p{L}\p{N}\s\-_.,()&/:'"+–—]{2,200}$/u;
+
+type FallbackSessionUser = {
+  id?: string | number;
+  role?: string;
+} | null;
+
+type DirectUpdateFallbackResult =
+  | { ok: true; data: TestCaseItem }
+  | { ok: false; message: string }
+  | null;
+
+function normalizeExecText(value: unknown): string {
+  return value === undefined || value === null ? "" : String(value).trim();
+}
+
+function parseStepsColumn(rawSteps: unknown): string[] {
+  if (Array.isArray(rawSteps)) {
+    return rawSteps.map((s) => String(s));
+  }
+  if (typeof rawSteps === "string" && rawSteps.trim() !== "") {
+    try {
+      const parsed = JSON.parse(rawSteps);
+      return Array.isArray(parsed) ? parsed.map((s) => String(s)) : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+async function updateTestCaseDirectDbFallback(
+  id: number,
+  payload: Record<string, any>,
+  sessionUser: FallbackSessionUser,
+): Promise<DirectUpdateFallbackResult> {
+  const actorId = Number(sessionUser?.id);
+  if (!Number.isInteger(actorId) || actorId <= 0) {
+    return null;
+  }
+
+  const dbPool = pool as any;
+  if (!dbPool || typeof dbPool.connect !== "function") {
+    return null;
+  }
+
+  if (payload.testId !== undefined && !TEST_ID_PATTERN.test(String(payload.testId))) {
+    return {
+      ok: false,
+      message: "يجب أن يطابق معرّف الاختبار النمط TC-XXXX أو BUG-XXXX (مثل TC-8492 أو BUG-8492)",
+    };
+  }
+  if (payload.module !== undefined && !MODULE_PATTERN.test(String(payload.module))) {
+    return {
+      ok: false,
+      message: "اسم الوحدة البرمجية يجب أن يتكون من 2 إلى 200 حرف مقبولة",
+    };
+  }
+  if (payload.scenario !== undefined && String(payload.scenario).trim().length < 5) {
+    return {
+      ok: false,
+      message: "سيناريو الاختبار يجب ألا يقل عن 5 أحرف",
+    };
+  }
+
+  let client: any;
+  let began = false;
+  try {
+    client = await dbPool.connect();
+    await client.query("BEGIN");
+    began = true;
+
+    const origRes = await client.query("SELECT * FROM test_cases WHERE id = $1 FOR UPDATE", [id]);
+    const original = origRes.rows[0];
+    if (!original) {
+      await client.query("ROLLBACK");
+      return { ok: false, message: "حالة الاختبار غير موجودة" };
+    }
+
+    const isAdmin = sessionUser?.role === "admin";
+    if (original.projectId) {
+      const projRes = await client.query("SELECT id FROM projects WHERE id = $1", [original.projectId]);
+      if (!projRes.rows[0]) {
+        await client.query("ROLLBACK");
+        return { ok: false, message: "المشروع المرتبط غير موجود" };
+      }
+      if (!isAdmin) {
+        const memRes = await client.query(
+          'SELECT 1 FROM project_assignments WHERE "projectId" = $1 AND "userId" = $2',
+          [original.projectId, actorId],
+        );
+        if (!memRes.rowCount && memRes.rows.length === 0) {
+          await client.query("ROLLBACK");
+          return { ok: false, message: "ليس لديك صلاحية لتعديل هذه الحالة" };
+        }
+      }
+    } else if (!isAdmin && Number(original.testerId) !== actorId) {
+      await client.query("ROLLBACK");
+      return { ok: false, message: "ليس لديك صلاحية لتعديل هذه الحالة" };
+    }
+
+    const schemaRes = await client.query(
+      "SELECT to_regclass('public.test_executions') AS exec_tbl, to_regclass('public.test_cycle_items') AS cycle_tbl, to_regclass('public.test_cases_current') AS current_view",
+    );
+    const hasWorkflowExecutions = Boolean(schemaRes.rows[0]?.exec_tbl);
+    const hasCycleItems = Boolean(schemaRes.rows[0]?.cycle_tbl);
+    const hasCurrentView = Boolean(schemaRes.rows[0]?.current_view);
+
+    if (
+      payload.projectId !== undefined &&
+      Number(payload.projectId) !== Number(original.projectId)
+    ) {
+      const targetProjId = Number(payload.projectId);
+      const targetProj = await client.query("SELECT id FROM projects WHERE id = $1", [targetProjId]);
+      if (!targetProj.rows[0]) {
+        await client.query("ROLLBACK");
+        return { ok: false, message: "المشروع المحدد غير موجود" };
+      }
+      if (!isAdmin) {
+        const memRes = await client.query(
+          'SELECT 1 FROM project_assignments WHERE "projectId" = $1 AND "userId" = $2',
+          [targetProjId, actorId],
+        );
+        if (!memRes.rowCount && memRes.rows.length === 0) {
+          await client.query("ROLLBACK");
+          return { ok: false, message: "ليس لديك صلاحية للنقل إلى هذا المشروع" };
+        }
+      }
+      if (hasWorkflowExecutions && hasCycleItems) {
+        const depRes = await client.query(
+          'SELECT 1 FROM test_executions WHERE "testCaseId" = $1 UNION ALL SELECT 1 FROM test_cycle_items WHERE "testCaseId" = $1 LIMIT 1',
+          [id],
+        );
+        if (depRes.rowCount || depRes.rows.length > 0) {
+          await client.query("ROLLBACK");
+          return {
+            ok: false,
+            message: "لا يمكن نقل حالة اختبار لها سجل تنفيذ أو دورات اختبار",
+          };
+        }
+      }
+    }
+
+    let pidx = 1;
+    const fields: string[] = [];
+    const values: any[] = [];
+
+    fields.push(`"updatedById" = $${pidx++}`);
+    values.push(actorId);
+
+    const allowedDefinitionKeys = [
+      "testId",
+      "module",
+      "pageName",
+      "scenario",
+      "preConditions",
+      "expectedResult",
+      "priority",
+      "severity",
+      "projectId",
+    ];
+    for (const key of allowedDefinitionKeys) {
+      if (payload[key] !== undefined) {
+        fields.push(`"${key}" = $${pidx++}`);
+        values.push(payload[key]);
+      }
+    }
+
+    if (payload.steps !== undefined) {
+      fields.push(`steps = $${pidx++}`);
+      values.push(JSON.stringify(payload.steps));
+    }
+
+    if (!hasWorkflowExecutions) {
+      for (const legacyKey of ["status", "actualResult", "notes"]) {
+        if (payload[legacyKey] !== undefined) {
+          fields.push(`"${legacyKey}" = $${pidx++}`);
+          values.push(payload[legacyKey]);
+        }
+      }
+      if (
+        payload.status !== undefined &&
+        ["passed", "failed", "blocked", "skipped"].includes(payload.status)
+      ) {
+        fields.push(`"executedAt" = NOW()`);
+      }
+    }
+
+    fields.push(`"updatedAt" = NOW()`);
+    values.push(id);
+    await client.query(`UPDATE test_cases SET ${fields.join(", ")} WHERE id = $${pidx}`, values);
+
+    const refreshedCase = (await client.query("SELECT * FROM test_cases WHERE id = $1", [id])).rows[0];
+
+    if (
+      hasWorkflowExecutions &&
+      (payload.status !== undefined ||
+        payload.actualResult !== undefined ||
+        payload.notes !== undefined)
+    ) {
+      const latestExec = (
+        await client.query(
+          'SELECT * FROM test_executions WHERE "testCaseId" = $1 ORDER BY id DESC LIMIT 1',
+          [id],
+        )
+      ).rows[0];
+      const rawCurrentStatus = latestExec ? latestExec.status : refreshedCase?.status || "pending";
+      const currentStatus = rawCurrentStatus === "not_run" ? "pending" : rawCurrentStatus;
+      const currentActual = latestExec ? latestExec.actualResult : refreshedCase?.actualResult;
+      const currentNotes = latestExec ? latestExec.notes : refreshedCase?.notes;
+      const nextStatus = payload.status !== undefined ? payload.status : currentStatus;
+      const nextActual =
+        payload.actualResult !== undefined ? payload.actualResult : currentActual;
+      const nextNotes = payload.notes !== undefined ? payload.notes : currentNotes;
+      const executionChanged =
+        nextStatus !== currentStatus ||
+        normalizeExecText(nextActual) !== normalizeExecText(currentActual) ||
+        normalizeExecText(nextNotes) !== normalizeExecText(currentNotes);
+
+      if (
+        executionChanged &&
+        ["passed", "failed", "blocked", "skipped", "pending", "not_run"].includes(nextStatus)
+      ) {
+        const actorRes = await client.query("SELECT name FROM users WHERE id = $1", [actorId]);
+        const actorName = actorRes.rows[0]?.name || null;
+        await client.query(
+          `INSERT INTO test_executions("testCaseId","projectId","testerId","testerName",status,"actualResult",notes,environment,"executedAt",snapshot,source) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'compatibility')`,
+          [
+            refreshedCase.id,
+            refreshedCase.projectId ?? null,
+            actorId,
+            actorName,
+            nextStatus === "pending" ? "not_run" : nextStatus,
+            nextActual || null,
+            nextNotes || null,
+            null,
+            ["pending", "not_run"].includes(nextStatus) ? null : new Date().toISOString(),
+            JSON.stringify(refreshedCase),
+          ],
+        );
+      }
+    }
+
+    const fromRelation = hasCurrentView ? "test_cases_current" : "test_cases";
+    const rowRes = await client.query(
+      `SELECT tc.*, u_up.id AS updated_by_id, u_up.name AS updated_by_name, u_up.email AS updated_by_email, p.id AS project_id, p.name AS project_name
+       FROM ${fromRelation} tc
+       LEFT JOIN users u_up ON tc."updatedById" = u_up.id
+       LEFT JOIN projects p ON tc."projectId" = p.id
+       WHERE tc.id = $1`,
+      [id],
+    );
+    await client.query("COMMIT");
+    began = false;
+
+    const row = rowRes.rows[0];
+    if (!row) {
+      return null;
+    }
+
+    const {
+      updated_by_id,
+      updated_by_name,
+      updated_by_email,
+      project_id,
+      project_name,
+      ...base
+    } = row;
+    delete base.tester;
+    delete base.testerId;
+    delete base.userId;
+    delete base.createdAt;
+
+    return {
+      ok: true,
+      data: {
+        ...base,
+        steps: parseStepsColumn(base.steps),
+        updatedById: updated_by_id || null,
+        updatedBy: updated_by_id
+          ? {
+              id: updated_by_id,
+              userId: updated_by_id,
+              name: updated_by_name,
+              email: updated_by_email,
+            }
+          : null,
+        project: project_id ? { id: project_id, name: project_name } : null,
+      } as TestCaseItem,
+    };
+  } catch (dbFallbackErr) {
+    if (client && began) {
+      await client.query("ROLLBACK").catch(() => {});
+    }
+    console.warn("Direct DB fallback for updateTestCase failed:", dbFallbackErr);
+    return null;
+  } finally {
+    if (client && typeof client.release === "function") {
+      client.release();
+    }
+  }
+}
 
 export async function getTestCases(params?: TestCaseQueryParams): Promise<TestCaseListResponse> {
   try {
@@ -81,25 +392,44 @@ export async function deleteTestCase(id: number): Promise<{ success: boolean; me
   try {
     const token = await getUserToken();
     if (!token) {
-      throw new Error("يرجى تسجيل الدخول أولاً");
+      return {
+        success: false,
+        message: "يرجى تسجيل الدخول أولاً",
+      };
     }
 
-    const res = await appFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/test-cases/${id}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
+    const baseUrl = sanitizeBackendOrigin(process.env.NEXT_PUBLIC_BASE_URL);
+    if (!baseUrl) {
+      return {
+        success: false,
+        message: "تعذر الاتصال بالخادم، يرجى المحاولة مرة أخرى",
+      };
+    }
+
+    const res = await fetchWithWakeRetry(
+      appFetch,
+      `${baseUrl}/api/test-cases/${id}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        cache: "no-store",
       },
-      cache: "no-store",
-    });
+      {
+        maxAttempts: 3,
+        timeoutsMs: [20000, 25000, 20000],
+        retryOnTimeout: true,
+        baseUrl,
+      },
+    );
 
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
       return {
         success: false,
-        message: Array.isArray(data.message)
-          ? data.message.join(" - ")
-          : data.message || "فشل حذف حالة الاختبار",
+        message: extractBackendErrorMessage(res.status, data, "فشل حذف حالة الاختبار"),
       };
     }
 
@@ -113,20 +443,29 @@ export async function deleteTestCase(id: number): Promise<{ success: boolean; me
     revalidatePath("/dashboard");
     revalidatePath("/users");
 
-    recordSystemAuditLog({
-      action: "حذف حالة اختبار",
-      actionCategory: "TEST_CASES",
-      description: `حذف حالة الاختبار نهائياً #${id}`,
-      endpoint: `/api/test-cases/${id}`,
-      method: "DELETE",
-    }).catch(() => {});
+    await Promise.resolve(
+      recordSystemAuditLog({
+        action: "حذف حالة اختبار",
+        actionCategory: "TEST_CASES",
+        description: `حذف حالة الاختبار نهائياً #${id}`,
+        endpoint: `/api/test-cases/${id}`,
+        method: "DELETE",
+      }),
+    ).catch(() => {});
 
     return {
       success: true,
       message: "تم حذف حالة الاختبار بنجاح",
     };
   } catch (error) {
-    throw new Error(error instanceof Error ? error.message : "حدث خطأ غير متوقع أثناء الحذف");
+    return {
+      success: false,
+      message: isAbortLikeError(error)
+        ? "استغرق الخادم وقتاً أطول من المعتاد أثناء الاستيقاظ، يرجى المحاولة مرة أخرى"
+        : error instanceof Error
+          ? error.message
+          : "حدث خطأ غير متوقع أثناء الحذف",
+    };
   }
 }
 
@@ -146,19 +485,28 @@ export async function updateTestCase(
 
     const payload: Record<string, any> = {};
     if (data.testId !== undefined && data.testId !== null) {
-      payload.testId = String(data.testId).trim();
+      const trimmedTestId = String(data.testId).trim();
+      if (trimmedTestId) {
+        payload.testId = trimmedTestId;
+      }
     }
     if (data.module !== undefined && data.module !== null) {
-      payload.module = String(data.module).slice(0, 50).trim();
+      const trimmedModule = String(data.module).trim();
+      if (trimmedModule) {
+        payload.module = trimmedModule.slice(0, 200).trim();
+      }
     }
-    if (data.pageName !== undefined && data.pageName !== null) {
-      payload.pageName = String(data.pageName).trim();
+    if (data.pageName !== undefined) {
+      payload.pageName = data.pageName === null ? "" : String(data.pageName).trim();
     }
     if (data.scenario !== undefined && data.scenario !== null) {
-      payload.scenario = String(data.scenario).trim();
+      const trimmedScenario = String(data.scenario).trim();
+      if (trimmedScenario) {
+        payload.scenario = trimmedScenario;
+      }
     }
-    if (data.preConditions !== undefined && data.preConditions !== null) {
-      payload.preConditions = String(data.preConditions).trim();
+    if (data.preConditions !== undefined) {
+      payload.preConditions = data.preConditions === null ? "" : String(data.preConditions).trim();
     }
     if (data.steps !== undefined && data.steps !== null) {
       payload.steps = Array.isArray(data.steps)
@@ -197,30 +545,75 @@ export async function updateTestCase(
       payload.projectId = Number(data.projectId);
     }
 
-    const res = await appFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/test-cases/${id}`, {
-      method: "PATCH",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-      cache: "no-store",
-    });
+    const baseUrl = sanitizeBackendOrigin(process.env.NEXT_PUBLIC_BASE_URL);
+    let res: Response | null = null;
+    let networkError: unknown = null;
 
-    const responseData = await res.json().catch(() => ({}));
+    if (baseUrl) {
+      try {
+        res = await fetchWithWakeRetry(
+          appFetch,
+          `${baseUrl}/api/test-cases/${id}`,
+          {
+            method: "PATCH",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+            cache: "no-store",
+          },
+          {
+            maxAttempts: 2,
+            timeoutsMs: [15000, 18000],
+            retryOnTimeout: true,
+            baseUrl,
+          },
+        );
+      } catch (err) {
+        networkError = err;
+      }
+    }
 
-    if (!res.ok) {
-      const errorMsg = Array.isArray(responseData.message)
-        ? responseData.message.join(" - ")
-        : responseData.message || "فشل تحديث حالة الاختبار";
+    let responseData: any = null;
+    let usedDirectDbFallback = false;
+
+    if (res && res.ok) {
+      responseData = await res.json().catch(() => ({}));
+    } else if (!res || GATEWAY_RETRY_STATUSES.has(res.status)) {
+      const fallbackResult = await updateTestCaseDirectDbFallback(id, payload, sessionUser);
+      if (fallbackResult && fallbackResult.ok) {
+        responseData = fallbackResult.data;
+        usedDirectDbFallback = true;
+      } else if (fallbackResult && !fallbackResult.ok) {
+        return {
+          success: false,
+          message: fallbackResult.message,
+        };
+      } else if (res) {
+        const errorBody = await res.json().catch(() => ({}));
+        return {
+          success: false,
+          message: extractBackendErrorMessage(res.status, errorBody, "فشل تحديث حالة الاختبار"),
+        };
+      } else {
+        return {
+          success: false,
+          message: isAbortLikeError(networkError)
+            ? "استغرق الخادم وقتاً أطول من المعتاد أثناء الاستيقاظ، يرجى المحاولة مرة أخرى"
+            : "تعذر الاتصال بالخادم أثناء تحديث حالة الاختبار، يرجى المحاولة مرة أخرى",
+        };
+      }
+    } else {
+      const errorBody = await res.json().catch(() => ({}));
       return {
         success: false,
-        message: errorMsg,
+        message: extractBackendErrorMessage(res.status, errorBody, "فشل تحديث حالة الاختبار"),
       };
     }
 
     // Persist updater ID directly in DB to guarantee audit tracking
-    if (sessionUser?.id) {
+    if (!usedDirectDbFallback && sessionUser?.id) {
       try {
         await pool.query('UPDATE test_cases SET "updatedById" = $1, "updatedAt" = NOW() WHERE id = $2', [Number(sessionUser.id), id]);
       } catch (dbErr) {
@@ -228,11 +621,12 @@ export async function updateTestCase(
       }
     }
 
-    // Safety: ensure response data never overwrites the original creator with the updater
+    // Safety: ensure response data never overwrites the original creator or creation time with the updater
     if (responseData && typeof responseData === "object") {
       delete responseData.tester;
       delete responseData.testerId;
       delete responseData.userId;
+      delete responseData.createdAt;
     }
 
     updateTag("test-cases");
@@ -245,13 +639,15 @@ export async function updateTestCase(
     revalidatePath("/dashboard");
     revalidatePath("/users");
 
-    recordSystemAuditLog({
-      action: "تعديل حالة اختبار",
-      actionCategory: "TEST_CASES",
-      description: `تعديل حالة الاختبار #${id} - الموديول: ${payload.module || "بدون تغيير"} - الحالة: ${payload.status || "بدون تغيير"}`,
-      endpoint: `/api/test-cases/${id}`,
-      method: "PATCH",
-    }).catch(() => {});
+    await Promise.resolve(
+      recordSystemAuditLog({
+        action: "تعديل حالة اختبار",
+        actionCategory: "TEST_CASES",
+        description: `تعديل حالة الاختبار #${id} - الموديول: ${payload.module || "بدون تغيير"} - الحالة: ${payload.status || "بدون تغيير"}`,
+        endpoint: `/api/test-cases/${id}`,
+        method: "PATCH",
+      }),
+    ).catch(() => {});
 
     return {
       success: true,

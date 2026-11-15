@@ -4,6 +4,12 @@ import { revalidatePath, updateTag } from "next/cache";
 import { getUserToken } from "@/app/myUtil";
 import { appFetch } from "@/lib/app-fetch";
 import { recordSystemAuditLog } from "@/lib/audit";
+import {
+  extractBackendErrorMessage,
+  fetchWithWakeRetry,
+  isAbortLikeError,
+  sanitizeBackendOrigin,
+} from "@/lib/backend-wake";
 import { updateProjectApiSchema } from "./project-schedule.zod";
 
 export async function updateProject(
@@ -32,8 +38,14 @@ export async function updateProject(
       return { success: false, message: "يرجى تسجيل الدخول أولاً" };
     }
 
-    const response = await appFetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/api/projects/${id}`,
+    const baseUrl = sanitizeBackendOrigin(process.env.NEXT_PUBLIC_BASE_URL);
+    if (!baseUrl) {
+      return { success: false, message: "تعذر الاتصال بالخادم، يرجى المحاولة مرة أخرى" };
+    }
+
+    const response = await fetchWithWakeRetry(
+      appFetch,
+      `${baseUrl}/api/projects/${id}`,
       {
         method: "PATCH",
         headers: {
@@ -43,15 +55,21 @@ export async function updateProject(
         body: JSON.stringify(parsed.data),
         cache: "no-store",
       },
+      {
+        maxAttempts: 3,
+        timeoutsMs: [20000, 25000, 20000],
+        retryOnTimeout: true,
+        baseUrl,
+      },
     );
 
-    const result = await response.json();
+    const result = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      const errorMsg = Array.isArray(result.message)
-        ? result.message.join(" - ")
-        : result.message || "Failed to update project";
-      return { success: false, message: errorMsg };
+      return {
+        success: false,
+        message: extractBackendErrorMessage(response.status, result, "Failed to update project"),
+      };
     }
 
     updateTag("notifications");
@@ -79,7 +97,9 @@ export async function updateProject(
   } catch (err: any) {
     return {
       success: false,
-      message: err?.message || "حدث خطأ في الاتصال بالخادم",
+      message: isAbortLikeError(err)
+        ? "استغرق الخادم وقتاً أطول من المعتاد أثناء الاستيقاظ، يرجى المحاولة مرة أخرى"
+        : err?.message || "حدث خطأ في الاتصال بالخادم",
     };
   }
 }

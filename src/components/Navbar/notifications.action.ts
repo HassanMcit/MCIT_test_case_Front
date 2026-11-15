@@ -57,10 +57,15 @@ export async function getMyNotifications(): Promise<NotificationsResponse> {
           Authorization: `Bearer ${token}`,
         },
         cache: "no-store",
+        signal:
+          typeof AbortSignal !== "undefined" &&
+          typeof AbortSignal.timeout === "function"
+            ? AbortSignal.timeout(4500)
+            : undefined,
       }
     );
 
-    const res = await raceBackendFetch(fetchPromise, 2000);
+    const res = await raceBackendFetch(fetchPromise, 2000, false);
     if (!res) {
       return { notifications: [], unreadCount: 0, unavailable: true };
     }
